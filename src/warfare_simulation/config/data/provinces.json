@@ -1,0 +1,37 @@
+{
+  "provinces": [
+    {
+      "name": "Highreach",
+      "population": 150000,
+      "fort_level": 3,
+      "food_stored": 120,
+      "monthly_tax": 6000,
+      "loyalty": 95,
+      "garrison_size": 200,
+      "garrison_capacity": 500,
+      "governor_name": "Lady Clarissa"
+    },
+    {
+      "name": "Oakhaven",
+      "population": 180000,
+      "fort_level": 2,
+      "food_stored": 140,
+      "monthly_tax": 7000,
+      "loyalty": 90,
+      "garrison_size": 150,
+      "garrison_capacity": 400,
+      "governor_name": "Sir Edward"
+    },
+    {
+      "name": "Westmarch",
+      "population": 120000,
+      "fort_level": 1,
+      "food_stored": 100,
+      "monthly_tax": 4500,
+      "loyalty": 80,
+      "garrison_size": 100,
+      "garrison_capacity": 300,
+      "governor_name": "Lord Brennan"
+    }
+  ]
+}

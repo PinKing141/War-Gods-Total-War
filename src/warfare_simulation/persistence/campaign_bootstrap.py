@@ -1,0 +1,443 @@
+"""
+Campaign bootstrap: seed SQLite from JSON config and hydrate domain repositories.
+
+JSON is the immutable campaign definition; SQLite is the mutable runtime state.
+On first run, configs are loaded, validated, and inserted into the database.
+"""
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, Optional, Type, TypeVar
+
+from warfare_simulation.config.config import ConfigManager
+from warfare_simulation.core.constants import (
+    ArmorType,
+    CommanderRole,
+    FactionStatus,
+    ResourceType,
+    UnitStatus,
+    UnitType,
+)
+from warfare_simulation.core.logger import get_logger
+from warfare_simulation.domain.diplomacy.models import Faction, Relation
+from warfare_simulation.domain.diplomacy.repository import FactionRepository, RelationRepository
+from warfare_simulation.domain.geography.models import Province
+from warfare_simulation.domain.geography.repository import ProvinceRepository
+from warfare_simulation.domain.kingdom.models import Kingdom
+from warfare_simulation.domain.kingdom.repository import KingdomRepository
+from warfare_simulation.domain.logistics.models import Resource
+from warfare_simulation.domain.logistics.repository import ResourceRepository
+from warfare_simulation.domain.military.models import Commander, Unit
+from warfare_simulation.domain.military.repository import CommanderRepository, UnitRepository
+from warfare_simulation.persistence.database import DatabaseManager
+
+logger = get_logger(__name__)
+
+E = TypeVar("E", bound=Enum)
+
+RESOURCE_TYPE_ALIASES = {
+    "WOOD": ResourceType.TIMBER,
+}
+
+
+@dataclass
+class CampaignRepositories:
+    """Domain repositories hydrated from SQLite."""
+
+    kingdom: KingdomRepository
+    province: ProvinceRepository
+    unit: UnitRepository
+    commander: CommanderRepository
+    faction: FactionRepository
+    relation: RelationRepository
+    resource: ResourceRepository
+
+
+class CampaignBootstrap:
+    """Load campaign config into SQLite and hydrate in-memory repositories."""
+
+    @staticmethod
+    def is_seeded(db: DatabaseManager, kingdom_name: Optional[str] = None) -> bool:
+        """Return True if the campaign has already been seeded."""
+        if not db.conn:
+            db.connect()
+        cursor = db.execute("SELECT COUNT(*) FROM kingdom")
+        count = cursor.fetchone()[0]
+        if count == 0:
+            return False
+        if kingdom_name is None:
+            return True
+        cursor = db.execute("SELECT COUNT(*) FROM kingdom WHERE name = ?", (kingdom_name,))
+        return cursor.fetchone()[0] > 0
+
+    @classmethod
+    def seed_from_config(
+        cls,
+        config_mgr: ConfigManager,
+        db: DatabaseManager,
+        *,
+        force: bool = False,
+    ) -> int:
+        """
+        Load validated JSON configs into SQLite (idempotent unless force=True).
+
+        Returns:
+            kingdom_id of the seeded kingdom
+        """
+        if not db.conn:
+            db.connect()
+        db.initialize_schema()
+
+        configs = config_mgr.load_all_configs()
+        kingdom_cfg = configs["kingdom"].kingdom
+
+        if cls.is_seeded(db, kingdom_cfg.name) and not force:
+            logger.info("Campaign already seeded for %s — skipping", kingdom_cfg.name)
+            cursor = db.execute("SELECT id FROM kingdom WHERE name = ?", (kingdom_cfg.name,))
+            return cursor.fetchone()[0]
+
+        if force:
+            cls._clear_campaign_tables(db)
+
+        cursor = db.execute(
+            """
+            INSERT INTO kingdom (
+                name, ruler_name, population, treasury_silver,
+                monthly_income, monthly_expenses, morale, loyalty,
+                grain_stores, current_turn, current_month, current_year
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                kingdom_cfg.name,
+                kingdom_cfg.ruler_name,
+                kingdom_cfg.population,
+                kingdom_cfg.treasury_silver,
+                kingdom_cfg.monthly_income,
+                kingdom_cfg.monthly_expenses,
+                kingdom_cfg.morale,
+                kingdom_cfg.loyalty,
+                kingdom_cfg.grain_stores,
+                kingdom_cfg.current_turn,
+                kingdom_cfg.current_month,
+                kingdom_cfg.current_year,
+            ),
+        )
+        kingdom_id = cursor.lastrowid
+
+        for prov in configs["provinces"].provinces:
+            db.execute(
+                """
+                INSERT INTO province (
+                    kingdom_id, name, population, fort_level, food_stored,
+                    monthly_tax, loyalty, garrison_size, garrison_capacity, governor_name
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    kingdom_id,
+                    prov.name,
+                    prov.population,
+                    prov.fort_level,
+                    prov.food_stored,
+                    prov.monthly_tax,
+                    prov.loyalty,
+                    prov.garrison_size,
+                    prov.garrison_capacity,
+                    prov.governor_name,
+                ),
+            )
+
+        for cmd in configs["commanders"].commanders:
+            db.execute(
+                """
+                INSERT INTO commander (
+                    kingdom_id, name, role, leadership, tactics, logistics,
+                    loyalty, status, traits
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    kingdom_id,
+                    cmd.name,
+                    cmd.role,
+                    cmd.leadership,
+                    cmd.tactics,
+                    cmd.logistics,
+                    cmd.loyalty,
+                    cmd.status,
+                    cmd.traits,
+                ),
+            )
+
+        for unit in configs["units"].units:
+            db.execute(
+                """
+                INSERT INTO unit (
+                    kingdom_id, name, unit_type, soldiers, veterans, morale,
+                    fatigue, armor, location_id, commander_id, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    kingdom_id,
+                    unit.name,
+                    unit.unit_type,
+                    unit.soldiers,
+                    unit.veterans,
+                    unit.morale,
+                    unit.fatigue,
+                    unit.armor,
+                    unit.location_id,
+                    None,
+                    unit.status,
+                ),
+            )
+
+        for faction in configs["diplomacy"].factions:
+            db.execute(
+                """
+                INSERT INTO faction (
+                    name, faction_type, government_type, power_level, wealth, stability
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    faction.name,
+                    faction.faction_type,
+                    faction.government_type,
+                    faction.power_level,
+                    faction.wealth,
+                    faction.stability,
+                ),
+            )
+
+        for relation in configs["diplomacy"].relations:
+            db.execute(
+                """
+                INSERT INTO relation (
+                    faction_a_id, faction_b_id, status, opinion, trust,
+                    trade_agreement, military_alliance
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    relation.faction_a_id,
+                    relation.faction_b_id,
+                    relation.status,
+                    relation.opinion,
+                    relation.trust,
+                    int(relation.trade_agreement),
+                    int(relation.military_alliance),
+                ),
+            )
+
+        for resource in configs["resources"].resources:
+            db.execute(
+                """
+                INSERT INTO resource (
+                    kingdom_id, resource_type, stored, monthly_production,
+                    monthly_consumption, max_storage
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    kingdom_id,
+                    resource.resource_type,
+                    resource.stored,
+                    resource.monthly_production,
+                    resource.monthly_consumption,
+                    resource.max_storage,
+                ),
+            )
+
+        db.commit()
+        logger.info("Campaign seeded into SQLite (kingdom_id=%s)", kingdom_id)
+        return kingdom_id
+
+    @classmethod
+    def load_repositories(cls, db: DatabaseManager) -> CampaignRepositories:
+        """Hydrate domain repositories from SQLite."""
+        if not db.conn:
+            db.connect()
+
+        kingdom_repo = KingdomRepository(db)
+        province_repo = ProvinceRepository(db)
+        unit_repo = UnitRepository(db)
+        commander_repo = CommanderRepository(db)
+        faction_repo = FactionRepository(db)
+        relation_repo = RelationRepository(db)
+        resource_repo = ResourceRepository(db)
+
+        cls._hydrate_kingdoms(db, kingdom_repo)
+        cls._hydrate_provinces(db, province_repo)
+        cls._hydrate_commanders(db, commander_repo)
+        cls._hydrate_units(db, unit_repo)
+        cls._hydrate_factions(db, faction_repo)
+        cls._hydrate_relations(db, relation_repo)
+        cls._hydrate_resources(db, resource_repo)
+
+        return CampaignRepositories(
+            kingdom=kingdom_repo,
+            province=province_repo,
+            unit=unit_repo,
+            commander=commander_repo,
+            faction=faction_repo,
+            relation=relation_repo,
+            resource=resource_repo,
+        )
+
+    @classmethod
+    def initialize(
+        cls,
+        config_mgr: ConfigManager,
+        db: DatabaseManager,
+        *,
+        force: bool = False,
+    ) -> CampaignRepositories:
+        """Seed SQLite from config (if needed) and return hydrated repositories."""
+        cls.seed_from_config(config_mgr, db, force=force)
+        return cls.load_repositories(db)
+
+    @staticmethod
+    def _clear_campaign_tables(db: DatabaseManager) -> None:
+        """Remove seeded campaign data (for tests)."""
+        for table in (
+            "event",
+            "resource",
+            "relation",
+            "unit",
+            "commander",
+            "province",
+            "faction",
+            "kingdom",
+        ):
+            db.execute(f"DELETE FROM {table}")
+        db.commit()
+
+    @staticmethod
+    def _enum_value(enum_cls: Type[E], raw: str, aliases: Optional[Dict[str, E]] = None) -> E:
+        if aliases and raw in aliases:
+            return aliases[raw]
+        try:
+            return enum_cls[raw]
+        except KeyError:
+            for member in enum_cls:
+                if member.value == raw:
+                    return member
+            raise
+
+    @classmethod
+    def _hydrate_kingdoms(cls, db: DatabaseManager, repo: KingdomRepository) -> None:
+        for row in db.execute("SELECT * FROM kingdom").fetchall():
+            entity = Kingdom(
+                id=row[0],
+                name=row[1],
+                ruler_name=row[2],
+                population=row[3],
+                treasury_silver=row[4],
+                monthly_income=row[5],
+                monthly_expenses=row[6],
+                morale=row[7],
+                loyalty=row[8],
+                grain_stores=row[9],
+                current_turn=row[10],
+                current_month=row[11],
+                current_year=row[12],
+            )
+            repo.hydrate(entity)
+
+    @classmethod
+    def _hydrate_provinces(cls, db: DatabaseManager, repo: ProvinceRepository) -> None:
+        for row in db.execute("SELECT * FROM province").fetchall():
+            entity = Province(
+                id=row[0],
+                kingdom_id=row[1],
+                name=row[2],
+                population=row[3],
+                fort_level=row[4],
+                food_stored=row[5],
+                monthly_tax=row[6],
+                loyalty=row[7],
+                garrison_size=row[8],
+                garrison_capacity=row[9],
+                governor_name=row[10] or "",
+            )
+            repo.hydrate(entity)
+
+    @classmethod
+    def _hydrate_commanders(cls, db: DatabaseManager, repo: CommanderRepository) -> None:
+        for row in db.execute("SELECT * FROM commander").fetchall():
+            role_raw = row[3]
+            try:
+                role = cls._enum_value(CommanderRole, role_raw)
+            except KeyError:
+                role = CommanderRole.CAPTAIN
+            entity = Commander(
+                id=row[0],
+                kingdom_id=row[1],
+                name=row[2],
+                role=role,
+                leadership=row[4],
+                tactics=row[5],
+                logistics=row[6],
+                loyalty=row[7],
+                status=row[8],
+                traits=row[9] or "",
+            )
+            repo.hydrate(entity)
+
+    @classmethod
+    def _hydrate_units(cls, db: DatabaseManager, repo: UnitRepository) -> None:
+        for row in db.execute("SELECT * FROM unit").fetchall():
+            entity = Unit(
+                id=row[0],
+                kingdom_id=row[1],
+                name=row[2],
+                unit_type=cls._enum_value(UnitType, row[3]),
+                soldiers=row[4],
+                veterans=row[5],
+                morale=row[6],
+                fatigue=row[7],
+                armor=cls._enum_value(ArmorType, row[8]),
+                location_id=row[9],
+                commander_id=row[10],
+                status=cls._enum_value(UnitStatus, row[11]),
+            )
+            repo.hydrate(entity)
+
+    @classmethod
+    def _hydrate_factions(cls, db: DatabaseManager, repo: FactionRepository) -> None:
+        for row in db.execute("SELECT * FROM faction").fetchall():
+            entity = Faction(
+                id=row[0],
+                name=row[1],
+                faction_type=row[2],
+                government_type=row[3] or "",
+                power_level=row[4],
+                wealth=row[5],
+                stability=row[6],
+            )
+            repo.hydrate(entity)
+
+    @classmethod
+    def _hydrate_relations(cls, db: DatabaseManager, repo: RelationRepository) -> None:
+        for row in db.execute("SELECT * FROM relation").fetchall():
+            entity = Relation(
+                id=row[0],
+                faction_a_id=row[1],
+                faction_b_id=row[2],
+                status=cls._enum_value(FactionStatus, row[3]),
+                opinion=row[4],
+                trust=row[5],
+                trade_agreement=bool(row[6]),
+                military_alliance=bool(row[7]),
+            )
+            repo.hydrate(entity)
+
+    @classmethod
+    def _hydrate_resources(cls, db: DatabaseManager, repo: ResourceRepository) -> None:
+        for row in db.execute("SELECT * FROM resource").fetchall():
+            entity = Resource(
+                id=row[0],
+                kingdom_id=row[1],
+                resource_type=cls._enum_value(ResourceType, row[2], RESOURCE_TYPE_ALIASES),
+                stored=row[3],
+                monthly_production=row[4],
+                monthly_consumption=row[5],
+                max_storage=row[6],
+            )
+            repo.hydrate(entity)

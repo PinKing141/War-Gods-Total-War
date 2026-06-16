@@ -1,0 +1,37 @@
+{
+  "units": [
+    {
+      "name": "Auster Vanguard",
+      "unit_type": "HEAVY_SPEARMEN",
+      "soldiers": 500,
+      "veterans": 50,
+      "morale": 85,
+      "fatigue": 0,
+      "armor": "PLATE_MAIL",
+      "location_id": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "name": "Oakhaven Archers",
+      "unit_type": "ARCHERS",
+      "soldiers": 400,
+      "veterans": 80,
+      "morale": 80,
+      "fatigue": 0,
+      "armor": "LEATHER",
+      "location_id": 2,
+      "status": "ACTIVE"
+    },
+    {
+      "name": "Western Guard",
+      "unit_type": "LIGHT_CAVALRY",
+      "soldiers": 200,
+      "veterans": 30,
+      "morale": 75,
+      "fatigue": 5,
+      "armor": "BRIGANDINE",
+      "location_id": 3,
+      "status": "ACTIVE"
+    }
+  ]
+}

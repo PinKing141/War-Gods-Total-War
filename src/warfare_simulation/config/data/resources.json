@@ -1,0 +1,32 @@
+{
+  "resources": [
+    {
+      "resource_type": "FOOD",
+      "stored": 5000,
+      "monthly_production": 500,
+      "monthly_consumption": 400,
+      "max_storage": 10000
+    },
+    {
+      "resource_type": "WOOD",
+      "stored": 2000,
+      "monthly_production": 200,
+      "monthly_consumption": 150,
+      "max_storage": 5000
+    },
+    {
+      "resource_type": "STONE",
+      "stored": 1500,
+      "monthly_production": 150,
+      "monthly_consumption": 100,
+      "max_storage": 4000
+    },
+    {
+      "resource_type": "IRON",
+      "stored": 800,
+      "monthly_production": 100,
+      "monthly_consumption": 80,
+      "max_storage": 2000
+    }
+  ]
+}

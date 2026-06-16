@@ -1,0 +1,16 @@
+{
+  "kingdom": {
+    "name": "The Dominion of Auster",
+    "ruler_name": "Lord Protector Favour",
+    "population": 450000,
+    "treasury_silver": 520000,
+    "monthly_income": 18500,
+    "monthly_expenses": 12800,
+    "morale": 85,
+    "loyalty": 85,
+    "grain_stores": 24,
+    "current_turn": 1,
+    "current_month": 1,
+    "current_year": 1
+  }
+}

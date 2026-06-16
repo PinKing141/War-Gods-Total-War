@@ -1,0 +1,57 @@
+{
+  "factions": [
+    {
+      "name": "Kingdom of Norland",
+      "faction_type": "nation",
+      "government_type": "monarchy",
+      "power_level": 75,
+      "wealth": 70,
+      "stability": 80
+    },
+    {
+      "name": "Free Cities Alliance",
+      "faction_type": "coalition",
+      "government_type": "democracy",
+      "power_level": 60,
+      "wealth": 85,
+      "stability": 65
+    },
+    {
+      "name": "Eastern Empire",
+      "faction_type": "nation",
+      "government_type": "autocracy",
+      "power_level": 90,
+      "wealth": 80,
+      "stability": 70
+    }
+  ],
+  "relations": [
+    {
+      "faction_a_id": 1,
+      "faction_b_id": 2,
+      "status": "ALLY",
+      "opinion": 45,
+      "trust": 60,
+      "trade_agreement": true,
+      "military_alliance": false
+    },
+    {
+      "faction_a_id": 1,
+      "faction_b_id": 3,
+      "status": "RIVAL",
+      "opinion": -30,
+      "trust": -40,
+      "trade_agreement": false,
+      "military_alliance": false
+    },
+    {
+      "faction_a_id": 2,
+      "faction_b_id": 3,
+      "status": "NEUTRAL",
+      "opinion": 10,
+      "trust": 20,
+      "trade_agreement": true,
+      "military_alliance": false
+    }
+  ]
+}

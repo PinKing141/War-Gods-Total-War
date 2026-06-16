@@ -1,0 +1,34 @@
+{
+  "commanders": [
+    {
+      "name": "General Marcus Thorn",
+      "role": "GENERAL",
+      "leadership": 85,
+      "tactics": 80,
+      "logistics": 75,
+      "loyalty": 95,
+      "status": "Active",
+      "traits": "Courageous, Strategic"
+    },
+    {
+      "name": "Captain Elena Swiftblade",
+      "role": "CAPTAIN",
+      "leadership": 70,
+      "tactics": 75,
+      "logistics": 60,
+      "loyalty": 90,
+      "status": "Active",
+      "traits": "Swift, Skilled"
+    },
+    {
+      "name": "Lord Advisor Theron",
+      "role": "ADVISOR",
+      "leadership": 80,
+      "tactics": 70,
+      "logistics": 85,
+      "loyalty": 85,
+      "status": "Active",
+      "traits": "Wise, Diplomatic"
+    }
+  ]
+}
