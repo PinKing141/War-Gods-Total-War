@@ -1,37 +1,48 @@
 {
   "provinces": [
     {
-      "name": "Highreach",
+      "name": "Highreach (Capital)",
       "population": 150000,
-      "fort_level": 3,
-      "food_stored": 120,
-      "monthly_tax": 6000,
+      "fort_level": 5,
+      "food_stored": 25000,
+      "monthly_tax": 8000,
       "loyalty": 95,
-      "garrison_size": 200,
-      "garrison_capacity": 500,
-      "governor_name": "Lady Clarissa"
+      "garrison_size": 1000,
+      "garrison_capacity": 2000,
+      "governor_name": "Lord Protector Ibrahim"
     },
     {
-      "name": "Oakhaven",
+      "name": "Oakhaven (Agri)",
       "population": 180000,
       "fort_level": 2,
-      "food_stored": 140,
-      "monthly_tax": 7000,
+      "food_stored": 45000,
+      "monthly_tax": 4500,
       "loyalty": 90,
-      "garrison_size": 150,
-      "garrison_capacity": 400,
-      "governor_name": "Sir Edward"
+      "garrison_size": 300,
+      "garrison_capacity": 1000,
+      "governor_name": "Lord Vance"
     },
     {
-      "name": "Westmarch",
-      "population": 120000,
-      "fort_level": 1,
-      "food_stored": 100,
-      "monthly_tax": 4500,
-      "loyalty": 80,
-      "garrison_size": 100,
-      "garrison_capacity": 300,
-      "governor_name": "Lord Brennan"
+      "name": "Ironford (Mining)",
+      "population": 80000,
+      "fort_level": 3,
+      "food_stored": 12000,
+      "monthly_tax": 4000,
+      "loyalty": 85,
+      "garrison_size": 400,
+      "garrison_capacity": 1500,
+      "governor_name": "Overseer Thorne"
+    },
+    {
+      "name": "Veyl (Border/Intel)",
+      "population": 40000,
+      "fort_level": 4,
+      "food_stored": 8000,
+      "monthly_tax": 2000,
+      "loyalty": 92,
+      "garrison_size": 800,
+      "garrison_capacity": 2500,
+      "governor_name": "Spymaster Kael"
     }
   ]
 }
