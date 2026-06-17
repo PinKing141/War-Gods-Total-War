@@ -3,7 +3,6 @@
 **Document Version**: 1.1  
 **Last Updated**: 2026-06-17  
 **Status**: Phases 1–6 Complete; Phase 7 — Turn Simulation (In Progress)
-**Status**: Phase 5 — Application Thin Slice (Complete); Phase 6 — Verification & Docs (In Progress)
 
 ---
 
@@ -16,9 +15,9 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 - Extensible architecture (add new domains without refactoring existing code)
 - Clean separation of concerns (each domain is independently testable)
 
-**Phases 1–5 are complete.** The next milestone is **Phase 6**: harden verification, document the architecture, and deliberately retire the monolith after parity coverage is accepted. Full turn simulation and orchestration depth come after Phase 6.
+**Phases 1–6 are complete.** The current milestone is **Phase 7**: expand turn simulation from a verified export-first foundation into persistent campaign progression with richer resolution systems.
 
-**Target**: The Phase 5 app entry point now runs the completed export path cleanly. By Phase 6, you'll have a scalable foundation for a full campaign simulation engine.
+**Target**: The modular foundation is in place. Phase 7 now focuses on persisting advanced turn state back to SQLite and adding richer campaign-resolution systems such as orders, combat, fog of war, and turn summaries.
 
 ---
 
@@ -31,9 +30,10 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 | 3 — Data & Persistence | ✓ Complete     | JSON configs, schemas, SQLite, migrations, **CampaignBootstrap** (JSON→DB seeding) |
 | 4 — Export             | ✓ Complete     | Modular workbook factory, style manager, 8 sheet generators, parity tests |
 | 5 — Application        | ✓ Complete     | Thin slice app loads JSON, seeds SQLite, hydrates repos, and exports |
-| 6 — Verification & Docs | **→ Next**     | Domain, persistence, and export parity tests exist                 |
+| 6 — Verification & Docs | ✓ Complete     | Domain, persistence, export parity tests, architecture/API/extension docs |
+| 7 — Turn Simulation | → In Progress | Clock, economy, resource advancement, and checkpoints exist; DB persistence still pending |
 
-**Reference implementation**: `campaign_engine_initialiser.py` remains available as the golden reference until Phase 6 retires it deliberately.
+**Reference implementation**: `campaign_engine_initialiser.py` is deprecated and retained only as a golden reference while parity coverage remains useful.
 
 ---
 
@@ -45,7 +45,7 @@ These refinements keep the roadmap pragmatic as implementation proceeds:
 
 2. **Keep the monolith until parity is proven.** `campaign_engine_initialiser.py` is the golden reference for sheet names, row counts, formulas, and formatting. Retire it only during Phase 6 cleanup after parity coverage is accepted.
 
-3. **Keep Phase 5 thin.** `WarfareSimulationApp` loads config, seeds the DB, and exports. Defer `CampaignOrchestrator.advance_turn()`, full `GameState` save/load, and richer CLI features to post–Phase 6.
+3. **Keep Phase 7 incremental.** `CampaignOrchestrator.advance_turn()` should grow through tested slices: deterministic clock/economy/resource advancement first, then persistence, orders, combat, fog of war, and summaries.
 
 4. **Keep the integration test strong.** `tests/test_export_parity.py` now guards sheet order, row counts, cell values, header styling, and column widths.
 
