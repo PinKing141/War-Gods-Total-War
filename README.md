@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–5 Complete ✓ | Phase 6 (Verification & Docs) — Next Priority
+> **Status**: Phases 1–5 Complete ✓ | Phase 6 (Verification & Docs) — In Progress
 
 ## Quick Start
 
@@ -134,9 +134,9 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 - [x] Domain tests (`test_phase2_domains.py`)
 - [x] Persistence tests (`test_phase3_persistence.py`)
 - [x] Full export parity test (cell-level)
-- [ ] Retire `campaign_engine_initialiser.py`
-- [ ] Architecture documentation
-- [ ] Extension examples
+- [x] Deprecate `campaign_engine_initialiser.py` as golden reference before removal
+- [x] Architecture documentation
+- [x] Extension examples
 
 ## Usage Examples
 
