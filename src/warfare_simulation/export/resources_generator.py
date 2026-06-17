@@ -3,9 +3,9 @@ Generates the 'Resources' sheet.
 """
 
 from openpyxl.workbook import Workbook
-from typing import Optional
+from typing import Any, Optional
 
-from warfare_simulation.domain.logistics.repository import LogisticsRepository
+LogisticsRepository = Any
 
 from .base_generator import SheetGenerator
 from .styles import StyleManager

@@ -3,9 +3,9 @@ Generates the 'Army Register' sheet.
 """
 
 from openpyxl.workbook import Workbook
-from typing import Optional
+from typing import Any, Optional
 
-from warfare_simulation.domain.military.repository import MilitaryRepository
+MilitaryRepository = Any
 
 from .base_generator import SheetGenerator
 from .styles import StyleManager

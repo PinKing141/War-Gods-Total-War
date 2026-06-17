@@ -1,42 +1,19 @@
-import os
+"""Generate the modular campaign workbook from JSON -> SQLite -> export."""
+
+from pathlib import Path
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+ROOT = Path(__file__).resolve().parent
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 
-from warfare_simulation.export.workbook_factory import WorkbookFactory
-from warfare_simulation.export.generators import (
-    DashboardGenerator, ProvincesGenerator, ResourcesGenerator,
-    ArmyRegisterGenerator, CommandersGenerator, DiplomacyGenerator,
-    LogisticsGenerator, EventLogGenerator
-)
+from warfare_simulation.app import WarfareSimulationApp
 
-# --- NEW IMPORTS FOR PHASE 3 PIPELINE ---
-from warfare_simulation.persistence.database import DatabaseManager
-from warfare_simulation.config.config import ConfigManager
-from warfare_simulation.persistence.campaign_bootstrap import CampaignBootstrap
+OUTPUT_PATH = ROOT / "campaign.xlsx"
+DB_PATH = ROOT / "campaign.db"
 
-OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "campaign.xlsx")
-DB_PATH = os.path.join(os.path.dirname(__file__), "campaign.db")
-
-# 1. Initialize the Core Infrastructure
-db = DatabaseManager(DB_PATH)
-config_mgr = ConfigManager() # Note: If this complains about needing a path, we will fix it in a moment!
-
-# 2. BOOTSTRAP THE CAMPAIGN! 
-# (This reads JSON configs, populates SQLite, and returns hydrated repositories)
-# Change this line:
-repos = CampaignBootstrap.initialize(config_mgr, db, force=True)
-
-# 3. Inject the LIVE repositories into our generators
-factory = WorkbookFactory(generators=[
-    DashboardGenerator(kingdom_repo=repos.kingdom),
-    ProvincesGenerator(province_repo=repos.province), # Now injected!
-    ResourcesGenerator(),
-    ArmyRegisterGenerator(),
-    CommandersGenerator(),
-    DiplomacyGenerator(),
-    LogisticsGenerator(),
-    EventLogGenerator()
-])
-
-factory.export(OUTPUT_PATH)
+if __name__ == "__main__":
+    app = WarfareSimulationApp(db_path=DB_PATH)
+    app.export_campaign(OUTPUT_PATH)
+    print(f"Exported {OUTPUT_PATH}")
