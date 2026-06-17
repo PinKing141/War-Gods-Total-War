@@ -1,1 +1,1 @@
-"""Export layer: Spreadsheet generation."""
+"""Export module for generating spreadsheets from campaign state."""

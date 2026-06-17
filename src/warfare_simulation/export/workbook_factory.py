@@ -1,31 +1,64 @@
-import os
+"""
+Orchestrates all sheet generators to create the campaign workbook.
+"""
+
 import openpyxl
-from typing import List
-from warfare_simulation.export.base_generator import SheetGenerator
+from openpyxl.workbook import Workbook
+
+from .army_generator import ArmyGenerator
+from .commanders_generator import CommandersGenerator
+from .dashboard_generator import DashboardGenerator
+from .diplomacy_generator import DiplomacyGenerator
+from .events_generator import EventsGenerator
+from .logistics_generator import LogisticsGenerator
+from .provinces_generator import ProvincesGenerator
+from .resources_generator import ResourcesGenerator
+from .styles import StyleManager
+
 
 class WorkbookFactory:
-    """Orchestrates the creation of the modular campaign spreadsheet."""
-    
-    def __init__(self, generators: List[SheetGenerator]):
-        self.generators = generators
+    """Orchestrates all sheet generators to create the campaign workbook."""
 
-    def export(self, output_path: str):
-        """Builds the workbook and triggers all injected sheet generators."""
+    def __init__(self, repos: dict):
+        """
+        Initializes the factory with all necessary domain repositories.
+
+        Args:
+            repos: A dictionary mapping repository names (e.g., 'kingdom')
+                   to repository instances.
+        """
+        self.repos = repos
+
+    def create_workbook(self) -> Workbook:
+        """
+        Creates and returns a complete campaign workbook.
+
+        Returns:
+            An openpyxl Workbook object populated with all campaign sheets.
+        """
         wb = openpyxl.Workbook()
-        
-# Openpyxl creates a default 'Sheet'.
-        default_sheet = wb.active
-        if default_sheet is not None:  # This line keeps Pylance/VS Code happy!
-            default_sheet.title = "Temp"
+        # The default sheet will be used for the dashboard and renamed.
 
-        # Run all our modular generators (we don't have any yet!)
-        for generator in self.generators:
-            generator.generate(wb)
+        styles = StyleManager()
 
-        # Clean up the default empty sheet if we generated real ones
-        if len(wb.sheetnames) > 1 and "Temp" in wb.sheetnames:
-            del wb["Temp"]
+        # For now, repos are passed but not used by generators,
+        # as they use hardcoded data from the monolith for parity testing.
+        kingdom_repo = self.repos.get("kingdom")
+        province_repo = self.repos.get("geography")
+        military_repo = self.repos.get("military")
+        diplomacy_repo = self.repos.get("diplomacy")
+        logistics_repo = self.repos.get("logistics")
+        event_repo = self.repos.get("events")
 
-        # Save the new file!
-        wb.save(output_path)
-        print(f"Success: Modular campaign exported to {output_path}")
+        # The order of generation determines the order of sheets in the workbook.
+        # DashboardGenerator is special as it uses the default active sheet.
+        DashboardGenerator(wb, styles, kingdom_repo).generate()
+        ProvincesGenerator(wb, styles, province_repo).generate()
+        ResourcesGenerator(wb, styles, logistics_repo).generate()
+        ArmyGenerator(wb, styles, military_repo).generate()
+        CommandersGenerator(wb, styles, military_repo).generate()
+        DiplomacyGenerator(wb, styles, diplomacy_repo).generate()
+        LogisticsGenerator(wb, styles, logistics_repo).generate()
+        EventsGenerator(wb, styles, event_repo).generate()
+
+        return wb

@@ -9,6 +9,7 @@
 ## Executive Summary
 
 Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **production-grade, domain-driven campaign engine** capable of supporting:
+
 - Multiple game systems (combat, diplomacy, events, logistics)
 - Persistent state management (JSON config + SQLite runtime)
 - Extensible architecture (add new domains without refactoring existing code)
@@ -22,14 +23,14 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 
 ## Current Status
 
-| Phase | Status | Notes |
-|-------|--------|-------|
-| 1 — Foundation | ✓ Complete | Core abstractions, constants, exceptions, logging, validation |
-| 2 — Domains | ✓ Complete | All six domains (models, repository, service) |
-| 3 — Data & Persistence | ✓ Complete | JSON configs, schemas, SQLite, migrations, **CampaignBootstrap** (JSON→DB seeding) |
-| 4 — Export | **→ In progress** | **Current priority** — `export/` not yet implemented |
-| 5 — Application | Pending | Thin slice only (see Phase 5 adjustments) |
-| 6 — Verification & Docs | Partial | `test_phase2_domains.py`, `test_phase3_persistence.py` exist |
+| Phase                  | Status         | Notes                                                              |
+| ---------------------- | -------------- | ------------------------------------------------------------------ |
+| 1 — Foundation         | ✓ Complete     | Core abstractions, constants, exceptions, logging, validation      |
+| 2 — Domains            | ✓ Complete     | All six domains (models, repository, service)                      |
+| 3 — Data & Persistence | ✓ Complete     | JSON configs, schemas, SQLite, migrations, **CampaignBootstrap** (JSON→DB seeding) |
+| 4 — Export             | **→ In progress** | **Current priority** — `export/` not yet implemented               |
+| 5 — Application        | Pending        | Thin slice only (see Phase 5 adjustments)                          |
+| 6 — Verification & Docs | Partial        | `test_phase2_domains.py`, `test_phase3_persistence.py` exist       |
 
 **Reference implementation**: Keep `campaign_engine_initialiser.py` until Phase 6 spreadsheet parity is verified. Do not delete or replace it prematurely.
 
@@ -53,7 +54,7 @@ These refinements keep the roadmap pragmatic as implementation proceeds:
 
 ## High-Level Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        APPLICATION LAYER                         │
 │  ┌──────────────────────────────────────────────────────────┐   │
@@ -114,7 +115,7 @@ These refinements keep the roadmap pragmatic as implementation proceeds:
 
 ## Startup Flow (Initialization Sequence)
 
-```
+```text
 1. main.py starts app.py
    ↓
 2. ConfigManager loads JSON files from config/data/
@@ -155,7 +156,7 @@ These refinements keep the roadmap pragmatic as implementation proceeds:
 
 ## Project Structure
 
-```
+```text
 Warfare Simulation/
 ├── src/warfare_simulation/          # Main package
 │   ├── __init__.py                  # Package marker, version info
@@ -285,6 +286,7 @@ Warfare Simulation/
 
 **Goals**: Set up package structure, define base classes and constants.
 
+
 **Tasks**:
 1. Create `src/warfare_simulation/` package structure with `__init__.py`
 2. Create `core/base.py` with abstract classes:
@@ -292,6 +294,7 @@ Warfare Simulation/
    - `GameSystem` (base for all domain services: military, diplomacy, etc.)
    - `SheetGenerator` (base for all spreadsheet generators with shared formatting logic)
    - `IValidationRule` (interface for domain-specific validation)
+
 
 3. Create `core/constants.py` with enums:
    ```python
@@ -314,6 +317,7 @@ Warfare Simulation/
    ```
 
 4. Create `core/exceptions.py` with custom exceptions:
+
    - `InvalidCampaignStateError` (state violation)
    - `ResourceError` (insufficient resources)
    - `ValidationError` (config validation failed)
@@ -321,6 +325,7 @@ Warfare Simulation/
 
 5. Create `core/logger.py` for centralized logging (use `logging` stdlib)
 6. Create `core/validation.py` with `ValidationService` class:
+
    - Method: `validate_kingdom_state(kingdom) -> List[ValidationError]`
    - Method: `validate_resource_transaction(source, target, amount) -> bool`
    - Method: `validate_military_deployment(unit, location) -> bool`
@@ -402,6 +407,7 @@ Warfare Simulation/
 
 **Tasks**:
 
+
 1. Create `config/data/` JSON files:
    - `initial_kingdom.json`: Kingdom name, ruler, population, treasury, etc.
    - `provinces.json`: List of provinces with population, garrison, loyalty
@@ -409,6 +415,7 @@ Warfare Simulation/
    - `commanders.json`: Commander data with skills and traits
    - `diplomacy.json`: Initial faction relations
    - `resources.json`: Resource definitions and storage amounts
+
 
    Example structure:
    ```json
@@ -512,11 +519,14 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
 
 **Goals**: Break monolithic spreadsheet function into domain-aware, composable generators and prove end-to-end parity with `campaign_engine_initialiser.py`.
 
+
 **Success criteria** (all must pass before moving to Phase 5):
+
 - [ ] JSON configs load and populate SQLite without errors
 - [ ] `WorkbookFactory.create_workbook()` produces all 8 sheets
 - [ ] Sheet names, row counts, and key cell values match the monolith output
 - [ ] `tests/test_export_parity.py` passes (stub acceptable at Phase 4 start; tighten in Phase 6)
+
 
 **Tasks**:
 
@@ -580,6 +590,7 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
    - `logistics_generator.py`: Queries `LogisticsRepository`, builds "Logistics & Projects" sheet
    - `events_generator.py`: Queries `EventRepository`, builds "Event Log" sheet
 
+
    Example (DashboardGenerator):
    ```python
    class DashboardGenerator(SheetGenerator):
@@ -641,6 +652,7 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
 
 **Goals**: Minimal runnable app — load config, seed DB, export spreadsheet. No full turn loop yet.
 
+
 **Scope (Phase 5)**:
 - ✓ `WarfareSimulationApp`: init config + DB + repos, seed from JSON, call export
 - ✓ `main.py`: one-line entry point (`app.run()`)
@@ -648,13 +660,16 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
 - Stub `GameState` with `current_turn = 1` — no save/load yet
 - Stub `CampaignOrchestrator.advance_turn()` with `pass` or `NotImplementedError`
 
+
 **Deferred to post–Phase 6** (see "Next Steps After Phase 6"):
 - Full turn advancement across all domains
 - `GameState.save_checkpoint()` / load
 - Interactive CLI
 - Combat system wiring
 
+
 **Tasks**:
+
 
 1. Create `orchestration/campaign.py` (minimal `CampaignOrchestrator`):
    ```python
@@ -749,11 +764,14 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
 
 **Goals**: Harden tests, document architecture, demonstrate extensibility, and **retire the monolith**.
 
+
 **Monolith retirement criteria** (all required):
+
 - [ ] `tests/test_export_parity.py` passes with cell-level comparison (not just sheet names / row counts)
 - [ ] All 8 sheets match `campaign_engine_initialiser.py` output
 - [ ] `WarfareSimulationApp.run()` produces identical `.xlsx` via the modular path
 - [ ] Monolith file marked deprecated in a comment, then removed in a follow-up commit
+
 
 **Tasks**:
 
@@ -1211,11 +1229,11 @@ Use this checklist to track completion:
 - [x] `test_phase3_persistence.py` includes seeding + hydration tests
 
 ### Phase 4: Export — **CURRENT PRIORITY**
-- [ ] `tests/test_export_parity.py` created (stub OK to start)
-- [ ] `export/styles.py` with StyleManager
-- [ ] `export/base_generator.py` with SheetGenerator
-- [ ] Individual generators for all 8 sheets
-- [ ] `export/workbook_factory.py` orchestrating all
+- [x] `tests/test_export_parity.py` created (stub OK to start)
+- [x] `export/styles.py` with StyleManager
+- [x] `export/base_generator.py` with SheetGenerator
+- [x] Individual generators for all 8 sheets
+- [x] `export/workbook_factory.py` orchestrating all
 - [ ] End-to-end: JSON → SQLite → export works
 - [ ] Generated Excel matches original output (sheet names + row counts)
 

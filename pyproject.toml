@@ -40,8 +40,8 @@ dev = [
 Homepage = "https://github.com/favour/warfare-simulation"
 Repository = "https://github.com/favour/warfare-simulation.git"
 
-[tool.setuptools]
-packages = ["src.warfare_simulation"]
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.black]
 line-length = 100
