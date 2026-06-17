@@ -143,7 +143,7 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 - [x] Kingdom economy applies monthly net income
 - [x] Logistics resources apply monthly net production
 - [x] `GameState` save/load checkpoints
-- [ ] Persist advanced turn state back to SQLite
+- [x] Persist advanced turn state back to SQLite
 
 ## Usage Examples
 
