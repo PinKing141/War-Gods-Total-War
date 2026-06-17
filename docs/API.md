@@ -15,6 +15,22 @@ app.run("Auster_Campaign_Engine.xlsx")
 - `export_campaign(filename="Auster_Campaign_Engine.xlsx")`: writes the workbook through the orchestrator and returns the output path.
 - `run(filename="Auster_Campaign_Engine.xlsx")`: convenience method that prints status, exports the workbook, and returns the output path.
 
+## `warfare_simulation.orchestration.campaign.CampaignOrchestrator`
+
+Coordinates campaign-level actions.
+
+- `export_campaign(filename)`: writes the current campaign workbook and returns the output path.
+- `advance_turn()`: advances the campaign one monthly turn, updates kingdom economy, advances logistics resources, synchronizes `GameState`, and returns the updated state.
+
+## `warfare_simulation.orchestration.game_state.GameState`
+
+Tracks the global campaign clock.
+
+- `advance_turn()`: increments turn/month and rolls month 12 into the next year.
+- `sync_from_kingdom(kingdom)`: mirrors clock fields from the active kingdom aggregate.
+- `save_checkpoint(filename)`: writes the clock state to JSON.
+- `load_checkpoint(filename)`: restores a clock state from JSON.
+
 ## `warfare_simulation.config.config.ConfigManager`
 
 Loads validated JSON configuration.

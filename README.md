@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–5 Complete ✓ | Phase 6 (Verification & Docs) — In Progress
+> **Status**: Phases 1–6 Complete ✓ | Phase 7 (Turn Simulation) — In Progress
 
 ## Quick Start
 
@@ -130,13 +130,20 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 - [x] CLI entry point (`main.py`)
 - Turn simulation deferred to post–Phase 6
 
-### Phase 6: Verification & Docs
+### ✓ Phase 6: Verification & Docs (Complete)
 - [x] Domain tests (`test_phase2_domains.py`)
 - [x] Persistence tests (`test_phase3_persistence.py`)
 - [x] Full export parity test (cell-level)
 - [x] Deprecate `campaign_engine_initialiser.py` as golden reference before removal
 - [x] Architecture documentation
 - [x] Extension examples
+
+### Phase 7: Turn Simulation
+- [x] `CampaignOrchestrator.advance_turn()` updates campaign clock
+- [x] Kingdom economy applies monthly net income
+- [x] Logistics resources apply monthly net production
+- [x] `GameState` save/load checkpoints
+- [ ] Persist advanced turn state back to SQLite
 
 ## Usage Examples
 

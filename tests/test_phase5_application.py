@@ -59,9 +59,42 @@ def test_app_run_loads_config_seeds_sqlite_and_exports_workbook(tmp_path):
     assert len(app.repos.resource.list_all()) == 4
 
 
-def test_advance_turn_is_explicitly_deferred(tmp_path):
-    """Phase 5 intentionally exposes export only; turn simulation is post-Phase 6."""
-    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=tmp_path / "phase5_campaign.db")
+def test_advance_turn_updates_campaign_clock_and_economy(tmp_path):
+    """Phase 7 starts deterministic turn advancement for economy and logistics."""
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=tmp_path / "phase7_campaign.db")
+
+    kingdom = app.repos.kingdom.get_current_kingdom()
+    food = app.repos.resource.get(1)
+
+    state = app.campaign.advance_turn()
+
+    assert state is app.game_state
+    assert state.current_turn == 2
+    assert state.current_month == 2
+    assert state.current_year == 1
+
+    assert kingdom.current_turn == 2
+    assert kingdom.current_month == 2
+    assert kingdom.current_year == 1
+    assert kingdom.treasury_silver == 525700
+    assert food.stored == 5100
+
+
+def test_app_run_creates_expected_sqlite_schema(tmp_path):
+    """The app should create the complete Phase 6 runtime schema before export."""
+    db_path = tmp_path / "phase6_schema.db"
+    output_path = tmp_path / "phase6_schema.xlsx"
+
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    app.run(output_path)
+
+    with sqlite3.connect(db_path) as conn:
+        tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
 
     with pytest.raises(NotImplementedError, match="Turn simulation comes after export parity"):
         app.campaign.advance_turn()

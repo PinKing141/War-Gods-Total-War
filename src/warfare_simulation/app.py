@@ -15,6 +15,7 @@ class WarfareSimulationApp:
         self.config_mgr = ConfigManager(str(config_path) if config_path is not None else None)
         self.db_mgr = DatabaseManager(str(db_path))
         self.repos = CampaignBootstrap.initialize(self.config_mgr, self.db_mgr)
+        self.game_state = GameState()
         self.campaign = CampaignOrchestrator(
             {
                 "kingdom": self.repos.kingdom,
@@ -28,9 +29,9 @@ class WarfareSimulationApp:
                 "relation": self.repos.relation,
                 "logistics": self.repos.resource,
                 "resource": self.repos.resource,
-            }
+            },
+            game_state=self.game_state,
         )
-        self.game_state = GameState()
 
     def export_campaign(self, filename: str | Path = "Auster_Campaign_Engine.xlsx") -> Path:
         """Generate the campaign spreadsheet."""
