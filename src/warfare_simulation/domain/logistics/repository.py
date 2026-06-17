@@ -52,6 +52,7 @@ class ResourceRepository(Repository[Resource]):
         
         entity.mark_updated()
         self._resources[entity.id] = entity
+        self._persist_update(entity)
         return entity
     
     def delete(self, entity_id: int) -> bool:
@@ -68,6 +69,30 @@ class ResourceRepository(Repository[Resource]):
     def hydrate(self, entity: Resource) -> Resource:
         """Load a resource with a pre-assigned ID from SQLite."""
         return self._hydrate_entity(entity, self._resources)
+
+    def _persist_update(self, entity: Resource) -> None:
+        """Persist mutable resource turn state to SQLite when a DB is attached."""
+        if self.db_manager is None or not self.db_manager.conn:
+            return
+
+        self.db_manager.execute(
+            """
+            UPDATE resource
+            SET resource_type = ?, stored = ?, monthly_production = ?,
+                monthly_consumption = ?, max_storage = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                entity.resource_type.name,
+                entity.stored,
+                entity.monthly_production,
+                entity.monthly_consumption,
+                entity.max_storage,
+                entity.id,
+            ),
+        )
+        self.db_manager.commit()
 
 
 class ProjectRepository(Repository[Project]):

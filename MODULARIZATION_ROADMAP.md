@@ -31,7 +31,7 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 | 4 — Export             | ✓ Complete     | Modular workbook factory, style manager, 8 sheet generators, parity tests |
 | 5 — Application        | ✓ Complete     | Thin slice app loads JSON, seeds SQLite, hydrates repos, and exports |
 | 6 — Verification & Docs | ✓ Complete     | Domain, persistence, export parity tests, architecture/API/extension docs |
-| 7 — Turn Simulation | → In Progress | Clock, economy, resource advancement, and checkpoints exist; DB persistence still pending |
+| 7 — Turn Simulation | → In Progress | Clock, economy, resource advancement, checkpoints, and DB persistence exist; richer systems still pending |
 
 **Reference implementation**: `campaign_engine_initialiser.py` is deprecated and retained only as a golden reference while parity coverage remains useful.
 
@@ -1166,7 +1166,7 @@ def test_kingdom_silver_transaction():
 - [x] Kingdom treasury applies monthly income minus expenses
 - [x] Logistics resources apply production minus consumption
 - [x] `GameState.save_checkpoint()` / `load_checkpoint()` round trip JSON state
-- [ ] Persist advanced turn state back to SQLite
+- [x] Persist advanced turn state back to SQLite
 - [ ] Add richer domain systems to each turn: diplomacy, combat, events
 - [ ] Add interactive CLI turn controls
 

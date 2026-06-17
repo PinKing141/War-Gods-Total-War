@@ -53,6 +53,7 @@ class KingdomRepository(Repository[Kingdom]):
         
         entity.mark_updated()
         self._kingdoms[entity.id] = entity
+        self._persist_update(entity)
         return entity
     
     def delete(self, entity_id: int) -> bool:
@@ -69,6 +70,36 @@ class KingdomRepository(Repository[Kingdom]):
     def hydrate(self, entity: Kingdom) -> Kingdom:
         """Load a kingdom with a pre-assigned ID from SQLite."""
         return self._hydrate_entity(entity, self._kingdoms)
+
+    def _persist_update(self, entity: Kingdom) -> None:
+        """Persist mutable kingdom turn state to SQLite when a DB is attached."""
+        if self.db_manager is None or not self.db_manager.conn:
+            return
+
+        self.db_manager.execute(
+            """
+            UPDATE kingdom
+            SET population = ?, treasury_silver = ?, monthly_income = ?,
+                monthly_expenses = ?, morale = ?, loyalty = ?, grain_stores = ?,
+                current_turn = ?, current_month = ?, current_year = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                entity.population,
+                entity.treasury_silver,
+                entity.monthly_income,
+                entity.monthly_expenses,
+                entity.morale,
+                entity.loyalty,
+                entity.grain_stores,
+                entity.current_turn,
+                entity.current_month,
+                entity.current_year,
+                entity.id,
+            ),
+        )
+        self.db_manager.commit()
     
     def get_current_kingdom(self) -> Optional[Kingdom]:
         """Get the active kingdom (first one, typically)."""
