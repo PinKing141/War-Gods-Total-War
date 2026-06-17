@@ -4,6 +4,8 @@ from pathlib import Path
 
 import openpyxl
 import sqlite3
+import pytest
+
 from warfare_simulation.app import WarfareSimulationApp
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -76,6 +78,26 @@ def test_advance_turn_updates_campaign_clock_and_economy(tmp_path):
     assert kingdom.current_year == 1
     assert kingdom.treasury_silver == 525700
     assert food.stored == 5100
+
+
+def test_app_run_creates_expected_sqlite_schema(tmp_path):
+    """The app should create the complete Phase 6 runtime schema before export."""
+    db_path = tmp_path / "phase6_schema.db"
+    output_path = tmp_path / "phase6_schema.xlsx"
+
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    app.run(output_path)
+
+    with sqlite3.connect(db_path) as conn:
+        tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+
+    with pytest.raises(NotImplementedError, match="Turn simulation comes after export parity"):
+        app.campaign.advance_turn()
 
 
 def test_app_run_creates_expected_sqlite_schema(tmp_path):

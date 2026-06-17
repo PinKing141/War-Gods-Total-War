@@ -3,6 +3,7 @@
 **Document Version**: 1.1  
 **Last Updated**: 2026-06-17  
 **Status**: Phases 1–6 Complete; Phase 7 — Turn Simulation (In Progress)
+**Status**: Phase 5 — Application Thin Slice (Complete); Phase 6 — Verification & Docs (In Progress)
 
 ---
 
