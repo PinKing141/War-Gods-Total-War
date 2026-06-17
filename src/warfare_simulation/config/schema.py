@@ -4,9 +4,8 @@ Pydantic schemas for config validation.
 Defines strongly-typed configuration structures with validation.
 """
 
-from pydantic import BaseModel, Field, validator
-from typing import List, Optional
-from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
+from typing import List
 
 
 class KingdomConfigSchema(BaseModel):
@@ -25,9 +24,8 @@ class KingdomConfigSchema(BaseModel):
     current_month: int = Field(default=1, ge=1, le=12)
     current_year: int = Field(default=1, ge=1)
     
-    class Config:
-        """Pydantic config."""
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "The Dominion of Auster",
                 "ruler_name": "Lord Protector Favour",
@@ -40,6 +38,7 @@ class KingdomConfigSchema(BaseModel):
                 "grain_stores": 24,
             }
         }
+    )
 
 
 class ProvinceConfigSchema(BaseModel):
@@ -55,9 +54,8 @@ class ProvinceConfigSchema(BaseModel):
     garrison_capacity: int = Field(gt=0)
     governor_name: str
     
-    class Config:
-        """Pydantic config."""
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Highreach",
                 "population": 150000,
@@ -70,6 +68,7 @@ class ProvinceConfigSchema(BaseModel):
                 "governor_name": "Lady Clarissa",
             }
         }
+    )
 
 
 class UnitConfigSchema(BaseModel):
@@ -85,9 +84,8 @@ class UnitConfigSchema(BaseModel):
     location_id: int = Field(ge=1)
     status: str  # UnitStatus enum value
     
-    class Config:
-        """Pydantic config."""
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Auster Vanguard",
                 "unit_type": "HEAVY_SPEARMEN",
@@ -100,6 +98,7 @@ class UnitConfigSchema(BaseModel):
                 "status": "ACTIVE",
             }
         }
+    )
 
 
 class CommanderConfigSchema(BaseModel):
@@ -114,9 +113,8 @@ class CommanderConfigSchema(BaseModel):
     status: str
     traits: str = ""
     
-    class Config:
-        """Pydantic config."""
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "General Marcus Thorn",
                 "role": "GENERAL",
@@ -128,6 +126,7 @@ class CommanderConfigSchema(BaseModel):
                 "traits": "Courageous, Strategic",
             }
         }
+    )
 
 
 class FactionConfigSchema(BaseModel):

@@ -3,9 +3,9 @@ Generates the 'Diplomacy & Intel' sheet.
 """
 
 from openpyxl.workbook import Workbook
-from typing import Optional
+from typing import Any, Optional
 
-from warfare_simulation.domain.diplomacy.repository import DiplomacyRepository
+DiplomacyRepository = Any
 
 from .base_generator import SheetGenerator
 from .styles import StyleManager

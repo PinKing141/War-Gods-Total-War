@@ -19,7 +19,7 @@ from .styles import StyleManager
 class WorkbookFactory:
     """Orchestrates all sheet generators to create the campaign workbook."""
 
-    def __init__(self, repos: dict):
+    def __init__(self, repos: dict | None = None):
         """
         Initializes the factory with all necessary domain repositories.
 
@@ -27,7 +27,24 @@ class WorkbookFactory:
             repos: A dictionary mapping repository names (e.g., 'kingdom')
                    to repository instances.
         """
-        self.repos = repos
+        self.repos = repos or {}
+
+    @classmethod
+    def from_campaign_repositories(cls, repos):
+        """Build a factory from a CampaignRepositories bootstrap result."""
+        return cls({
+            "kingdom": repos.kingdom,
+            "geography": repos.province,
+            "province": repos.province,
+            "military": repos,
+            "unit": repos.unit,
+            "commander": repos.commander,
+            "diplomacy": repos,
+            "faction": repos.faction,
+            "relation": repos.relation,
+            "logistics": repos.resource,
+            "resource": repos.resource,
+        })
 
     def create_workbook(self) -> Workbook:
         """
@@ -44,10 +61,10 @@ class WorkbookFactory:
         # For now, repos are passed but not used by generators,
         # as they use hardcoded data from the monolith for parity testing.
         kingdom_repo = self.repos.get("kingdom")
-        province_repo = self.repos.get("geography")
-        military_repo = self.repos.get("military")
-        diplomacy_repo = self.repos.get("diplomacy")
-        logistics_repo = self.repos.get("logistics")
+        province_repo = self.repos.get("geography") or self.repos.get("province")
+        military_repo = self.repos.get("military") or self.repos.get("unit")
+        diplomacy_repo = self.repos.get("diplomacy") or self.repos.get("faction")
+        logistics_repo = self.repos.get("logistics") or self.repos.get("resource")
         event_repo = self.repos.get("events")
 
         # The order of generation determines the order of sheets in the workbook.

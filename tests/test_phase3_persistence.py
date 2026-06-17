@@ -11,7 +11,7 @@ import tempfile
 import shutil
 
 # Add src to path
-workspace_root = Path(__file__).parent
+workspace_root = Path(__file__).resolve().parents[1]
 src_path = workspace_root / "src"
 sys.path.insert(0, str(src_path))
 
@@ -42,8 +42,8 @@ def test_config_loading():
     
     print("Loading provinces config...")
     provinces_config = config_mgr.load_provinces_config()
-    assert len(provinces_config.provinces) == 3
-    assert provinces_config.provinces[0].name == "Highreach"
+    assert len(provinces_config.provinces) == 4
+    assert provinces_config.provinces[0].name == "Highreach (Capital)"
     print(f"[OK] Provinces loaded: {len(provinces_config.provinces)} provinces")
     
     print("Loading units config...")
@@ -151,7 +151,7 @@ def test_campaign_seeding():
         assert cursor.fetchone()[0] == 1
 
         cursor = db.execute("SELECT COUNT(*) FROM province")
-        assert cursor.fetchone()[0] == 3
+        assert cursor.fetchone()[0] == 4
 
         cursor = db.execute("SELECT COUNT(*) FROM unit")
         assert cursor.fetchone()[0] == 3
@@ -179,7 +179,7 @@ def test_campaign_seeding():
         repos = CampaignBootstrap.load_repositories(db)
         kingdom = repos.kingdom.get(kingdom_id)
         assert kingdom.name == "The Dominion of Auster"
-        assert len(repos.province.list_all()) == 3
+        assert len(repos.province.list_all()) == 4
         assert len(repos.unit.list_all()) == 3
         assert len(repos.commander.list_all()) == 3
         assert len(repos.faction.list_all()) == 3
