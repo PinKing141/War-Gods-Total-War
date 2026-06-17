@@ -1228,7 +1228,7 @@ Use this checklist to track completion:
 - [x] Data loads without validation errors
 - [x] `test_phase3_persistence.py` includes seeding + hydration tests
 
-### Phase 4: Export — **CURRENT PRIORITY**
+### Phase 4: Export ✓ Complete
 - [x] `tests/test_export_parity.py` created (stub OK to start)
 - [x] `export/styles.py` with StyleManager
 - [x] `export/base_generator.py` with SheetGenerator
