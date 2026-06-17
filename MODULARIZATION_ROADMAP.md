@@ -2,7 +2,7 @@
 
 **Document Version**: 1.1  
 **Last Updated**: 2026-06-17  
-**Status**: Phase 5 — Application Thin Slice (Next Priority)
+**Status**: Phase 5 — Application Thin Slice (Complete); Phase 6 — Verification & Docs (Next Priority)
 
 ---
 
@@ -15,9 +15,9 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 - Extensible architecture (add new domains without refactoring existing code)
 - Clean separation of concerns (each domain is independently testable)
 
-**Phases 1–4 are complete.** The next milestone is **Phase 5**: keep the application layer thin around config loading, SQLite seeding, and spreadsheet export. Full turn simulation and orchestration depth come after Phase 6.
+**Phases 1–5 are complete.** The next milestone is **Phase 6**: harden verification, document the architecture, and deliberately retire the monolith after parity coverage is accepted. Full turn simulation and orchestration depth come after Phase 6.
 
-**Target**: By Phase 5 end, the app entry point will run the completed export path cleanly. By Phase 6, you'll have a scalable foundation for a full campaign simulation engine.
+**Target**: The Phase 5 app entry point now runs the completed export path cleanly. By Phase 6, you'll have a scalable foundation for a full campaign simulation engine.
 
 ---
 
@@ -29,8 +29,8 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 | 2 — Domains            | ✓ Complete     | All six domains (models, repository, service)                      |
 | 3 — Data & Persistence | ✓ Complete     | JSON configs, schemas, SQLite, migrations, **CampaignBootstrap** (JSON→DB seeding) |
 | 4 — Export             | ✓ Complete     | Modular workbook factory, style manager, 8 sheet generators, parity tests |
-| 5 — Application        | **→ Next**      | Thin slice only (see Phase 5 adjustments)                          |
-| 6 — Verification & Docs | Partial        | Domain, persistence, and export parity tests exist                 |
+| 5 — Application        | ✓ Complete     | Thin slice app loads JSON, seeds SQLite, hydrates repos, and exports |
+| 6 — Verification & Docs | **→ Next**     | Domain, persistence, and export parity tests exist                 |
 
 **Reference implementation**: `campaign_engine_initialiser.py` remains available as the golden reference until Phase 6 retires it deliberately.
 
@@ -40,11 +40,11 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 
 These refinements keep the roadmap pragmatic as implementation proceeds:
 
-1. **Phase 5 is the next milestone.** Keep the runnable application thin: load JSON → seed SQLite → `WorkbookFactory` → `Auster_Campaign_Engine.xlsx`.
+1. **Phase 5 is complete.** The runnable application remains thin: load JSON → seed SQLite → `WorkbookFactory` → `Auster_Campaign_Engine.xlsx`.
 
 2. **Keep the monolith until parity is proven.** `campaign_engine_initialiser.py` is the golden reference for sheet names, row counts, formulas, and formatting. Retire it only during Phase 6 cleanup after parity coverage is accepted.
 
-3. **Thin Phase 5 initially.** A minimal `WarfareSimulationApp` that loads config, seeds the DB, and exports is enough. Defer `CampaignOrchestrator.advance_turn()`, full `GameState` save/load, and CLI features to post–Phase 6.
+3. **Keep Phase 5 thin.** `WarfareSimulationApp` loads config, seeds the DB, and exports. Defer `CampaignOrchestrator.advance_turn()`, full `GameState` save/load, and richer CLI features to post–Phase 6.
 
 4. **Keep the integration test strong.** `tests/test_export_parity.py` now guards sheet order, row counts, cell values, header styling, and column widths.
 
@@ -1234,21 +1234,21 @@ Use this checklist to track completion:
 - [x] `export/base_generator.py` with SheetGenerator
 - [x] Individual generators for all 8 sheets
 - [x] `export/workbook_factory.py` orchestrating all
-- [ ] End-to-end: JSON → SQLite → export works
-- [ ] Generated Excel matches original output (sheet names + row counts)
+- [x] End-to-end: JSON → SQLite → export works
+- [x] Generated Excel matches original output (sheet names + row counts)
 
 ### Phase 5: Application (Thin Slice)
-- [ ] `orchestration/campaign.py` with export-only `CampaignOrchestrator`
-- [ ] `orchestration/game_state.py` with stub `GameState`
-- [ ] `app.py` with minimal `WarfareSimulationApp` (init + export)
-- [ ] `main.py` entry point
+- [x] `orchestration/campaign.py` with export-only `CampaignOrchestrator`
+- [x] `orchestration/game_state.py` with stub `GameState`
+- [x] `app.py` with minimal `WarfareSimulationApp` (init + export)
+- [x] `main.py` entry point
 - [x] `requirements.txt` and `pyproject.toml` (exist)
 - [x] `.gitignore` configured (exists)
 
 ### Phase 6: Verification & Docs
 - [x] Unit tests for key domains (`test_phase2_domains.py`)
 - [x] Persistence tests (`test_phase3_persistence.py`)
-- [ ] `test_export_parity.py` full cell-level parity
+- [x] `test_export_parity.py` full cell-level parity
 - [ ] Monolith retired after parity verified
 - [ ] `docs/ARCHITECTURE.md` written
 - [ ] `docs/EXTENDING.md` with Combat example
