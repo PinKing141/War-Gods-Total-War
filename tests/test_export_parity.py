@@ -6,6 +6,7 @@ import openpyxl
 import pytest
 
 from campaign_engine_initialiser import create_campaign_workbook
+from warfare_simulation.app import WarfareSimulationApp
 from warfare_simulation.config.config import ConfigManager
 from warfare_simulation.export.workbook_factory import WorkbookFactory
 from warfare_simulation.persistence.campaign_bootstrap import CampaignBootstrap
@@ -97,3 +98,29 @@ def test_header_style_and_width_parity(legacy_workbook, modular_workbook):
                 modular_ws.column_dimensions[column_letter].width
                 == legacy_ws.column_dimensions[column_letter].width
             ), f"Width mismatch at {sheet_name}!{column_letter}"
+
+
+def test_app_run_export_matches_legacy_workbook(legacy_workbook, tmp_path):
+    """The runnable app must preserve legacy workbook output through the public entry point."""
+    output_path = tmp_path / "app_export.xlsx"
+    db_path = tmp_path / "app_campaign.db"
+
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    exported_path = app.run(output_path)
+
+    assert exported_path == output_path
+    app_workbook = openpyxl.load_workbook(output_path, data_only=False)
+
+    assert app_workbook.sheetnames == legacy_workbook.sheetnames
+    for sheet_name in legacy_workbook.sheetnames:
+        legacy_ws = legacy_workbook[sheet_name]
+        app_ws = app_workbook[sheet_name]
+        assert app_ws.max_row == legacy_ws.max_row
+        assert app_ws.max_column == legacy_ws.max_column
+
+        for row in range(1, legacy_ws.max_row + 1):
+            for column in range(1, legacy_ws.max_column + 1):
+                coordinate = legacy_ws.cell(row=row, column=column).coordinate
+                assert (
+                    app_ws[coordinate].value == legacy_ws[coordinate].value
+                ), f"Mismatch at {sheet_name}!{coordinate}"

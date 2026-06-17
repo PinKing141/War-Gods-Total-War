@@ -2,7 +2,7 @@
 
 **Document Version**: 1.1  
 **Last Updated**: 2026-06-17  
-**Status**: Phase 5 — Application Thin Slice (Complete); Phase 6 — Verification & Docs (Next Priority)
+**Status**: Phase 5 — Application Thin Slice (Complete); Phase 6 — Verification & Docs (In Progress)
 
 ---
 
@@ -767,10 +767,10 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
 
 **Monolith retirement criteria** (all required):
 
-- [ ] `tests/test_export_parity.py` passes with cell-level comparison (not just sheet names / row counts)
-- [ ] All 8 sheets match `campaign_engine_initialiser.py` output
-- [ ] `WarfareSimulationApp.run()` produces identical `.xlsx` via the modular path
-- [ ] Monolith file marked deprecated in a comment, then removed in a follow-up commit
+- [x] `tests/test_export_parity.py` passes with cell-level comparison (not just sheet names / row counts)
+- [x] All 8 sheets match `campaign_engine_initialiser.py` output
+- [x] `WarfareSimulationApp.run()` produces identical `.xlsx` via the modular path
+- [x] Monolith file marked deprecated in a comment, then removed in a follow-up commit
 
 
 **Tasks**:
@@ -778,9 +778,9 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
 1. **Verification Tests** (extend existing tests in `tests/`):
    - ✓ Domain tests: `test_phase2_domains.py` (exists)
    - ✓ Persistence tests: `test_phase3_persistence.py` (exists)
-   - Expand `test_export_parity.py`: full sheet-by-sheet comparison (old monolith vs. new export)
-   - Test config loading: Load JSON → verify all fields parsed correctly
-   - Test SQLite: Run app → verify DB created with correct schema
+   - ✓ Expand `test_export_parity.py`: full sheet-by-sheet comparison (old monolith vs. new export)
+   - ✓ Test config loading: Load JSON → verify all fields parsed correctly
+   - ✓ Test SQLite: Run app → verify DB created with correct schema
    - Test turn advancement: **deferred** until post–Phase 6 turn simulation work
 
    Example test:
