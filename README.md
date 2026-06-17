@@ -128,7 +128,6 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 - [x] Export-only orchestrator stub
 - [x] Stub `GameState` with current turn tracking
 - [x] CLI entry point (`main.py`)
-- [x] Phase 5 application test coverage
 - Turn simulation deferred to post–Phase 6
 
 ### Phase 6: Verification & Docs

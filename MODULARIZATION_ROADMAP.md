@@ -1242,7 +1242,6 @@ Use this checklist to track completion:
 - [x] `orchestration/game_state.py` with stub `GameState`
 - [x] `app.py` with minimal `WarfareSimulationApp` (init + export)
 - [x] `main.py` entry point
-- [x] `tests/test_phase5_application.py` verifies app run + deferred turns
 - [x] `requirements.txt` and `pyproject.toml` (exist)
 - [x] `.gitignore` configured (exists)
 
