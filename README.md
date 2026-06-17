@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–4 Complete ✓ | Phase 5 (Application Thin Slice) — Next Priority
+> **Status**: Phases 1–5 Complete ✓ | Phase 6 (Verification & Docs) — Next Priority
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ docs/                  # Architecture and API documentation
 
 ## Roadmap
 
-See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 5 — thin application layer around config loading, SQLite seeding, and export.**
+See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 6 — verification, documentation, and deliberate monolith retirement.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -123,10 +123,12 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 - [x] Workbook factory
 - [x] Excel output parity with monolith
 
-### → Phase 5: Application Layer (Thin Slice)
-- [ ] Minimal app: load config → seed DB → export
-- [ ] Export-only orchestrator stub
-- [ ] CLI entry point (`main.py`)
+### ✓ Phase 5: Application Layer (Thin Slice) (Complete)
+- [x] Minimal app: load config → seed DB → export
+- [x] Export-only orchestrator stub
+- [x] Stub `GameState` with current turn tracking
+- [x] CLI entry point (`main.py`)
+- [x] Phase 5 application test coverage
 - Turn simulation deferred to post–Phase 6
 
 ### Phase 6: Verification & Docs
