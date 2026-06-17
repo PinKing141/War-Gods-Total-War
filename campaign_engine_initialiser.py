@@ -1,3 +1,9 @@
+"""Deprecated legacy workbook generator.
+
+Kept temporarily as the Phase 6 golden reference for export parity tests.
+Remove this file only after the modular exporter is accepted as the canonical path.
+"""
+
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter

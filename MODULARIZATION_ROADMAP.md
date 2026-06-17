@@ -2,7 +2,7 @@
 
 **Document Version**: 1.1  
 **Last Updated**: 2026-06-17  
-**Status**: Phase 5 — Application Thin Slice (Complete); Phase 6 — Verification & Docs (Next Priority)
+**Status**: Phases 1–6 Complete; Phase 7 — Turn Simulation (In Progress)
 
 ---
 
@@ -767,10 +767,10 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
 
 **Monolith retirement criteria** (all required):
 
-- [ ] `tests/test_export_parity.py` passes with cell-level comparison (not just sheet names / row counts)
-- [ ] All 8 sheets match `campaign_engine_initialiser.py` output
-- [ ] `WarfareSimulationApp.run()` produces identical `.xlsx` via the modular path
-- [ ] Monolith file marked deprecated in a comment, then removed in a follow-up commit
+- [x] `tests/test_export_parity.py` passes with cell-level comparison (not just sheet names / row counts)
+- [x] All 8 sheets match `campaign_engine_initialiser.py` output
+- [x] `WarfareSimulationApp.run()` produces identical `.xlsx` via the modular path
+- [x] Monolith file marked deprecated in a comment, then removed in a follow-up commit
 
 
 **Tasks**:
@@ -778,9 +778,9 @@ repos = CampaignBootstrap.initialize(config_mgr, db_mgr)
 1. **Verification Tests** (extend existing tests in `tests/`):
    - ✓ Domain tests: `test_phase2_domains.py` (exists)
    - ✓ Persistence tests: `test_phase3_persistence.py` (exists)
-   - Expand `test_export_parity.py`: full sheet-by-sheet comparison (old monolith vs. new export)
-   - Test config loading: Load JSON → verify all fields parsed correctly
-   - Test SQLite: Run app → verify DB created with correct schema
+   - ✓ Expand `test_export_parity.py`: full sheet-by-sheet comparison (old monolith vs. new export)
+   - ✓ Test config loading: Load JSON → verify all fields parsed correctly
+   - ✓ Test SQLite: Run app → verify DB created with correct schema
    - Test turn advancement: **deferred** until post–Phase 6 turn simulation work
 
    Example test:
@@ -1156,15 +1156,27 @@ def test_kingdom_silver_transaction():
 
 ---
 
-## Next Steps After Phase 6
+## Phase 7: Turn Simulation
 
-1. **Turn Simulation**: Implement a game loop that advances turns indefinitely
-2. **Diplomacy Engine**: Add NPC faction behavior, opinion shifts, treaty mechanics
-3. **Combat System**: Full turn-based combat with unit matchups, morale effects
-4. **Event System**: Dynamic events (raids, natural disasters, diplomatic crises)
-5. **Persistence**: Save/load game state to file
-6. **CLI**: Interactive command-line interface for campaign control
-7. **Visualization**: Web dashboard or ASCII map for campaign map
+**Goal**: Replace the post-Phase 6 turn stub with a deterministic monthly advancement loop.
+
+- [x] `CampaignOrchestrator.advance_turn()` executes without errors
+- [x] Global `GameState` advances turn/month/year
+- [x] Kingdom treasury applies monthly income minus expenses
+- [x] Logistics resources apply production minus consumption
+- [x] `GameState.save_checkpoint()` / `load_checkpoint()` round trip JSON state
+- [ ] Persist advanced turn state back to SQLite
+- [ ] Add richer domain systems to each turn: diplomacy, combat, events
+- [ ] Add interactive CLI turn controls
+
+## Next Steps After Phase 7
+
+1. **Diplomacy Engine**: Add NPC faction behavior, opinion shifts, treaty mechanics
+2. **Combat System**: Full turn-based combat with unit matchups, morale effects
+3. **Event System**: Dynamic events (raids, natural disasters, diplomatic crises)
+4. **Persistence**: Persist full mutable game state to SQLite/file checkpoints
+5. **CLI**: Interactive command-line interface for campaign control
+6. **Visualization**: Web dashboard or ASCII map for campaign map
 
 ---
 
