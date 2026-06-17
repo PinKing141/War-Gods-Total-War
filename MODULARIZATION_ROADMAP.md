@@ -1,8 +1,8 @@
 # Warfare Simulation Campaign Engine — Modularization Roadmap
 
 **Document Version**: 1.1  
-**Last Updated**: 2026-06-16  
-**Status**: Phase 4 — Export (Current Priority)
+**Last Updated**: 2026-06-17  
+**Status**: Phase 5 — Application Thin Slice (Next Priority)
 
 ---
 
@@ -15,9 +15,9 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 - Extensible architecture (add new domains without refactoring existing code)
 - Clean separation of concerns (each domain is independently testable)
 
-**Phases 1–3 are complete.** The next milestone is **Phase 4**: wire config → SQLite → modular export and prove sheet-by-sheet parity with the monolith. Phase 5 stays thin (init + export only). Full turn simulation and orchestration depth come after Phase 6.
+**Phases 1–4 are complete.** The next milestone is **Phase 5**: keep the application layer thin around config loading, SQLite seeding, and spreadsheet export. Full turn simulation and orchestration depth come after Phase 6.
 
-**Target**: By Phase 4 end, you'll have a fully refactored spreadsheet generator with an integration test guarding parity. By Phase 6, you'll have a scalable foundation for a full campaign simulation engine.
+**Target**: By Phase 5 end, the app entry point will run the completed export path cleanly. By Phase 6, you'll have a scalable foundation for a full campaign simulation engine.
 
 ---
 
@@ -28,11 +28,11 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 | 1 — Foundation         | ✓ Complete     | Core abstractions, constants, exceptions, logging, validation      |
 | 2 — Domains            | ✓ Complete     | All six domains (models, repository, service)                      |
 | 3 — Data & Persistence | ✓ Complete     | JSON configs, schemas, SQLite, migrations, **CampaignBootstrap** (JSON→DB seeding) |
-| 4 — Export             | **→ In progress** | **Current priority** — `export/` not yet implemented               |
-| 5 — Application        | Pending        | Thin slice only (see Phase 5 adjustments)                          |
-| 6 — Verification & Docs | Partial        | `test_phase2_domains.py`, `test_phase3_persistence.py` exist       |
+| 4 — Export             | ✓ Complete     | Modular workbook factory, style manager, 8 sheet generators, parity tests |
+| 5 — Application        | **→ Next**      | Thin slice only (see Phase 5 adjustments)                          |
+| 6 — Verification & Docs | Partial        | Domain, persistence, and export parity tests exist                 |
 
-**Reference implementation**: Keep `campaign_engine_initialiser.py` until Phase 6 spreadsheet parity is verified. Do not delete or replace it prematurely.
+**Reference implementation**: `campaign_engine_initialiser.py` remains available as the golden reference until Phase 6 retires it deliberately.
 
 ---
 
@@ -40,13 +40,13 @@ Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **
 
 These refinements keep the roadmap pragmatic as implementation proceeds:
 
-1. **Phase 4 is the next milestone.** Ship one vertical slice: load JSON → seed SQLite → `WorkbookFactory` → `Auster_Campaign_Engine.xlsx`. That proves the architecture before building more orchestration.
+1. **Phase 5 is the next milestone.** Keep the runnable application thin: load JSON → seed SQLite → `WorkbookFactory` → `Auster_Campaign_Engine.xlsx`.
 
-2. **Keep the monolith until parity is proven.** `campaign_engine_initialiser.py` is the golden reference for sheet names, row counts, formulas, and formatting. Retire it only after `tests/test_export_parity.py` passes (Phase 4 stub, full assertions in Phase 6).
+2. **Keep the monolith until parity is proven.** `campaign_engine_initialiser.py` is the golden reference for sheet names, row counts, formulas, and formatting. Retire it only during Phase 6 cleanup after parity coverage is accepted.
 
 3. **Thin Phase 5 initially.** A minimal `WarfareSimulationApp` that loads config, seeds the DB, and exports is enough. Defer `CampaignOrchestrator.advance_turn()`, full `GameState` save/load, and CLI features to post–Phase 6.
 
-4. **Add the integration test early.** Write `tests/test_export_parity.py` at the start of Phase 4 — even as a stub comparing sheet names and row counts — so export refactors have a safety net from day one.
+4. **Keep the integration test strong.** `tests/test_export_parity.py` now guards sheet order, row counts, cell values, header styling, and column widths.
 
 5. **Keep progress trackers in sync.** Update this checklist and `README.md` whenever a phase completes so planning reflects reality.
 
