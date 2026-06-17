@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–3 Complete ✓ | Phase 4 (Export) — Current Priority
+> **Status**: Phases 1–4 Complete ✓ | Phase 5 (Application Thin Slice) — Next Priority
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ docs/                  # Architecture and API documentation
 
 ## Roadmap
 
-See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 4 — modular export with parity test against `campaign_engine_initialiser.py`.**
+See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 5 — thin application layer around config loading, SQLite seeding, and export.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -116,14 +116,14 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 
 **Verify locally**: `pip install -r requirements.txt` then `PYTHONPATH=src python test_phase3_persistence.py`
 
-### → Phase 4: Spreadsheet Export (Current Priority)
-- [ ] `tests/test_export_parity.py` (integration test first)
-- [ ] Style manager
-- [ ] Sheet generators (8 sheets)
-- [ ] Workbook factory
-- [ ] Excel output parity with monolith
+### ✓ Phase 4: Spreadsheet Export (Complete)
+- [x] `tests/test_export_parity.py` (integration test first)
+- [x] Style manager
+- [x] Sheet generators (8 sheets)
+- [x] Workbook factory
+- [x] Excel output parity with monolith
 
-### Phase 5: Application Layer (Thin Slice)
+### → Phase 5: Application Layer (Thin Slice)
 - [ ] Minimal app: load config → seed DB → export
 - [ ] Export-only orchestrator stub
 - [ ] CLI entry point (`main.py`)
@@ -132,7 +132,7 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 ### Phase 6: Verification & Docs
 - [x] Domain tests (`test_phase2_domains.py`)
 - [x] Persistence tests (`test_phase3_persistence.py`)
-- [ ] Full export parity test (cell-level)
+- [x] Full export parity test (cell-level)
 - [ ] Retire `campaign_engine_initialiser.py`
 - [ ] Architecture documentation
 - [ ] Extension examples

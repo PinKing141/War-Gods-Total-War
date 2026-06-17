@@ -39,6 +39,18 @@ def _non_empty_row_count(ws):
     return sum(1 for row in ws.iter_rows(values_only=True) if any(cell is not None for cell in row))
 
 
+def _style_snapshot(cell):
+    return {
+        "font_bold": cell.font.bold,
+        "font_color": cell.font.color.rgb if cell.font.color else None,
+        "fill_start": cell.fill.start_color.rgb,
+        "fill_end": cell.fill.end_color.rgb,
+        "fill_type": cell.fill.fill_type,
+        "horizontal": cell.alignment.horizontal,
+        "vertical": cell.alignment.vertical,
+    }
+
+
 def test_sheet_names_and_row_counts_parity(legacy_workbook, modular_workbook):
     """The modular export must preserve legacy sheet order and row counts."""
     assert modular_workbook.sheetnames == legacy_workbook.sheetnames
@@ -49,21 +61,39 @@ def test_sheet_names_and_row_counts_parity(legacy_workbook, modular_workbook):
         )
 
 
-def test_key_cell_values_match_monolith(legacy_workbook, modular_workbook):
-    """Guard key formulas and values while full cell-level parity evolves."""
-    key_cells = {
-        "Kingdom Dashboard": ["A2", "B2", "B4", "B5", "B8", "B10"],
-        "Provinces": ["A2", "B2", "H5"],
-        "Resources": ["A2", "E2", "F3"],
-        "Army Register": ["A2", "D2", "I10"],
-        "Commanders": ["A2", "H5"],
-        "Diplomacy & Intel": ["A2", "C3"],
-        "Logistics & Projects": ["A2", "E4"],
-        "Event Log": ["A2", "D3"],
-    }
-
-    for sheet_name, cells in key_cells.items():
+def test_cell_level_export_parity(legacy_workbook, modular_workbook):
+    """The modular export must preserve every populated legacy cell value."""
+    for sheet_name in legacy_workbook.sheetnames:
         legacy_ws = legacy_workbook[sheet_name]
         modular_ws = modular_workbook[sheet_name]
-        for cell in cells:
-            assert modular_ws[cell].value == legacy_ws[cell].value, f"Mismatch at {sheet_name}!{cell}"
+        assert modular_ws.max_row == legacy_ws.max_row
+        assert modular_ws.max_column == legacy_ws.max_column
+
+        for row in range(1, legacy_ws.max_row + 1):
+            for column in range(1, legacy_ws.max_column + 1):
+                coordinate = legacy_ws.cell(row=row, column=column).coordinate
+                assert (
+                    modular_ws[coordinate].value == legacy_ws[coordinate].value
+                ), f"Mismatch at {sheet_name}!{coordinate}"
+
+
+def test_header_style_and_width_parity(legacy_workbook, modular_workbook):
+    """The modular export must preserve monolith header styling and column widths."""
+    for sheet_name in legacy_workbook.sheetnames:
+        legacy_ws = legacy_workbook[sheet_name]
+        modular_ws = modular_workbook[sheet_name]
+
+        for column in range(1, legacy_ws.max_column + 1):
+            coordinate = legacy_ws.cell(row=1, column=column).coordinate
+            legacy_cell = legacy_ws[coordinate]
+            modular_cell = modular_ws[coordinate]
+
+            assert _style_snapshot(modular_cell) == _style_snapshot(
+                legacy_cell
+            ), f"Style mismatch at {sheet_name}!{coordinate}"
+
+            column_letter = legacy_cell.column_letter
+            assert (
+                modular_ws.column_dimensions[column_letter].width
+                == legacy_ws.column_dimensions[column_letter].width
+            ), f"Width mismatch at {sheet_name}!{column_letter}"
