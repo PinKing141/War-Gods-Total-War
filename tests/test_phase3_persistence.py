@@ -190,6 +190,41 @@ def test_campaign_seeding():
         db.close()
 
 
+def test_campaign_force_reseed_remaps_relation_ids_after_deleted_factions():
+    """Force reseeding should not assume config faction IDs match SQLite row IDs."""
+    print("\n=== Testing Campaign Force Reseed Relation ID Mapping ===")
+
+    config_dir = workspace_root / "src" / "warfare_simulation" / "config" / "data"
+    config_mgr = ConfigManager(str(config_dir))
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = os.path.join(tmpdir, "force_seed_test.db")
+        db = DatabaseManager(db_path)
+        db.connect()
+        db.initialize_schema()
+
+        CampaignBootstrap.seed_from_config(config_mgr, db)
+        CampaignBootstrap.seed_from_config(config_mgr, db, force=True)
+
+        faction_ids = {
+            row[0] for row in db.execute("SELECT id FROM faction").fetchall()
+        }
+        relation_faction_ids = {
+            faction_id
+            for row in db.execute(
+                "SELECT faction_a_id, faction_b_id FROM relation"
+            ).fetchall()
+            for faction_id in row
+        }
+
+        assert len(faction_ids) == 3
+        assert len(relation_faction_ids) == 3
+        assert relation_faction_ids == faction_ids
+        print("[OK] Force reseed relations reference the newly inserted factions")
+
+        db.close()
+
+
 def test_migrations():
     """Test migration system."""
     print("\n=== Testing Migrations ===")
@@ -253,6 +288,7 @@ def run_all_tests():
         test_config_loading()
         test_database_initialization()
         test_campaign_seeding()
+        test_campaign_force_reseed_remaps_relation_ids_after_deleted_factions()
         test_migrations()
         
         print("\n" + "=" * 70)

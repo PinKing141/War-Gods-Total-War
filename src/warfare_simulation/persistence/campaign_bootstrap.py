@@ -190,8 +190,9 @@ class CampaignBootstrap:
                 ),
             )
 
-        for faction in configs["diplomacy"].factions:
-            db.execute(
+        faction_id_map: Dict[int, int] = {}
+        for config_id, faction in enumerate(configs["diplomacy"].factions, start=1):
+            cursor = db.execute(
                 """
                 INSERT INTO faction (
                     name, faction_type, government_type, power_level, wealth, stability
@@ -206,6 +207,7 @@ class CampaignBootstrap:
                     faction.stability,
                 ),
             )
+            faction_id_map[config_id] = cursor.lastrowid
 
         for relation in configs["diplomacy"].relations:
             db.execute(
@@ -216,8 +218,8 @@ class CampaignBootstrap:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    relation.faction_a_id,
-                    relation.faction_b_id,
+                    faction_id_map[relation.faction_a_id],
+                    faction_id_map[relation.faction_b_id],
                     relation.status,
                     relation.opinion,
                     relation.trust,
