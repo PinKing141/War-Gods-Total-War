@@ -11,7 +11,7 @@ from warfare_simulation.core.constants import EventCategory
 from warfare_simulation.core.exceptions import RepositoryError
 from warfare_simulation.persistence.repository import Repository
 
-from .models import AuditLog, Event, TurnSummary
+from .models import AuditLog, Event, ObserverLog, TurnSummary
 
 
 class EventRepository(Repository[Event]):
@@ -174,6 +174,94 @@ class AuditLogRepository(Repository[AuditLog]):
 
     def hydrate(self, entity: AuditLog) -> AuditLog:
         """Load an audit log with a pre-assigned ID from SQLite."""
+        return self._hydrate_entity(entity, self._logs)
+
+
+class ObserverLogRepository(Repository[ObserverLog]):
+    """Repository for domain-specific observer log streams."""
+
+    VALID_STREAMS = {
+        "economics",
+        "diplomacy",
+        "construction",
+        "conflict",
+        "random_resolution",
+        "logistics",
+    }
+
+    def __init__(self, db_manager=None):
+        """Initialize observer-log repository."""
+        super().__init__(db_manager)
+        self._logs: dict = {}
+        self._next_id = 1
+
+    def create(self, entity: ObserverLog) -> ObserverLog:
+        """Create a new observer-log record."""
+        entity.mark_updated()
+        if self.db_manager is not None and self.db_manager.conn:
+            cursor = self.db_manager.execute(
+                """
+                INSERT INTO observer_log (
+                    turn, day, month, year, stream, actor, target, source_system,
+                    summary, details, source_event_id, source_audit_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entity.turn,
+                    entity.day,
+                    entity.month,
+                    entity.year,
+                    entity.stream,
+                    entity.actor,
+                    entity.target,
+                    entity.source_system,
+                    entity.summary,
+                    json.dumps(entity.details),
+                    entity.source_event_id,
+                    entity.source_audit_id,
+                ),
+            )
+            self.db_manager.commit()
+            entity.id = cursor.lastrowid
+        else:
+            entity.id = self._next_id
+            self._next_id += 1
+        self._logs[entity.id] = entity
+        return entity
+
+    def get(self, entity_id: int) -> Optional[ObserverLog]:
+        """Fetch observer log by ID."""
+        return self._logs.get(entity_id)
+
+    def get_by_turn(self, turn: int) -> List[ObserverLog]:
+        """Fetch observer logs for a turn."""
+        return [log for log in self._logs.values() if log.turn == turn]
+
+    def get_by_stream(self, stream: str) -> List[ObserverLog]:
+        """Fetch observer logs for a dedicated stream."""
+        return [log for log in self._logs.values() if log.stream == stream]
+
+    def update(self, entity: ObserverLog) -> ObserverLog:
+        """Update an existing observer-log record."""
+        if entity.id not in self._logs:
+            raise RepositoryError(f"ObserverLog with ID {entity.id} not found")
+        entity.mark_updated()
+        self._logs[entity.id] = entity
+        return entity
+
+    def delete(self, entity_id: int) -> bool:
+        """Delete observer log by ID."""
+        if entity_id in self._logs:
+            del self._logs[entity_id]
+            return True
+        return False
+
+    def list_all(self) -> List[ObserverLog]:
+        """Fetch all observer logs."""
+        return list(self._logs.values())
+
+    def hydrate(self, entity: ObserverLog) -> ObserverLog:
+        """Load an observer log with a pre-assigned ID from SQLite."""
         return self._hydrate_entity(entity, self._logs)
 
 

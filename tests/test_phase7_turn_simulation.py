@@ -359,3 +359,26 @@ def test_dashboard_event_rows_expose_observer_causality_fields(tmp_path):
     assert row.source_system in {"Economy", "Logistics"}
     assert "daily_scheduler" in row.cause
     assert row.impact
+
+
+def test_phase10_dedicated_observer_logs_persist_by_stream(tmp_path):
+    """Dedicated observer streams should persist and rehydrate beside generic audits."""
+    db_path = tmp_path / "phase10_observer_streams.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    app.campaign.advance_turn()
+
+    economics_logs = app.repos.observer_log.get_by_stream("economics")
+    assert economics_logs
+    assert any(log.source_system == "Economy" for log in economics_logs)
+    logistics_logs = app.repos.observer_log.get_by_stream("logistics")
+    assert logistics_logs
+    assert any(log.source_system == "Logistics" for log in logistics_logs)
+    assert economics_logs[0].details
+
+    restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    rehydrated = restarted.repos.observer_log.get_by_stream("economics")
+    assert len(rehydrated) == len(economics_logs)
+    assert len(restarted.repos.observer_log.get_by_stream("logistics")) == len(logistics_logs)
+    assert rehydrated[0].summary
+    assert "new_" in " ".join(rehydrated[0].details.keys())

@@ -24,8 +24,8 @@ from warfare_simulation.core.constants import (
 from warfare_simulation.core.logger import get_logger
 from warfare_simulation.domain.diplomacy.models import Faction, Relation
 from warfare_simulation.domain.diplomacy.repository import FactionRepository, RelationRepository
-from warfare_simulation.domain.events.models import AuditLog, Event, TurnSummary
-from warfare_simulation.domain.events.repository import AuditLogRepository, EventRepository, TurnSummaryRepository
+from warfare_simulation.domain.events.models import AuditLog, Event, ObserverLog, TurnSummary
+from warfare_simulation.domain.events.repository import AuditLogRepository, EventRepository, ObserverLogRepository, TurnSummaryRepository
 from warfare_simulation.domain.geography.models import Province
 from warfare_simulation.domain.geography.repository import ProvinceRepository
 from warfare_simulation.domain.kingdom.models import Kingdom
@@ -58,6 +58,7 @@ class CampaignRepositories:
     resource: ResourceRepository
     event: EventRepository
     audit_log: AuditLogRepository
+    observer_log: ObserverLogRepository
     turn_summary: TurnSummaryRepository
 
 
@@ -274,6 +275,7 @@ class CampaignBootstrap:
         resource_repo = ResourceRepository(db)
         event_repo = EventRepository(db)
         audit_log_repo = AuditLogRepository(db)
+        observer_log_repo = ObserverLogRepository(db)
         turn_summary_repo = TurnSummaryRepository(db)
 
         cls._hydrate_kingdoms(db, kingdom_repo)
@@ -285,6 +287,7 @@ class CampaignBootstrap:
         cls._hydrate_resources(db, resource_repo)
         cls._hydrate_events(db, event_repo)
         cls._hydrate_audit_logs(db, audit_log_repo)
+        cls._hydrate_observer_logs(db, observer_log_repo)
         cls._hydrate_turn_summaries(db, turn_summary_repo)
 
         return CampaignRepositories(
@@ -297,6 +300,7 @@ class CampaignBootstrap:
             resource=resource_repo,
             event=event_repo,
             audit_log=audit_log_repo,
+            observer_log=observer_log_repo,
             turn_summary=turn_summary_repo,
         )
 
@@ -316,6 +320,7 @@ class CampaignBootstrap:
     def _clear_campaign_tables(db: DatabaseManager) -> None:
         """Remove seeded campaign data (for tests)."""
         for table in (
+            "observer_log",
             "audit_log",
             "turn_summary",
             "event",
@@ -551,6 +556,27 @@ class CampaignBootstrap:
                 new_value=json.loads(row[9]) if row[9] is not None else None,
                 reason=row[10] or "",
                 source_event_id=row[11],
+            )
+            repo.hydrate(entity)
+
+
+    @classmethod
+    def _hydrate_observer_logs(cls, db: DatabaseManager, repo: ObserverLogRepository) -> None:
+        for row in db.execute("SELECT * FROM observer_log").fetchall():
+            entity = ObserverLog(
+                id=row[0],
+                turn=row[1],
+                day=row[2],
+                month=row[3],
+                year=row[4],
+                stream=row[5],
+                actor=row[6],
+                target=row[7],
+                source_system=row[8],
+                summary=row[9],
+                details=json.loads(row[10] or "{}"),
+                source_event_id=row[11],
+                source_audit_id=row[12],
             )
             repo.hydrate(entity)
 

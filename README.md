@@ -177,7 +177,7 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Add structured event metadata for date, actor, target, source system, cause chain, and effect summary
 - [x] Persist and rehydrate event metadata through SQLite
 - [x] Surface observer-readable causal details in the Event Log export without breaking legacy workbook shape
-- [ ] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution
+- [x] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution
 - [ ] Add summary generators for daily/weekly/monthly observer output
 - [ ] Update dashboard event feed for long-run readability
 

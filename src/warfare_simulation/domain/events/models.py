@@ -66,6 +66,34 @@ class TurnSummary(GameEntity):
 
 
 @dataclass
+class ObserverLog(GameEntity):
+    """Dedicated observer log entry for a simulation stream.
+
+    Streams are intentionally domain-specific (for example ``economics`` or
+    ``random_resolution``) so observer and debug views can filter causality
+    without parsing generic audit rows.
+    """
+
+    turn: int = 1
+    day: int = 1
+    month: int = 1
+    year: int = 1
+    stream: str = "system"
+    actor: str = "system"
+    target: str = ""
+    source_system: str = "System"
+    summary: str = ""
+    details: dict[str, Any] = None
+    source_event_id: int | None = None
+    source_audit_id: int | None = None
+
+    def __post_init__(self):
+        """Initialize details if None."""
+        if self.details is None:
+            self.details = {}
+
+
+@dataclass
 class AuditLog(GameEntity):
     """Traceable record for an important campaign state mutation."""
 
