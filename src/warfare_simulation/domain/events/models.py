@@ -37,6 +37,25 @@ class Event(GameEntity):
 
 
 @dataclass
+class TurnSummary(GameEntity):
+    """Persisted summary of a completed campaign turn."""
+
+    turn: int = 1
+    month: int = 1
+    year: int = 1
+    title: str = ""
+    narrative: str = ""
+    event_count: int = 0
+    audit_count: int = 0
+    highlights: list[str] = None
+
+    def __post_init__(self):
+        """Initialize highlights if None."""
+        if self.highlights is None:
+            self.highlights = []
+
+
+@dataclass
 class AuditLog(GameEntity):
     """Traceable record for an important campaign state mutation."""
 

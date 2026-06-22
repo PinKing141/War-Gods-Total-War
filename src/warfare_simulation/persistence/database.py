@@ -232,6 +232,21 @@ class DatabaseManager:
             """)
 
             self.execute("""
+                CREATE TABLE IF NOT EXISTS turn_summary (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    turn INTEGER NOT NULL,
+                    month INTEGER NOT NULL,
+                    year INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    narrative TEXT NOT NULL,
+                    event_count INTEGER NOT NULL,
+                    audit_count INTEGER NOT NULL,
+                    highlights TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            self.execute("""
                 CREATE TABLE IF NOT EXISTS audit_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     turn INTEGER NOT NULL,

@@ -122,3 +122,39 @@ def test_advance_turn_writes_event_and_audit_logs(tmp_path):
         "Monthly income minus expenses during turn advancement.",
     )
     assert any(log[5] == "Logistics" for log in audits)
+
+
+def test_advance_turn_persists_turn_summary(tmp_path):
+    """Turn advancement should persist a compact summary of resolved systems."""
+    db_path = tmp_path / "phase7_turn_summary.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    app.campaign.advance_turn()
+
+    with sqlite3.connect(db_path) as conn:
+        summary = conn.execute(
+            """
+            SELECT turn, month, year, title, event_count, audit_count, highlights
+            FROM turn_summary
+            ORDER BY id
+            """
+        ).fetchone()
+
+    assert summary[:6] == (2, 2, 1, "Turn 2 Summary", 1, 5)
+    assert "The Dominion of Auster collected monthly net income." in summary[6]
+
+
+def test_rehydrated_repositories_include_turn_summaries(tmp_path):
+    """A restarted app should hydrate persisted turn summaries from SQLite."""
+    db_path = tmp_path / "phase7_summary_restart.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    app.campaign.advance_turn()
+    restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    summary = restarted.repos.turn_summary.get_latest()
+
+    assert summary.turn == 2
+    assert summary.event_count == 1
+    assert summary.audit_count == 5
+    assert "Logistics resolved 4 resource update(s)." in summary.narrative
