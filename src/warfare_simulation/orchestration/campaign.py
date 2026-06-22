@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from warfare_simulation.core.constants import EventCategory
-from warfare_simulation.domain.events.models import AuditLog, Event
+from warfare_simulation.domain.events.models import AuditLog, Event, TurnSummary
 from warfare_simulation.export.workbook_factory import WorkbookFactory
 from warfare_simulation.orchestration.game_state import GameState
 
@@ -101,4 +101,43 @@ class CampaignOrchestrator:
         else:
             self.game_state.advance_turn()
 
+        self._write_turn_summary()
         return self.game_state
+
+    def _write_turn_summary(self) -> TurnSummary | None:
+        """Create an auditable high-level summary for the completed turn."""
+        summary_repo = self.repos.get("turn_summary")
+        if summary_repo is None:
+            return None
+
+        event_repo = self.repos.get("event")
+        audit_repo = self.repos.get("audit_log")
+        events = event_repo.get_by_turn(self.game_state.current_turn) if event_repo is not None else []
+        audits = audit_repo.get_by_turn(self.game_state.current_turn) if audit_repo is not None else []
+        highlights = [event.description for event in events[:3]]
+        if not highlights:
+            highlights = ["No major campaign events were recorded."]
+
+        economy_audits = [audit for audit in audits if audit.system == "Economy"]
+        logistics_audits = [audit for audit in audits if audit.system == "Logistics"]
+        narrative_parts = [
+            f"Turn {self.game_state.current_turn} closed in month {self.game_state.current_month}, year {self.game_state.current_year}.",
+            f"Recorded {len(events)} event(s) and {len(audits)} auditable state change(s).",
+        ]
+        if economy_audits:
+            narrative_parts.append(f"Economy resolved {len(economy_audits)} treasury update(s).")
+        if logistics_audits:
+            narrative_parts.append(f"Logistics resolved {len(logistics_audits)} resource update(s).")
+
+        return summary_repo.create(
+            TurnSummary(
+                turn=self.game_state.current_turn,
+                month=self.game_state.current_month,
+                year=self.game_state.current_year,
+                title=f"Turn {self.game_state.current_turn} Summary",
+                narrative=" ".join(narrative_parts),
+                event_count=len(events),
+                audit_count=len(audits),
+                highlights=highlights,
+            )
+        )

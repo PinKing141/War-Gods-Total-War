@@ -22,8 +22,8 @@ from warfare_simulation.core.constants import (
 from warfare_simulation.core.logger import get_logger
 from warfare_simulation.domain.diplomacy.models import Faction, Relation
 from warfare_simulation.domain.diplomacy.repository import FactionRepository, RelationRepository
-from warfare_simulation.domain.events.models import AuditLog, Event
-from warfare_simulation.domain.events.repository import AuditLogRepository, EventRepository
+from warfare_simulation.domain.events.models import AuditLog, Event, TurnSummary
+from warfare_simulation.domain.events.repository import AuditLogRepository, EventRepository, TurnSummaryRepository
 from warfare_simulation.domain.geography.models import Province
 from warfare_simulation.domain.geography.repository import ProvinceRepository
 from warfare_simulation.domain.kingdom.models import Kingdom
@@ -56,6 +56,7 @@ class CampaignRepositories:
     resource: ResourceRepository
     event: EventRepository
     audit_log: AuditLogRepository
+    turn_summary: TurnSummaryRepository
 
 
 class CampaignBootstrap:
@@ -270,6 +271,7 @@ class CampaignBootstrap:
         resource_repo = ResourceRepository(db)
         event_repo = EventRepository(db)
         audit_log_repo = AuditLogRepository(db)
+        turn_summary_repo = TurnSummaryRepository(db)
 
         cls._hydrate_kingdoms(db, kingdom_repo)
         cls._hydrate_provinces(db, province_repo)
@@ -280,6 +282,7 @@ class CampaignBootstrap:
         cls._hydrate_resources(db, resource_repo)
         cls._hydrate_events(db, event_repo)
         cls._hydrate_audit_logs(db, audit_log_repo)
+        cls._hydrate_turn_summaries(db, turn_summary_repo)
 
         return CampaignRepositories(
             kingdom=kingdom_repo,
@@ -291,6 +294,7 @@ class CampaignBootstrap:
             resource=resource_repo,
             event=event_repo,
             audit_log=audit_log_repo,
+            turn_summary=turn_summary_repo,
         )
 
     @classmethod
@@ -310,6 +314,7 @@ class CampaignBootstrap:
         """Remove seeded campaign data (for tests)."""
         for table in (
             "audit_log",
+            "turn_summary",
             "event",
             "resource",
             "relation",
@@ -490,5 +495,24 @@ class CampaignBootstrap:
                 new_value=json.loads(row[9]) if row[9] is not None else None,
                 reason=row[10] or "",
                 source_event_id=row[11],
+            )
+            repo.hydrate(entity)
+
+
+    @classmethod
+    def _hydrate_turn_summaries(cls, db: DatabaseManager, repo: TurnSummaryRepository) -> None:
+        for row in db.execute("SELECT * FROM turn_summary").fetchall():
+            import json
+
+            entity = TurnSummary(
+                id=row[0],
+                turn=row[1],
+                month=row[2],
+                year=row[3],
+                title=row[4],
+                narrative=row[5],
+                event_count=row[6],
+                audit_count=row[7],
+                highlights=json.loads(row[8] or "[]"),
             )
             repo.hydrate(entity)

@@ -11,7 +11,7 @@ from warfare_simulation.core.constants import EventCategory
 from warfare_simulation.core.exceptions import RepositoryError
 from warfare_simulation.persistence.repository import Repository
 
-from .models import AuditLog, Event
+from .models import AuditLog, Event, TurnSummary
 
 
 class EventRepository(Repository[Event]):
@@ -165,3 +165,79 @@ class AuditLogRepository(Repository[AuditLog]):
     def hydrate(self, entity: AuditLog) -> AuditLog:
         """Load an audit log with a pre-assigned ID from SQLite."""
         return self._hydrate_entity(entity, self._logs)
+
+
+class TurnSummaryRepository(Repository[TurnSummary]):
+    """Repository for persisted turn summaries."""
+
+    def __init__(self, db_manager=None):
+        """Initialize turn-summary repository."""
+        super().__init__(db_manager)
+        self._summaries: dict = {}
+        self._next_id = 1
+
+    def create(self, entity: TurnSummary) -> TurnSummary:
+        """Create a new turn summary."""
+        entity.mark_updated()
+        if self.db_manager is not None and self.db_manager.conn:
+            cursor = self.db_manager.execute(
+                """
+                INSERT INTO turn_summary (
+                    turn, month, year, title, narrative, event_count, audit_count, highlights
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entity.turn,
+                    entity.month,
+                    entity.year,
+                    entity.title,
+                    entity.narrative,
+                    entity.event_count,
+                    entity.audit_count,
+                    json.dumps(entity.highlights),
+                ),
+            )
+            self.db_manager.commit()
+            entity.id = cursor.lastrowid
+        else:
+            entity.id = self._next_id
+            self._next_id += 1
+        self._summaries[entity.id] = entity
+        return entity
+
+    def get(self, entity_id: int) -> Optional[TurnSummary]:
+        """Fetch summary by ID."""
+        return self._summaries.get(entity_id)
+
+    def get_by_turn(self, turn: int) -> List[TurnSummary]:
+        """Fetch all summaries for a turn."""
+        return [summary for summary in self._summaries.values() if summary.turn == turn]
+
+    def get_latest(self) -> Optional[TurnSummary]:
+        """Fetch the latest summary."""
+        if not self._summaries:
+            return None
+        return max(self._summaries.values(), key=lambda summary: (summary.turn, summary.id))
+
+    def update(self, entity: TurnSummary) -> TurnSummary:
+        """Update an existing turn summary."""
+        if entity.id not in self._summaries:
+            raise RepositoryError(f"TurnSummary with ID {entity.id} not found")
+        entity.mark_updated()
+        self._summaries[entity.id] = entity
+        return entity
+
+    def delete(self, entity_id: int) -> bool:
+        """Delete summary by ID."""
+        if entity_id in self._summaries:
+            del self._summaries[entity_id]
+            return True
+        return False
+
+    def list_all(self) -> List[TurnSummary]:
+        """Fetch all turn summaries."""
+        return list(self._summaries.values())
+
+    def hydrate(self, entity: TurnSummary) -> TurnSummary:
+        """Load a turn summary with a pre-assigned ID from SQLite."""
+        return self._hydrate_entity(entity, self._summaries)
