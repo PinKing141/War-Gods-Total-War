@@ -2,7 +2,7 @@
 
 **Document Version**: 2.0  
 **Last Updated**: 2026-06-20  
-**Status**: Foundations Complete; Observer Simulation Pivot Approved
+**Status**: Foundations Complete; Observer Simulation Pivot Approved; Phase 10 Started
 
 ---
 
@@ -43,6 +43,8 @@ This roadmap preserves completed work while redefining the upcoming phases aroun
 | 6 — Verification & Docs | ✓ Complete | Tests, architecture docs, API docs, extension docs |
 | 7 — Runtime State | ✓ Complete | Kingdom/resource persistence, checkpoints, startup state hydration |
 | 8 — Observer Pivot | ✓ Complete | Calendar model, dashboard speed controls, date checkpointing, and initial pulse loop are complete; autonomous actors and observer summaries remain next |
+| 9 — Pulse Scheduler | ✓ Complete | Daily, weekly, monthly, seasonal, and yearly cadence boundaries are implemented and tested |
+| 10 — Observer Logs | In Progress | Structured event metadata now records date, actor, target, source system, cause chain, and effect summary |
 
 **Reference implementation**: `campaign_engine_initialiser.py` remains deprecated. It is now only a historical export reference, not a target design for future behavior.
 
@@ -361,17 +363,18 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 
 **Tasks**:
 
-1. Expand the events domain into a structured historical log system.
-2. Add event metadata: date, actor, target, source system, cause chain, and effect summary.
-3. Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution.
-4. Add summary generators for daily/weekly/monthly observer output.
-5. Update exports and the dashboard to surface the latest history clearly.
+1. [x] Expand the events domain into a structured historical log system.
+2. [x] Add event metadata: date, actor, target, source system, cause chain, and effect summary.
+3. [ ] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution.
+4. [ ] Add summary generators for daily/weekly/monthly observer output.
+5. [x] Update exports to surface causal event history clearly while preserving the current workbook contract.
+6. [ ] Update the dashboard to surface the latest history clearly.
 
 **Deliverables**:
 
-1. Typed log records for core systems.
-2. Observer-readable event feed in the dashboard.
-3. Exported history sheet or sheets driven by recorded logs.
+1. [x] Typed event records with causal metadata for core systems.
+2. [ ] Observer-readable event feed in the dashboard.
+3. [x] Exported Event Log rows driven by recorded logs and causal metadata.
 
 **Exit criteria**:
 

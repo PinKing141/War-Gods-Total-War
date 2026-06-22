@@ -510,6 +510,13 @@ class CampaignBootstrap:
                 except (TypeError, json.JSONDecodeError):
                     affected_entities = [row[5]]
 
+            cause_chain = []
+            if len(row) > 12 and row[12]:
+                try:
+                    cause_chain = json.loads(row[12])
+                except (TypeError, json.JSONDecodeError):
+                    cause_chain = [row[12]]
+
             entity = Event(
                 id=row[0],
                 turn=row[1],
@@ -517,6 +524,14 @@ class CampaignBootstrap:
                 description=row[3],
                 impact=row[4] or "",
                 affected_entities=affected_entities,
+                day=row[6] if len(row) > 6 and row[6] is not None else 1,
+                month=row[7] if len(row) > 7 and row[7] is not None else 1,
+                year=row[8] if len(row) > 8 and row[8] is not None else 1,
+                actor=row[9] if len(row) > 9 and row[9] else "system",
+                target=row[10] if len(row) > 10 and row[10] else "",
+                source_system=row[11] if len(row) > 11 and row[11] else "System",
+                cause_chain=cause_chain,
+                effect_summary=row[13] if len(row) > 13 and row[13] else "",
             )
             repo.hydrate(entity)
 

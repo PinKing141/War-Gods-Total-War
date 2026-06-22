@@ -293,3 +293,30 @@ def test_advance_day_records_weekly_monthly_seasonal_and_yearly_pulses(tmp_path)
 
     assert app.campaign.last_pulse_report.pulses == ("daily", "monthly", "seasonal", "yearly")
     assert app.game_state.formatted_date() == "01/01/0002"
+
+
+def test_event_metadata_survives_restart_and_exports_causal_details(tmp_path):
+    """Structured event metadata should persist and remain observer-readable."""
+    db_path = tmp_path / "phase10_event_metadata.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    app.campaign.advance_turn()
+    restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    event = restarted.repos.event.get_recent(1)[0]
+
+    assert event.day == 1
+    assert event.month == 2
+    assert event.year == 1
+    assert event.actor == "kingdom:1"
+    assert event.target == "kingdom:1.treasury_silver"
+    assert event.source_system == "Economy"
+    assert event.cause_chain[:2] == ["monthly_pulse", "collect_monthly_net_income"]
+    assert event.effect_summary == "Treasury changed from 520000 to 525700 silver."
+
+    workbook = app.export_campaign(tmp_path / "metadata_export.xlsx")
+    from openpyxl import load_workbook
+
+    ws = load_workbook(workbook)["Event Log"]
+    assert ws.max_column == 4
+    assert "01/02/0001 | kingdom:1 → kingdom:1.treasury_silver" in ws["C2"].value
+    assert "Cause: monthly_pulse → collect_monthly_net_income" in ws["C2"].value

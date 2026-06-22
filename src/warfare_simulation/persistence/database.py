@@ -237,9 +237,25 @@ class DatabaseManager:
                     description TEXT NOT NULL,
                     impact TEXT,
                     affected_entities TEXT,
+                    day INTEGER DEFAULT 1,
+                    month INTEGER DEFAULT 1,
+                    year INTEGER DEFAULT 1,
+                    actor TEXT DEFAULT 'system',
+                    target TEXT DEFAULT '',
+                    source_system TEXT DEFAULT 'System',
+                    cause_chain TEXT,
+                    effect_summary TEXT DEFAULT '',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            self._ensure_column("event", "day", "INTEGER DEFAULT 1")
+            self._ensure_column("event", "month", "INTEGER DEFAULT 1")
+            self._ensure_column("event", "year", "INTEGER DEFAULT 1")
+            self._ensure_column("event", "actor", "TEXT DEFAULT 'system'")
+            self._ensure_column("event", "target", "TEXT DEFAULT ''")
+            self._ensure_column("event", "source_system", "TEXT DEFAULT 'System'")
+            self._ensure_column("event", "cause_chain", "TEXT")
+            self._ensure_column("event", "effect_summary", "TEXT DEFAULT ''")
 
             self.execute("""
                 CREATE TABLE IF NOT EXISTS turn_summary (

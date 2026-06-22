@@ -147,6 +147,22 @@ class CampaignOrchestrator:
                             f"to {kingdom.treasury_silver} silver."
                         ),
                         affected_entities=[kingdom.id],
+                        day=kingdom.current_day,
+                        month=kingdom.current_month,
+                        year=kingdom.current_year,
+                        actor=f"kingdom:{kingdom.id}",
+                        target=f"kingdom:{kingdom.id}.treasury_silver",
+                        source_system="Economy",
+                        cause_chain=[
+                            "monthly_pulse",
+                            "collect_monthly_net_income",
+                            f"income:{kingdom.monthly_income}",
+                            f"expenses:{kingdom.monthly_expenses}",
+                        ],
+                        effect_summary=(
+                            f"Treasury changed from {previous_treasury} "
+                            f"to {kingdom.treasury_silver} silver."
+                        ),
                     )
                 )
 

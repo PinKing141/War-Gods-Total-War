@@ -29,11 +29,21 @@ class Event(GameEntity):
     description: str = ""
     impact: str = ""
     affected_entities: list = None
+    day: int = 1
+    month: int = 1
+    year: int = 1
+    actor: str = "system"
+    target: str = ""
+    source_system: str = "System"
+    cause_chain: list[str] = None
+    effect_summary: str = ""
 
     def __post_init__(self):
-        """Initialize affected_entities if None."""
+        """Initialize collection fields if None."""
         if self.affected_entities is None:
             self.affected_entities = []
+        if self.cause_chain is None:
+            self.cause_chain = []
 
 
 @dataclass

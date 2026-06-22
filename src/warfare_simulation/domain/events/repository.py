@@ -29,8 +29,10 @@ class EventRepository(Repository[Event]):
         if self.db_manager is not None and self.db_manager.conn:
             cursor = self.db_manager.execute(
                 """
-                INSERT INTO event (turn, category, description, impact, affected_entities)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO event (
+                    turn, category, description, impact, affected_entities,
+                    day, month, year, actor, target, source_system, cause_chain, effect_summary
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     entity.turn,
@@ -38,6 +40,14 @@ class EventRepository(Repository[Event]):
                     entity.description,
                     entity.impact,
                     json.dumps(entity.affected_entities),
+                    entity.day,
+                    entity.month,
+                    entity.year,
+                    entity.actor,
+                    entity.target,
+                    entity.source_system,
+                    json.dumps(entity.cause_chain),
+                    entity.effect_summary,
                 ),
             )
             self.db_manager.commit()
