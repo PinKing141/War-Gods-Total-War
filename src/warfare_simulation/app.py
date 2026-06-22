@@ -29,7 +29,9 @@ class WarfareSimulationApp:
                 "relation": self.repos.relation,
                 "logistics": self.repos.resource,
                 "resource": self.repos.resource,
-                "events": self.repos.event,
+                "event": self.repos.event,
+                "audit_log": self.repos.audit_log,
+                "turn_summary": self.repos.turn_summary,
             },
             game_state=self.game_state,
         )

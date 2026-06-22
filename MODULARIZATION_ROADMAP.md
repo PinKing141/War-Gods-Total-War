@@ -1422,6 +1422,7 @@ def test_kingdom_silver_transaction():
 - [x] Logistics resources apply production minus consumption
 - [x] `GameState.save_checkpoint()` / `load_checkpoint()` round trip JSON state
 - [x] Persist advanced turn state back to SQLite
+- [x] Persist turn summaries from event and audit logs
 - [ ] Add richer domain systems to each turn: diplomacy, combat, events
 - [ ] Add interactive CLI turn controls
 

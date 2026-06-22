@@ -22,6 +22,14 @@ class GameState:
     current_year: int = 1
     simulation_speed: str = "paused"
 
+    def __post_init__(self) -> None:
+        """Normalize persisted clock values to their runtime types."""
+        self.current_day = int(self.current_day)
+        self.current_turn = int(self.current_turn)
+        self.current_month = int(self.current_month)
+        self.current_year = int(self.current_year)
+        self.simulation_speed = str(self.simulation_speed)
+
     @staticmethod
     def days_in_month(month: int, year: int) -> int:
         """Return the number of days in a given month/year pair."""
