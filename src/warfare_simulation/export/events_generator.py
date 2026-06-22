@@ -32,15 +32,26 @@ class EventsGenerator(SheetGenerator):
                     [
                         event.turn,
                         getattr(event.category, "value", str(event.category)),
-                        event.description,
-                        event.impact,
+                        self._format_event_details(event),
+                        event.effect_summary or event.impact,
                     ]
                     for event in events
                 ])
                 return
 
         events_data = [
-            [0, "System", "Campaign Initialised.", "The Dominion of Auster is ready."],
-            [1, "Diplomacy", "Tyra trade envoy arrives in Highreach.", "+500 Silver this turn."],
+            [0, "System", "01/01/0001 | system → campaign | Campaign Initialised. | Cause: seed data", "The Dominion of Auster is ready."],
+            [1, "Diplomacy", "01/01/0001 | faction:Tyra → province:Highreach | Tyra trade envoy arrives in Highreach. | Cause: seed example", "+500 Silver this turn."],
         ]
         self._append_data(events_data)
+
+    @staticmethod
+    def _format_event_details(event) -> str:
+        """Return an observer-readable detail string while preserving legacy columns."""
+        date = f"{event.day:02d}/{event.month:02d}/{event.year:04d}"
+        cause = " → ".join(event.cause_chain) if event.cause_chain else "unspecified"
+        target = event.target or "world"
+        return (
+            f"{date} | {event.actor} → {target} | "
+            f"{event.description} | Source: {event.source_system} | Cause: {cause}"
+        )

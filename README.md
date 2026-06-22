@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–8 Complete ✓ | Phase 9 (Pulse Scheduler) — In Progress
+> **Status**: Phases 1–9 Complete ✓ | Phase 10 (Observer Logs & Causality) — In Progress
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Phase 9 — pulse scheduler and system cadence.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Phase 10 — observer logs and causality backbone.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -168,10 +168,18 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Dashboard pause/resume plus `1x`, `2x`, `5x`, and `fast` speed controls
 - [x] Checkpoint round-trip for date and simulation speed
 
-### Phase 9: Pulse Scheduler
+### ✓ Phase 9: Pulse Scheduler (Complete)
 - [x] Add daily, weekly, monthly, seasonal, and yearly pulse boundaries
 - [x] Prevent duplicate system execution at pulse boundaries
 - [x] Preserve monthly economy/logistics totals through daily progression
+
+### Phase 10: Observer Logs and Causality Backbone
+- [x] Add structured event metadata for date, actor, target, source system, cause chain, and effect summary
+- [x] Persist and rehydrate event metadata through SQLite
+- [x] Surface observer-readable causal details in the Event Log export without breaking legacy workbook shape
+- [ ] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution
+- [ ] Add summary generators for daily/weekly/monthly observer output
+- [ ] Update dashboard event feed for long-run readability
 
 ## Usage Examples
 

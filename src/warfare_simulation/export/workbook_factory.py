@@ -66,7 +66,7 @@ class WorkbookFactory:
         military_repo = self.repos.get("military") or self.repos.get("unit")
         diplomacy_repo = self.repos.get("diplomacy") or self.repos.get("faction")
         logistics_repo = self.repos.get("logistics") or self.repos.get("resource")
-        event_repo = self.repos.get("events")
+        event_repo = self.repos.get("events") or self.repos.get("event")
 
         # The order of generation determines the order of sheets in the workbook.
         # DashboardGenerator is special as it uses the default active sheet.

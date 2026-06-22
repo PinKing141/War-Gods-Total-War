@@ -682,6 +682,7 @@ Save/load is core infrastructure, not polish.
 - Explicit daily/monthly simulation loop.
 - Event scheduler.
 - Audit log.
+- Structured event metadata with date, actor, target, source system, cause chain, and effect summary. ✓ Initial implementation
 - Dice/random log.
 - Faction pressure evaluation.
 - Basic autonomous intent generation.
@@ -689,7 +690,7 @@ Save/load is core infrastructure, not polish.
 - Basic logistics shortage consequences.
 - Basic movement over time.
 - Basic battle resolver.
-- Monthly chronicle generated from logs.
+- Monthly chronicle generated from logs. ✓ Initial turn-summary implementation
 - Save/load/checkpoint compatibility.
 - Long-run smoke/soak test.
 
