@@ -7,6 +7,7 @@ from warfare_simulation.core.constants import EventCategory
 from warfare_simulation.domain.events.models import AuditLog, Event, TurnSummary
 from warfare_simulation.export.workbook_factory import WorkbookFactory
 from warfare_simulation.orchestration.game_state import GameState
+from warfare_simulation.orchestration.pulse_scheduler import PulseReport, PulseScheduler
 
 
 class CampaignOrchestrator:
@@ -15,7 +16,15 @@ class CampaignOrchestrator:
     def __init__(self, repos: Mapping[str, Any], game_state: GameState | None = None):
         self.repos = dict(repos)
         self.game_state = game_state or GameState()
+        self.pulse_scheduler = PulseScheduler()
+        self.last_pulse_report: PulseReport | None = None
+        self._register_pulse_hooks()
         self._sync_game_state_from_repos()
+
+    def _register_pulse_hooks(self) -> None:
+        """Register implemented domain work with the pulse scheduler."""
+        self.pulse_scheduler.register("daily", self._sync_daily_calendar_to_kingdoms)
+        self.pulse_scheduler.register("monthly", self._resolve_monthly_economy_and_logistics)
 
     def _sync_game_state_from_repos(self) -> None:
         """Initialize the shared game clock from persisted kingdom state when available."""
@@ -36,40 +45,59 @@ class CampaignOrchestrator:
         return output_path
 
     def advance_day(self) -> GameState:
-        """Advance the simulation by one in-world day.
+        """Advance the simulation by one in-world day through scheduled pulses.
 
-        The currently-implemented economy and logistics logic remains monthly, so
-        only month rollovers trigger the existing domain progression slice.
+        Daily, weekly, monthly, seasonal, and yearly pulse boundaries are resolved
+        by ``PulseScheduler``. The currently implemented economy and logistics
+        mutations remain monthly, so they execute only when the scheduler reports
+        the monthly pulse for the newly-entered date.
         """
-        month_rolled = self.game_state.advance_day()
+        previous_date = self.game_state.sim_date
+        self.game_state.advance_day()
+        self.last_pulse_report = self.pulse_scheduler.run_due_pulses(
+            previous_date,
+            self.game_state.sim_date,
+        )
+        return self.game_state
 
+    def _sync_daily_calendar_to_kingdoms(self, _date: Any) -> None:
+        """Persist the daily clock to kingdom aggregates without monthly effects."""
+        kingdom_repo = self.repos.get("kingdom")
+        if kingdom_repo is None or not hasattr(kingdom_repo, "list_all"):
+            return
+
+        kingdoms = kingdom_repo.list_all()
+        for kingdom in kingdoms:
+            kingdom.current_day = self.game_state.current_day
+            kingdom.current_turn = self.game_state.current_turn
+            kingdom.current_month = self.game_state.current_month
+            kingdom.current_year = self.game_state.current_year
+            kingdom.mark_updated()
+            kingdom_repo.update(kingdom)
+
+    def _resolve_monthly_economy_and_logistics(self, _date: Any) -> None:
+        """Resolve currently implemented monthly economy and logistics systems."""
         kingdom_repo = self.repos.get("kingdom")
         kingdoms = []
         if kingdom_repo is not None and hasattr(kingdom_repo, "list_all"):
             kingdoms = kingdom_repo.list_all()
             for kingdom in kingdoms:
+                kingdom.treasury_silver += kingdom.monthly_income - kingdom.monthly_expenses
                 kingdom.current_day = self.game_state.current_day
-                if month_rolled:
-                    kingdom.advance_turn()
-                    kingdom.current_day = self.game_state.current_day
-                else:
-                    kingdom.current_turn = self.game_state.current_turn
-                    kingdom.current_month = self.game_state.current_month
-                    kingdom.current_year = self.game_state.current_year
-                    kingdom.mark_updated()
+                kingdom.current_turn = self.game_state.current_turn
+                kingdom.current_month = self.game_state.current_month
+                kingdom.current_year = self.game_state.current_year
+                kingdom.mark_updated()
                 kingdom_repo.update(kingdom)
 
-        if month_rolled:
-            resource_repo = self.repos.get("resource") or self.repos.get("logistics")
-            if resource_repo is not None:
-                for resource in resource_repo.list_all():
-                    resource.advance_turn()
-                    resource_repo.update(resource)
+        resource_repo = self.repos.get("resource") or self.repos.get("logistics")
+        if resource_repo is not None:
+            for resource in resource_repo.list_all():
+                resource.advance_turn()
+                resource_repo.update(resource)
 
         if kingdoms:
             self.game_state.sync_from_kingdom(kingdoms[0])
-
-        return self.game_state
 
     def advance_turn(self) -> GameState:
         """Advance the campaign by one monthly turn.

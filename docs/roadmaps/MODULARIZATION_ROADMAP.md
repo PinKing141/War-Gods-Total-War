@@ -42,7 +42,7 @@ This roadmap preserves completed work while redefining the upcoming phases aroun
 | 5 — Application | ✓ Complete | Thin app loads JSON, seeds SQLite, hydrates repos, exports state |
 | 6 — Verification & Docs | ✓ Complete | Tests, architecture docs, API docs, extension docs |
 | 7 — Runtime State | ✓ Complete | Kingdom/resource persistence, checkpoints, startup state hydration |
-| 8 — Observer Pivot | → Current | Calendar model, dashboard speed controls, and date checkpointing are complete; pulse loop, autonomous actors, and observer summaries remain next |
+| 8 — Observer Pivot | ✓ Complete | Calendar model, dashboard speed controls, date checkpointing, and initial pulse loop are complete; autonomous actors and observer summaries remain next |
 
 **Reference implementation**: `campaign_engine_initialiser.py` remains deprecated. It is now only a historical export reference, not a target design for future behavior.
 
@@ -301,7 +301,7 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 
 | Horizon | Outcome |
 | --- | --- |
-| Horizon 1 | Stable real-time-in-sim calendar, pulse engine, pause/speed controls |
+| Horizon 1 | Stable real-time-in-sim calendar, initial pulse engine, pause/speed controls |
 | Horizon 2 | Autonomous faction loop, province pressure, and observer-grade event logs |
 | Horizon 3 | Emergent wars, rebellions, diplomacy arcs, and multi-year replayable history |
 | Horizon 4 | Synthetic-history sandbox with scenarios, balancing, and long-run stability tooling |
@@ -337,23 +337,23 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 
 **Tasks**:
 
-1. Introduce a pulse scheduler in orchestration.
-2. Define per-pulse hooks for domain services.
-3. Implement daily, weekly, monthly, seasonal, and yearly execution boundaries.
-4. Add deterministic ordering for all pulse types, aligned with [../RULES_FRAMEWORK.md](../RULES_FRAMEWORK.md).
-5. Add focused tests for pulse boundaries and duplicate-run prevention.
+1. [x] Introduce a pulse scheduler in orchestration.
+2. [x] Define per-pulse hooks for domain services.
+3. [x] Implement daily, weekly, monthly, seasonal, and yearly execution boundaries.
+4. [x] Add deterministic ordering for all pulse types, aligned with [../RULES_FRAMEWORK.md](../RULES_FRAMEWORK.md).
+5. [x] Add focused tests for pulse boundaries and duplicate-run prevention.
 
 **Deliverables**:
 
-1. `advance_day()` orchestration path.
-2. Registered pulse hooks for all existing domains.
-3. Verified monthly and yearly boundary behavior.
+1. [x] `advance_day()` orchestration path.
+2. [x] Registered pulse hooks for implemented daily calendar sync and monthly economy/logistics domains.
+3. [x] Verified monthly and yearly boundary behavior.
 
 **Exit criteria**:
 
-1. No system executes twice at the same boundary.
-2. Monthly economy and logistics still match expected totals after daily progression.
-3. Year transitions are deterministic and tested.
+1. [x] No system executes twice at the same boundary.
+2. [x] Monthly economy and logistics still match expected totals after daily progression.
+3. [x] Year transitions are deterministic and tested.
 
 ### Phase 10: Observer Logs and Causality Backbone (Estimated: 2-3 weeks)
 
