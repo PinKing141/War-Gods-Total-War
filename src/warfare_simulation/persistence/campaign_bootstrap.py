@@ -15,12 +15,15 @@ from warfare_simulation.core.constants import (
     CommanderRole,
     FactionStatus,
     ResourceType,
+    EventCategory,
     UnitStatus,
     UnitType,
 )
 from warfare_simulation.core.logger import get_logger
 from warfare_simulation.domain.diplomacy.models import Faction, Relation
 from warfare_simulation.domain.diplomacy.repository import FactionRepository, RelationRepository
+from warfare_simulation.domain.events.models import AuditLog, Event
+from warfare_simulation.domain.events.repository import AuditLogRepository, EventRepository
 from warfare_simulation.domain.geography.models import Province
 from warfare_simulation.domain.geography.repository import ProvinceRepository
 from warfare_simulation.domain.kingdom.models import Kingdom
@@ -51,6 +54,8 @@ class CampaignRepositories:
     faction: FactionRepository
     relation: RelationRepository
     resource: ResourceRepository
+    event: EventRepository
+    audit_log: AuditLogRepository
 
 
 class CampaignBootstrap:
@@ -263,6 +268,8 @@ class CampaignBootstrap:
         faction_repo = FactionRepository(db)
         relation_repo = RelationRepository(db)
         resource_repo = ResourceRepository(db)
+        event_repo = EventRepository(db)
+        audit_log_repo = AuditLogRepository(db)
 
         cls._hydrate_kingdoms(db, kingdom_repo)
         cls._hydrate_provinces(db, province_repo)
@@ -271,6 +278,8 @@ class CampaignBootstrap:
         cls._hydrate_factions(db, faction_repo)
         cls._hydrate_relations(db, relation_repo)
         cls._hydrate_resources(db, resource_repo)
+        cls._hydrate_events(db, event_repo)
+        cls._hydrate_audit_logs(db, audit_log_repo)
 
         return CampaignRepositories(
             kingdom=kingdom_repo,
@@ -280,6 +289,8 @@ class CampaignBootstrap:
             faction=faction_repo,
             relation=relation_repo,
             resource=resource_repo,
+            event=event_repo,
+            audit_log=audit_log_repo,
         )
 
     @classmethod
@@ -298,6 +309,7 @@ class CampaignBootstrap:
     def _clear_campaign_tables(db: DatabaseManager) -> None:
         """Remove seeded campaign data (for tests)."""
         for table in (
+            "audit_log",
             "event",
             "resource",
             "relation",
@@ -441,5 +453,42 @@ class CampaignBootstrap:
                 monthly_production=row[4],
                 monthly_consumption=row[5],
                 max_storage=row[6],
+            )
+            repo.hydrate(entity)
+
+
+    @classmethod
+    def _hydrate_events(cls, db: DatabaseManager, repo: EventRepository) -> None:
+        for row in db.execute("SELECT * FROM event").fetchall():
+            import json
+
+            entity = Event(
+                id=row[0],
+                turn=row[1],
+                category=cls._enum_value(EventCategory, row[2]),
+                description=row[3],
+                impact=row[4] or "",
+                affected_entities=json.loads(row[5] or "[]"),
+            )
+            repo.hydrate(entity)
+
+    @classmethod
+    def _hydrate_audit_logs(cls, db: DatabaseManager, repo: AuditLogRepository) -> None:
+        for row in db.execute("SELECT * FROM audit_log").fetchall():
+            import json
+
+            entity = AuditLog(
+                id=row[0],
+                turn=row[1],
+                month=row[2],
+                year=row[3],
+                actor=row[4],
+                target=row[5],
+                system=row[6],
+                action=row[7],
+                previous_value=json.loads(row[8]) if row[8] is not None else None,
+                new_value=json.loads(row[9]) if row[9] is not None else None,
+                reason=row[10] or "",
+                source_event_id=row[11],
             )
             repo.hydrate(entity)

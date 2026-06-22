@@ -230,6 +230,25 @@ class DatabaseManager:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+            self.execute("""
+                CREATE TABLE IF NOT EXISTS audit_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    turn INTEGER NOT NULL,
+                    month INTEGER NOT NULL,
+                    year INTEGER NOT NULL,
+                    actor TEXT NOT NULL,
+                    target TEXT NOT NULL,
+                    system TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    previous_value TEXT,
+                    new_value TEXT,
+                    reason TEXT,
+                    source_event_id INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(source_event_id) REFERENCES event(id)
+                )
+            """)
             
             self.execute("""
                 CREATE TABLE IF NOT EXISTS migration (
