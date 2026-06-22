@@ -20,6 +20,7 @@ class KingdomConfigSchema(BaseModel):
     morale: int = Field(ge=0, le=100)
     loyalty: int = Field(ge=0, le=100)
     grain_stores: int = Field(ge=0)
+    current_day: int = Field(default=1, ge=1, le=31)
     current_turn: int = Field(default=1, ge=1)
     current_month: int = Field(default=1, ge=1, le=12)
     current_year: int = Field(default=1, ge=1)

@@ -81,7 +81,7 @@ class KingdomRepository(Repository[Kingdom]):
             UPDATE kingdom
             SET population = ?, treasury_silver = ?, monthly_income = ?,
                 monthly_expenses = ?, morale = ?, loyalty = ?, grain_stores = ?,
-                current_turn = ?, current_month = ?, current_year = ?,
+                current_day = ?, current_turn = ?, current_month = ?, current_year = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             """,
@@ -93,6 +93,7 @@ class KingdomRepository(Repository[Kingdom]):
                 entity.morale,
                 entity.loyalty,
                 entity.grain_stores,
+                entity.current_day,
                 entity.current_turn,
                 entity.current_month,
                 entity.current_year,

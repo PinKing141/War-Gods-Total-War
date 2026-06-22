@@ -44,6 +44,7 @@ class WorkbookFactory:
             "relation": repos.relation,
             "logistics": repos.resource,
             "resource": repos.resource,
+            "events": repos.event,
         })
 
     def create_workbook(self) -> Workbook:

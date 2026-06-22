@@ -5,6 +5,7 @@ JSON is the immutable campaign definition; SQLite is the mutable runtime state.
 On first run, configs are loaded, validated, and inserted into the database.
 """
 
+import json
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, Optional, Type, TypeVar
@@ -13,6 +14,7 @@ from warfare_simulation.config.config import ConfigManager
 from warfare_simulation.core.constants import (
     ArmorType,
     CommanderRole,
+    EventCategory,
     FactionStatus,
     ResourceType,
     UnitStatus,
@@ -21,6 +23,8 @@ from warfare_simulation.core.constants import (
 from warfare_simulation.core.logger import get_logger
 from warfare_simulation.domain.diplomacy.models import Faction, Relation
 from warfare_simulation.domain.diplomacy.repository import FactionRepository, RelationRepository
+from warfare_simulation.domain.events.models import Event
+from warfare_simulation.domain.events.repository import EventRepository
 from warfare_simulation.domain.geography.models import Province
 from warfare_simulation.domain.geography.repository import ProvinceRepository
 from warfare_simulation.domain.kingdom.models import Kingdom
@@ -51,6 +55,7 @@ class CampaignRepositories:
     faction: FactionRepository
     relation: RelationRepository
     resource: ResourceRepository
+    event: EventRepository
 
 
 class CampaignBootstrap:
@@ -104,8 +109,8 @@ class CampaignBootstrap:
             INSERT INTO kingdom (
                 name, ruler_name, population, treasury_silver,
                 monthly_income, monthly_expenses, morale, loyalty,
-                grain_stores, current_turn, current_month, current_year
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                grain_stores, current_day, current_turn, current_month, current_year
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 kingdom_cfg.name,
@@ -117,6 +122,7 @@ class CampaignBootstrap:
                 kingdom_cfg.morale,
                 kingdom_cfg.loyalty,
                 kingdom_cfg.grain_stores,
+                kingdom_cfg.current_day,
                 kingdom_cfg.current_turn,
                 kingdom_cfg.current_month,
                 kingdom_cfg.current_year,
@@ -263,6 +269,7 @@ class CampaignBootstrap:
         faction_repo = FactionRepository(db)
         relation_repo = RelationRepository(db)
         resource_repo = ResourceRepository(db)
+        event_repo = EventRepository(db)
 
         cls._hydrate_kingdoms(db, kingdom_repo)
         cls._hydrate_provinces(db, province_repo)
@@ -271,6 +278,7 @@ class CampaignBootstrap:
         cls._hydrate_factions(db, faction_repo)
         cls._hydrate_relations(db, relation_repo)
         cls._hydrate_resources(db, resource_repo)
+        cls._hydrate_events(db, event_repo)
 
         return CampaignRepositories(
             kingdom=kingdom_repo,
@@ -280,6 +288,7 @@ class CampaignBootstrap:
             faction=faction_repo,
             relation=relation_repo,
             resource=resource_repo,
+            event=event_repo,
         )
 
     @classmethod
@@ -324,7 +333,26 @@ class CampaignBootstrap:
 
     @classmethod
     def _hydrate_kingdoms(cls, db: DatabaseManager, repo: KingdomRepository) -> None:
-        for row in db.execute("SELECT * FROM kingdom").fetchall():
+        for row in db.execute(
+            """
+            SELECT
+                id,
+                name,
+                ruler_name,
+                population,
+                treasury_silver,
+                monthly_income,
+                monthly_expenses,
+                morale,
+                loyalty,
+                grain_stores,
+                current_day,
+                current_turn,
+                current_month,
+                current_year
+            FROM kingdom
+            """
+        ).fetchall():
             entity = Kingdom(
                 id=row[0],
                 name=row[1],
@@ -336,9 +364,10 @@ class CampaignBootstrap:
                 morale=row[7],
                 loyalty=row[8],
                 grain_stores=row[9],
-                current_turn=row[10],
-                current_month=row[11],
-                current_year=row[12],
+                current_day=row[10],
+                current_turn=row[11],
+                current_month=row[12],
+                current_year=row[13],
             )
             repo.hydrate(entity)
 
@@ -441,5 +470,25 @@ class CampaignBootstrap:
                 monthly_production=row[4],
                 monthly_consumption=row[5],
                 max_storage=row[6],
+            )
+            repo.hydrate(entity)
+
+    @classmethod
+    def _hydrate_events(cls, db: DatabaseManager, repo: EventRepository) -> None:
+        for row in db.execute("SELECT * FROM event ORDER BY turn, id").fetchall():
+            affected_entities = []
+            if row[5]:
+                try:
+                    affected_entities = json.loads(row[5])
+                except (TypeError, json.JSONDecodeError):
+                    affected_entities = [row[5]]
+
+            entity = Event(
+                id=row[0],
+                turn=row[1],
+                category=cls._enum_value(EventCategory, row[2]),
+                description=row[3],
+                impact=row[4] or "",
+                affected_entities=affected_entities,
             )
             repo.hydrate(entity)

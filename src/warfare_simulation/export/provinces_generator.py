@@ -25,6 +25,24 @@ class ProvincesGenerator(SheetGenerator):
         headers = ["Province", "Population", "Fort Level", "Food Stored", "Monthly Tax", "Loyalty", "Garrison", "Governor"]
         self._format_header(headers)
 
+        if self.province_repo is not None:
+            provinces = self.province_repo.list_all()
+            if provinces:
+                self._append_data([
+                    [
+                        province.name,
+                        province.population,
+                        province.fort_level,
+                        province.food_stored,
+                        province.monthly_tax,
+                        province.loyalty,
+                        province.garrison_size,
+                        province.governor_name,
+                    ]
+                    for province in provinces
+                ])
+                return
+
         prov_data = [
             ["Highreach (Capital)", 150000, 5, 25000, 8000, 95, 1000, "Lord Protector Favour"],
             ["Oakhaven (Agri)", 180000, 2, 45000, 4500, 90, 300, "Lord Vance"],

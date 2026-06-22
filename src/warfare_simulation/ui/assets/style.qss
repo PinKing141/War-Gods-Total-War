@@ -1,0 +1,249 @@
+/* =================================================================
+   War Gods Total War — Strategy Dark Theme
+   All visual styling lives here; widgets contain zero colour literals.
+   ================================================================= */
+
+/* ── Global ─────────────────────────────────────────────────────── */
+QMainWindow, QWidget, QDialog {
+    background-color: #0f1117;
+    color: #c8bfa8;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+}
+
+/* ── Kingdom sidebar panel ───────────────────────────────────────── */
+#kingdomPanel {
+    background-color: #0b0e18;
+    border-right: 1px solid #2e3347;
+}
+
+#kingdomName {
+    color: #e8d5a3;
+    font-size: 17px;
+    font-weight: bold;
+}
+
+#rulerLabel {
+    color: #8a9bb5;
+    font-size: 12px;
+}
+
+#dateLabel {
+    color: #6a7489;
+    font-size: 11px;
+}
+
+/* ── Section headers (small-caps labels above stat groups) ────────── */
+#sectionHeader {
+    color: #c9a84c;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+/* ── Stat labels / values ─────────────────────────────────────────── */
+#statLabel {
+    color: #6a7489;
+    font-size: 12px;
+}
+
+#statValue {
+    color: #d4c49a;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+#statValuePositive {
+    color: #5dbd7a;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+#statValueNegative {
+    color: #c45f5f;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* ── Horizontal divider ───────────────────────────────────────────── */
+QFrame[frameShape="4"] {
+    color: #2e3347;
+    max-height: 1px;
+    border: none;
+}
+
+/* ── Tables ───────────────────────────────────────────────────────── */
+QTableView {
+    background-color: #13172200;
+    alternate-background-color: #1c2133;
+    color: #c8bfa8;
+    gridline-color: #222840;
+    border: none;
+    selection-background-color: #2e3a5c;
+    selection-color: #e8d5a3;
+    outline: 0;
+}
+
+QTableView::item {
+    padding: 4px 8px;
+    border: none;
+}
+
+QHeaderView {
+    background-color: #0f1117;
+}
+
+QHeaderView::section {
+    background-color: #131827;
+    color: #c9a84c;
+    padding: 6px 10px;
+    border: none;
+    border-right: 1px solid #222840;
+    border-bottom: 2px solid #2e3347;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+QHeaderView::section:first {
+    border-left: none;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────── */
+QTabWidget::pane {
+    border: none;
+    background-color: #0f1117;
+}
+
+QTabBar {
+    background-color: #0f1117;
+}
+
+QTabBar::tab {
+    background-color: #0f1117;
+    color: #6a7489;
+    padding: 9px 22px;
+    border-bottom: 2px solid transparent;
+    font-size: 12px;
+    margin-right: 2px;
+}
+
+QTabBar::tab:selected {
+    color: #e8d5a3;
+    border-bottom: 2px solid #c9a84c;
+}
+
+QTabBar::tab:hover:!selected {
+    color: #c8bfa8;
+    background-color: #151b2a;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+QToolBar {
+    background-color: #0b0e18;
+    border-bottom: 1px solid #2e3347;
+    padding: 6px 10px;
+    spacing: 6px;
+}
+
+QToolBar QLabel {
+    color: #6a7489;
+    font-size: 12px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+QPushButton {
+    background-color: #181c27;
+    color: #c8bfa8;
+    border: 1px solid #2e3347;
+    border-radius: 3px;
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #1e253a;
+    border-color: #c9a84c;
+    color: #e8d5a3;
+}
+
+QPushButton:pressed {
+    background-color: #2e3a5c;
+}
+
+QPushButton:disabled {
+    color: #3a3f52;
+    border-color: #1e253a;
+    background-color: #0f1117;
+}
+
+#advanceTurnBtn {
+    background-color: #1e2d48;
+    color: #e8d5a3;
+    border: 1px solid #c9a84c;
+    padding: 7px 22px;
+    font-size: 13px;
+}
+
+#advanceTurnBtn:hover {
+    background-color: #28406a;
+}
+
+#advanceTurnBtn:disabled {
+    color: #4a5060;
+    border-color: #2e3347;
+    background-color: #0f1117;
+}
+
+/* ── Status bar ───────────────────────────────────────────────────── */
+QStatusBar {
+    background-color: #080b12;
+    color: #505870;
+    border-top: 1px solid #1e253a;
+    font-size: 11px;
+    padding: 2px 8px;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────── */
+QScrollBar:vertical {
+    background-color: #0f1117;
+    width: 9px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #2a3048;
+    min-height: 28px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #3a4468;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar:horizontal {
+    background-color: #0f1117;
+    height: 9px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #2a3048;
+    min-width: 28px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #3a4468;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0;
+}

@@ -25,6 +25,36 @@ class ArmyGenerator(SheetGenerator):
         headers = ["Unit Name", "Soldiers", "Veterans", "Type", "Morale", "Fatigue", "Armour", "Location", "Commander"]
         self._format_header(headers)
 
+        unit_repo = getattr(self.military_repo, "unit", self.military_repo)
+        commander_repo = getattr(self.military_repo, "commander", None)
+        province_repo = getattr(self.military_repo, "province", None)
+        if unit_repo is not None and hasattr(unit_repo, "list_all"):
+            units = unit_repo.list_all()
+            if units:
+                commanders = {}
+                if commander_repo is not None and hasattr(commander_repo, "list_all"):
+                    commanders = {commander.id: commander.name for commander in commander_repo.list_all()}
+
+                provinces = {}
+                if province_repo is not None and hasattr(province_repo, "list_all"):
+                    provinces = {province.id: province.name for province in province_repo.list_all()}
+
+                self._append_data([
+                    [
+                        unit.name,
+                        unit.soldiers,
+                        unit.veterans,
+                        getattr(unit.unit_type, "value", str(unit.unit_type)),
+                        unit.morale,
+                        unit.fatigue,
+                        getattr(unit.armor, "value", str(unit.armor)),
+                        provinces.get(unit.location_id, unit.location_id),
+                        commanders.get(unit.commander_id, ""),
+                    ]
+                    for unit in units
+                ])
+                return
+
         army_data = [
             ["Vanguard I", 500, 420, "Heavy Spearmen", 92, 0, "Brigandine", "Highreach", "Lord Protector Favour"],
             ["Vanguard II", 500, 380, "Heavy Spearmen", 88, 0, "Brigandine", "Highreach", "Captain Aris"],

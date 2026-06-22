@@ -30,6 +30,29 @@ class DashboardGenerator(SheetGenerator):
         column_widths = [25, 20, 40]
         self._format_header(headers, column_widths)
 
+        kingdom = self.kingdom_repo.get_current_kingdom() if self.kingdom_repo else None
+        if kingdom is not None:
+            dash_data = [
+                ["Kingdom", kingdom.name, "Current ruling state"],
+                ["Ruler", kingdom.ruler_name, "Active sovereign"],
+                ["Population", "=SUM(Provinces!B:B)", "Total citizens across provinces"],
+                ["Treasury (Silver)", kingdom.treasury_silver, "Available silver reserves"],
+                ["Monthly Income", kingdom.monthly_income, "Kingdom recurring income"],
+                ["Monthly Expenses", kingdom.monthly_expenses, "Kingdom recurring expenses"],
+                ["Net Income", "=B6-B7", "Monthly surplus or deficit"],
+                ["Grain Stores (Months)", kingdom.grain_stores, "Strategic food reserves"],
+                ["Army Size", "=SUM('Army Register'!B:B)", "Total active soldiers"],
+                ["National Morale", f"{kingdom.morale}%", "Realm-wide confidence"],
+                ["Noble Loyalty", f"{kingdom.loyalty}%", "Support from the nobility"],
+                [
+                    "Current Turn",
+                    kingdom.current_turn,
+                    f"Year {kingdom.current_year}, Month {kingdom.current_month}",
+                ],
+            ]
+            self._append_data(dash_data)
+            return
+
         # Data from campaign_engine_initialiser.py for parity
         dash_data = [
             ["Kingdom", "The Dominion of Auster", "Motto: Order Before Ambition"],

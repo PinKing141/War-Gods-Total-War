@@ -25,6 +25,25 @@ class CommandersGenerator(SheetGenerator):
         headers = ["Name", "Role", "Leadership", "Tactics", "Logistics", "Loyalty", "Status", "Traits"]
         self._format_header(headers)
 
+        commander_repo = getattr(self.military_repo, "commander", self.military_repo)
+        if commander_repo is not None and hasattr(commander_repo, "list_all"):
+            commanders = commander_repo.list_all()
+            if commanders:
+                self._append_data([
+                    [
+                        commander.name,
+                        getattr(commander.role, "value", str(commander.role)),
+                        commander.leadership,
+                        commander.tactics,
+                        commander.logistics,
+                        commander.loyalty,
+                        commander.status,
+                        commander.traits,
+                    ]
+                    for commander in commanders
+                ])
+                return
+
         com_data = [
             ["Lord Protector Favour", "Sovereign", 95, 97, 96, 100, "Active", "Defensive Strategist, Patient, Over-analytical"],
             ["Marcus Thorne", "General (Cavalry)", 84, 79, 72, 88, "Active", "Bold, Inspiring, Prideful"],

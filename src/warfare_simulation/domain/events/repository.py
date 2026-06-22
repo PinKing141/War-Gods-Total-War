@@ -64,3 +64,7 @@ class EventRepository(Repository[Event]):
     def list_all(self) -> List[Event]:
         """Fetch all events."""
         return list(self._events.values())
+
+    def hydrate(self, entity: Event) -> Event:
+        """Load an event with a pre-assigned ID from SQLite."""
+        return self._hydrate_entity(entity, self._events)

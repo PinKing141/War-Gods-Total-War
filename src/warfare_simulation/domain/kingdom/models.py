@@ -32,6 +32,7 @@ class Kingdom(GameEntity):
         morale: National morale (0-100)
         loyalty: Noble loyalty (0-100)
         grain_stores: Food reserves (in months)
+        current_day: Current day in month (1-31)
         current_turn: Current turn number
         current_month: Current month in year (1-12)
         current_year: Current year
@@ -46,6 +47,7 @@ class Kingdom(GameEntity):
     morale: int = DEFAULT_MORALE
     loyalty: int = DEFAULT_LOYALTY
     grain_stores: int = 0  # Months of food
+    current_day: int = 1
     current_turn: int = 1
     current_month: int = 1  # 1-12
     current_year: int = 1
@@ -64,6 +66,7 @@ class Kingdom(GameEntity):
         self.treasury_silver += net_income
         
         # Advance time
+        self.current_day = 1
         self.current_month += 1
         if self.current_month > 12:
             self.current_month = 1
@@ -168,6 +171,7 @@ class Kingdom(GameEntity):
             "morale": self.morale,
             "loyalty": self.loyalty,
             "grain_stores": self.grain_stores,
+            "current_day": self.current_day,
             "current_turn": self.current_turn,
             "current_month": self.current_month,
             "current_year": self.current_year,

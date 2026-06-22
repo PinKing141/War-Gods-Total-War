@@ -1,249 +1,352 @@
-# Campaign Rules Framework
+# Observer Simulation Rules Framework
 
-This document turns the spreadsheet-first campaign concept into enforceable operating rules. The core principle is simple: the workbook and runtime state are the campaign engine. Narration explains outcomes after the data, formulas, and logged rolls resolve them.
+This document redefines the project as a spreadsheet-first and dashboard-assisted observer simulation. The world runs by itself. The user does not issue faction orders, command armies, or adjudicate outcomes by hand. The engine advances a live in-world calendar, state actors make decisions, deterministic systems update the economy and logistics, and logged stochastic systems introduce uncertainty where appropriate.
+
+The core principle is simple: the runtime state is the world, and every visible historical outcome must be explainable from recorded state transitions.
 
 ## 1. Source of Truth
 
-1. The official campaign state is the combination of the SQLite runtime database, the generated workbook, and the turn-resolution logs produced from them.
-2. If an asset is not recorded in official state, it does not exist for orders or narration.
-3. Players may only issue orders with assets available at the start of the current turn, unless a rule explicitly allows mid-turn availability.
-4. No player may invent troops, gold, supplies, construction progress, diplomatic agreements, intelligence, casualties, weather, or victories by narration.
-5. All permanent changes must be produced by formulas, validated orders, deterministic service logic, or a logged dice/random resolution.
+1. The official simulation state is the combination of the SQLite runtime database, generated workbook exports, desktop dashboard views, checkpoints, and machine-readable logs.
+2. The SQLite runtime database is authoritative for active world state.
+3. Workbook exports and desktop dashboard panels are observer views generated from the authoritative runtime state.
+4. If an actor, claim, army, resource stockpile, treaty, rebellion, event, or casualty is not recorded in official state, it does not exist.
+5. Permanent changes must be produced by deterministic formulas, validated autonomous decisions, or logged random resolution.
+6. Narrative text, summaries, and observer commentary may explain outcomes, but they must not create outcomes.
 
-## 2. Campaign Scale
+## 2. Simulation Identity
 
-The default campaign scale is one monthly turn. A month is long enough for taxation, supply consumption, construction progress, recruitment progress, local movement, intelligence activity, and political reactions to occur. Tactical battles may be resolved inside a turn, but their consequences are applied before the turn summary is finalized.
+The default product direction is a pure observer simulation.
 
-Recommended scale conventions:
+1. No human faction receives direct command authority.
+2. All polities are simulated actors with goals, pressures, capabilities, and memory.
+3. The user may pause, resume, inspect, filter, export, save, load, and change simulation speed.
+4. The user may not directly move armies, spend treasury, recruit units, sign treaties, or trigger battles during a live run.
+5. Scenario configuration, seed changes, and world-parameter changes are allowed before a run begins or through explicit curator tools that are themselves logged.
+
+## 3. Time Model
+
+The simulation uses a live in-world calendar displayed as `DD/MM/YYYY`.
+
+1. World time is simulated time, not wall-clock time.
+2. The engine advances the calendar automatically while unpaused.
+3. The UI must support at minimum `Pause`, `1x`, `2x`, `5x`, and `Fast` simulation speeds.
+4. The current canonical time object should track day, month, and year rather than only turn counters.
+5. Turn numbers may remain as internal aggregation markers, but the calendar date is the primary observer-facing time reference.
+
+Recommended baseline:
 
 | Area | Default scale |
 | --- | --- |
-| Turn length | 1 month |
-| Population | Individual people |
-| Manpower | Recruitable people, tracked separately from total population when implemented |
-| Money | Campaign currency units |
-| Food | Abstract stores convertible to months of civilian and military consumption |
-| Resources | Stockpiled units with monthly production and consumption |
-| Unit strength | Individual soldiers grouped into units |
-| Movement | Kilometers per day converted into monthly operational movement |
-| Morale, loyalty, support, fatigue | 0-100 unless a sheet explicitly states otherwise |
+| Primary observer clock | Day / Month / Year |
+| Daily pulse | Local drift, movement progress, report aging, minor incidents |
+| Weekly pulse | Route checks, short-term markets, AI threat review |
+| Monthly pulse | Taxes, upkeep, production, strategic review |
+| Seasonal pulse | Harvests, weather regime, disease pressure |
+| Yearly pulse | Demographic change, institutional drift, succession risk |
 
-## 3. Workbook Visibility
+## 4. Observer Visibility
 
-The master state contains the truth. Player-facing views contain only what that player could know.
+The simulation has no player fog-of-war requirement by default, but it still needs layered visibility for clarity and future extensibility.
 
 ### Master State
 
-The master state may include hidden armies, true troop counts, spy identities, secret diplomacy, inactive event triggers, exact resource stockpiles, and real order queues for every faction.
+The master state may include hidden probabilities, AI goals, internal decision weights, route efficiencies, threat maps, and raw stochastic inputs.
 
-### Player State
+### Observer State
 
-The player state should include owned assets, public information, confirmed reports, estimates, rumors, and aged intelligence. Enemy information should use ranges and confidence values unless the player has current confirmed intelligence.
+The observer state should expose:
 
-### Intelligence Records
+1. Current date and speed.
+2. Realm summaries.
+3. Province summaries.
+4. Resource and logistics pressures.
+5. Diplomatic states.
+6. Wars, battles, rebellions, collapses, and major events.
+7. Historical logs and cause chains.
 
-Every intelligence item should record source, target, reported claim, confidence, information age, mission risk, and whether the report is confirmed or rumored. Old reports should not silently update themselves; a report gathered on Turn 12 remains a Turn 12 report until refreshed.
+### Debug / Analysis State
 
-## 4. Turn Sequence
+For development and balancing, debug views may expose:
 
-Each turn should be resolved in this order unless a scenario-specific rule overrides it:
+1. AI goals and decision scores.
+2. Event trigger reasons.
+3. Raw economic calculations.
+4. Threat evaluations.
+5. Hidden random rolls.
 
-1. Start-of-turn snapshot and backup.
-2. Weather, season, and global event checks.
-3. Harvest, production, spoilage, and trade-price updates.
-4. Income collection.
-5. Mandatory expenses, upkeep, interest, and shortage checks.
-6. Recruitment progress and training updates.
-7. Construction progress and repair updates.
-8. Player orders validated against official state.
-9. Movement, route, fatigue, and supply-line resolution.
-10. Scouting, espionage, counterintelligence, and report aging.
-11. Encounters, ambushes, sieges, and battles triggered by movement or orders.
-12. Battle and siege resolution.
-13. Casualties, prisoners, wounded recovery, desertion, and attrition.
-14. Diplomacy, treaties, opinion changes, and war-support updates.
-15. Public order, noble loyalty, rebellion, corruption, and stability checks.
-16. Event log, dice log, and audit log updates.
-17. Turn summary generated for the player.
-18. End-of-turn save/checkpoint.
+Debug data should be clearly separated from observer-facing history so the public chronology remains readable.
 
-This order prevents disputes such as whether income arrives before expenses, whether a unit can fight before recruitment completes, or whether a bridge destroyed this turn blocks movement this turn.
+## 5. Simulation Pulse Order
 
-## 5. Order Validation
+Each simulated day should resolve in this order unless a scenario-specific rule overrides it:
 
-Every order must be validated before resolution. An order is valid only when all required assets, permissions, locations, costs, and timing exist in official state.
+1. Start-of-day snapshot markers and time advance.
+2. Weather and seasonal effect checks.
+3. Movement progress and route-state updates.
+4. Local supply consumption and shortage progression.
+5. Daily morale, loyalty, unrest, recovery, and attrition drift.
+6. Intelligence aging and confirmation checks.
+7. Incident trigger checks.
+8. Event and audit log append.
 
-Validation questions:
+Each simulated week should additionally resolve:
 
-- Does the acting asset exist?
-- Is the asset alive, active, supplied, and available?
-- Is the order physically possible this turn?
-- Is the origin, destination, target, or province valid?
-- Is there enough treasury, manpower, equipment, food, and specialist capacity?
-- Does the order conflict with another active order?
-- Does a commander, governor, agent, or ruler have authority to execute it?
-- Is the route blocked by terrain, weather, enemy control, destroyed bridges, or siege conditions?
+1. Market and route recalculations.
+2. AI short-horizon reassessment.
+3. Risk-map refresh for borders, shortages, and instability.
 
-Invalid orders should be logged with a failure reason instead of silently ignored.
+Each simulated month should additionally resolve in this order:
 
-## 6. Deterministic Formulas
+1. Production, spoilage, and trade-price updates.
+2. Income collection.
+3. Mandatory expenses, upkeep, debt, and corruption losses.
+4. Recruitment progress, construction progress, and repair progress.
+5. Autonomous faction strategic decisions.
+6. Diplomatic changes, threat responses, war declarations, treaty changes, and internal political shifts.
+7. Battles, sieges, rebellions, and strategic consequences triggered by the month’s state transitions.
+8. Monthly summary generation.
+9. Checkpoint save eligibility.
+
+Each simulated year should additionally resolve:
+
+1. Population growth or decline.
+2. Succession, aging, or leadership change checks.
+3. Cultural, religious, and institutional drift.
+4. Long-horizon AI goal reevaluation.
+
+## 6. Autonomous Decision Rules
+
+Every major polity must act through a validated decision layer rather than arbitrary script text.
+
+Each actor should evaluate at minimum:
+
+1. Strategic goals.
+2. Treasury and food constraints.
+3. Military readiness.
+4. Internal stability.
+5. Threat perception.
+6. Opportunity perception.
+7. Existing diplomatic commitments.
+8. Historical memory.
+
+Decision validation questions:
+
+1. Does the actor exist and remain viable?
+2. Does the actor have the treasury, manpower, supply, or political capital required?
+3. Is the target valid and reachable?
+4. Does the action contradict locked state, treaty state, or simultaneous commitments?
+5. Is the action physically or politically possible under current conditions?
+
+Invalid autonomous decisions should be logged as rejected intent rather than silently discarded.
+
+## 7. Deterministic Systems
 
 Predictable systems should use formulas rather than narrative judgment.
 
 ### Economy
 
-Net Income = Taxes + Trade + Production + Tribute - Army Upkeep - Construction Costs - Administration - Corruption - Debt Interest
+Net Income = Taxes + Trade + Production + Tribute - Upkeep - Construction - Administration - Corruption - Interest
 
 ### Food
 
-Food Change = Farms + Imports + Foraging - Civilian Consumption - Army Consumption - Spoilage - Exports - Raid Losses
+Food Change = Farms + Imports + Foraging - Civilian Consumption - Military Consumption - Spoilage - Exports - Raid Losses
+
+### Stability
+
+Stability Change = Prosperity Modifier + Food Modifier + Security Modifier + Legitimacy Modifier + War Pressure Modifier + Corruption Modifier
+
+### Province Unrest
+
+Unrest Change = Tax Pressure + Shortage Pressure + Occupation Pressure + Cultural/Religious Tension - Garrison Pressure - Prosperity Relief - Reform Relief
 
 ### Construction
 
-Monthly Progress = Base Labor x Worker Efficiency x Material Availability x Engineer Modifier x Weather Modifier x Security Modifier
-
-### Recruitment
-
-Training Progress = Base Training Capacity x Facility Modifier x Officer Modifier x Equipment Availability x Stability Modifier
-
-### Morale
-
-Morale Change = Pay Modifier + Food Modifier + Victory/Defeat Modifier + Fatigue Modifier + Commander Modifier + Weather Modifier + Religious/Political Modifier
+Progress = Base Labor x Worker Efficiency x Material Availability x Engineering Modifier x Weather Modifier x Security Modifier
 
 ### Movement
 
-Operational Movement = Base Terrain Speed x Road Modifier x Weather Modifier x Supply Modifier x Commander Logistics Modifier
+Operational Progress = Base Terrain Speed x Road Modifier x Weather Modifier x Supply Modifier x Logistics Modifier
 
-Forced march may increase movement, but it must also increase fatigue, attrition risk, and combat-readiness penalties.
+## 8. Random Resolution
 
-## 7. Random Resolution
-
-Uncertain actions require logged dice or random numbers. A d100 model is recommended because most campaign values are percentages.
+Uncertain actions require logged random resolution. A d100 or normalized 0.0-1.0 model is recommended because most state pressures map cleanly to probabilities.
 
 Resolution procedure:
 
-1. Identify the action and actor.
+1. Identify the triggering action, actor, and target.
 2. Calculate base chance.
-3. Apply modifiers.
+3. Apply deterministic modifiers.
 4. Clamp the final chance within allowed minimum and maximum values.
-5. Roll d100.
-6. Compare roll to final chance.
-7. Apply success, partial success, failure, or critical result.
-8. Log the formula, modifiers, roll, and outcome.
+5. Roll.
+6. Compare roll to threshold.
+7. Apply result.
+8. Log formula, modifiers, roll, and outcome.
 
-Randomness should be small for routine deterministic systems and larger for risky human events such as espionage, ambushes, disease, diplomacy, and commander injury.
+Randomness should be narrow for routine systemic drift and wider for espionage, disease, commander survival, rebellion timing, and diplomatic brinkmanship.
 
-## 8. Battle Resolution
+## 9. Battles and Conflict
 
-Battles are generated from the campaign state. They are not decided by prose.
+Conflict remains generated from state rather than prose, but it no longer waits for player orders.
 
-Battle procedure:
+Battles, sieges, raids, and rebellions should emerge from:
 
-1. Confirm participating units, commanders, locations, supplies, fatigue, morale, and orders.
-2. Determine terrain, weather, visibility, fortifications, and surprise.
-3. Establish objectives and retreat routes.
-4. Calculate combat power per unit.
-5. Apply terrain, weather, morale, fatigue, equipment, experience, formation, and commander modifiers.
-6. Resolve phases: skirmish, main engagement, flank actions, reserves, morale checks, retreat, and pursuit.
-7. Calculate dead, wounded, missing, captured, desertion, equipment loss, and supply loss.
-8. Roll commander injury, capture, or death where appropriate.
-9. Apply post-battle morale, experience, public-order, diplomatic, and strategic effects.
-10. Record a battle report and update all affected sheets.
+1. AI strategic decisions.
+2. Movement overlap.
+3. Border tension.
+4. Supply collapse.
+5. Provincial unrest.
+6. Opportunistic aggression.
 
-Baseline combat formula:
+Baseline battle procedure:
 
-Combat Power = Unit Strength x Training x Equipment x Morale Modifier x Fatigue Modifier x Terrain Modifier x Commander Modifier x Random Factor
+1. Confirm participants, location, weather, morale, fatigue, supply, and retreat routes.
+2. Establish terrain and fortification context.
+3. Calculate combat power per side.
+4. Apply morale, fatigue, terrain, equipment, experience, and commander modifiers.
+5. Resolve engagement phases.
+6. Apply casualties, wounded, prisoners, desertion, and supply loss.
+7. Apply post-battle diplomatic, internal, and strategic effects.
+8. Record the conflict as a historical event with cause data.
 
-The random factor should usually be narrow, such as 0.95 to 1.05, so planning matters more than luck.
+## 10. Logistics and Endurance
 
-## 9. Logistics and Supply
+Supply is a hard constraint. Long-lived observer simulations become unconvincing if armies or provinces ignore material exhaustion.
 
-Supply is a hard constraint. An army cannot campaign indefinitely just because it exists.
+Each army or major force should eventually track:
 
-Each army should track food, water, ammunition where relevant, animal feed, supply wagons, road access, supply route, route security, and days or turns of endurance. Supply shortages should reduce morale and combat readiness before they destroy the army outright.
+1. Food endurance.
+2. Route access.
+3. Route security.
+4. Local forage quality.
+5. Seasonal penalties.
+6. Attrition state.
 
 Suggested shortage ladder:
 
-1. Fully supplied: no penalty.
-2. Strained: slower movement and minor morale pressure.
-3. Short: fatigue rises, training/recovery slows, morale drops.
-4. Critical: attrition, desertion, disease, and combat penalties.
-5. Starving: severe attrition, collapse risk, possible surrender or dispersal.
+1. Fully Supplied: no penalty.
+2. Strained: reduced movement, mild morale pressure.
+3. Short: rising fatigue, reduced recovery, falling morale.
+4. Critical: attrition, desertion, disease, reduced combat power.
+5. Starving: collapse risk, surrender, or dispersal.
 
-## 10. Recruitment and Manpower
+## 11. Construction, Recruitment, and State Capacity
 
-Recruitment takes time and consumes population, manpower, money, equipment, food, officers, and training capacity. Units are not ready until they reach their required training threshold and receive required equipment.
+Infrastructure and military capacity must grow through time and cost.
 
-Recommended readiness states:
-
-| State | Meaning |
-| --- | --- |
-| Mustered | People have been gathered but are not trained |
-| Training | Unit is forming and consumes resources |
-| Green | Can fight poorly with morale and tactics penalties |
-| Trained | Standard combat readiness |
-| Veteran | Requires battle experience or special training |
-| Elite | Requires rare facilities, officers, equipment, and time |
-
-## 11. Construction and Infrastructure
-
-Construction consumes money, materials, labor, engineering capacity, and time. Projects can be delayed or damaged by weather, raids, shortages, corruption, unrest, and siege conditions.
-
-A project is complete only when official progress reaches 100% and all required final costs or checks are satisfied. Completed infrastructure should add maintenance costs where appropriate.
+1. Recruitment consumes population, money, food, equipment, officer capacity, and training capacity.
+2. Construction consumes money, materials, labor, security, and engineering capacity.
+3. Large polities should face administrative drag and slower coherent execution.
+4. Administrative overreach should appear as corruption, delays, unrest, and brittle logistics.
 
 ## 12. Diplomacy and Internal Politics
 
-Diplomacy should track more than opinion. Relationship state may include trust, fear, threat perception, trade dependency, claims, treaties, war support, marriage ties, military access, and willingness to negotiate.
+The observer simulation should treat politics as a first-class engine, not a flavor layer.
 
-Internal politics should distinguish public support, noble loyalty, stability, corruption, legitimacy, war exhaustion, religious tension, and cultural tension. A kingdom can be militarily strong while politically fragile.
+Diplomatic state may include:
 
-## 13. Event and Audit Logs
+1. Opinion.
+2. Trust.
+3. Fear.
+4. Threat perception.
+5. Claims.
+6. Trade dependence.
+7. Treaty commitments.
+8. War support.
 
-Every important state change should be auditable. Logs should preserve the campaign history and make disputes resolvable.
+Internal political state may include:
+
+1. Stability.
+2. Legitimacy.
+3. Noble loyalty.
+4. Public support.
+5. Cultural tension.
+6. Religious tension.
+7. Corruption.
+8. War exhaustion.
+
+## 13. Historical Memory and Causality
+
+The world must remember its own history.
+
+Every major actor should eventually preserve memory of:
+
+1. Past wars.
+2. Betrayals.
+3. Alliances.
+4. Famines.
+5. Rebellions.
+6. Claims and lost territory.
+7. Dynastic or leadership crises.
+
+Every major event should record:
+
+1. What happened.
+2. When it happened.
+3. Which entities were affected.
+4. Which systems contributed.
+5. What changed because of it.
+
+If an observer cannot answer why a kingdom rose, declined, or fractured, the simulation is not yet sufficiently legible.
+
+## 14. Logs, Replays, and Auditability
+
+Every important state change should be auditable and replayable.
 
 Minimum logs:
 
-- Orders log.
-- Dice/resolution log.
-- Event log.
-- Battle log.
-- Casualty log.
-- Intelligence log.
-- Construction log.
-- Diplomacy log.
-- Save/checkpoint log.
+1. Event log.
+2. Random-resolution log.
+3. Diplomacy log.
+4. Conflict log.
+5. Casualty log.
+6. Construction log.
+7. Recruitment log.
+8. Economic summary log.
+9. Checkpoint/save log.
+10. Observer-summary log.
 
-Logs should include turn number, actor, target, previous value where useful, new value, reason, and source system.
+Logs should include date, actor, target, previous value where useful, new value, cause, and source system.
 
-## 14. Turn Summary Format
+## 15. Observer Summary Format
 
-Each turn summary should be concise but complete:
+Each summary should explain the world rather than request player action.
+
+Recommended summary sections:
 
 1. Executive summary.
-2. Treasury and economy.
-3. Food, resources, and logistics.
-4. Military movement and readiness.
-5. Battles, sieges, and casualties.
+2. Current date and speed.
+3. Major power shifts.
+4. Treasury, food, and logistics pressures.
+5. Wars, battles, and rebellions.
 6. Recruitment and construction.
-7. Diplomacy.
-8. Intelligence reports.
-9. Provinces and public order.
-10. Random events.
-11. Invalid or partially completed orders.
-12. Required player decisions for next turn.
+7. Diplomacy and treaty changes.
+8. Province instability hotspots.
+9. Notable events and cause chains.
+10. Emerging risks for the next interval.
 
-The turn summary is not the source of truth; it is the readable report generated from the source of truth.
+The summary is not the source of truth. It is the observer-readable interpretation of the source of truth.
 
-## 15. Anti-Retcon Rules
+## 16. Anti-Retcon and Save Integrity Rules
 
-1. Past turns cannot be edited except to correct documented data-entry errors.
-2. Corrections must be logged with the original value, corrected value, reason, and approver.
-3. A player cannot retroactively issue an order after seeing a result.
-4. Hidden information revealed later does not change what the player legally knew earlier.
-5. Backups/checkpoints should be retained so the campaign can be audited or restored.
+1. Past simulated dates cannot be edited except through documented data correction or explicit dev tools.
+2. Corrections must log original value, corrected value, reason, and operator.
+3. Live runs may not silently rewrite earlier history.
+4. Replays and exports must reflect the same official underlying state.
+5. Checkpoints should be retained so long runs can be audited and resumed.
 
-## 16. Implementation Status
+## 17. Implementation Roadmap Constraints
 
-The current codebase already supports a modular campaign foundation: separate domain packages, JSON configuration, SQLite persistence, workbook export generators, an application entry point, and early turn advancement for economy/logistics. The modularization work is substantially complete through the documented verification and documentation phase.
+The roadmap that follows elsewhere in the repo should obey these rules:
 
-The remaining modularization gap is not basic package structure. The remaining gap is deeper simulation completeness: persisting advanced turn state back to SQLite, implementing richer order validation, combat resolution, fog-of-war views, dice logs, and full turn-summary generation.
+1. Replace the current month-only turn mental model with a live simulated calendar.
+2. Introduce daily, weekly, monthly, seasonal, and yearly pulses incrementally.
+3. Keep exports and dashboard views as observer outputs, not primary mutation surfaces.
+4. Build autonomous faction behavior before adding curator powers.
+5. Prioritize causality, logs, and explainability before content breadth.
+6. Add battles and rich politics only after the calendar, pulses, economy, and event logging are stable.
+
+## 18. Current Implementation Status
+
+The codebase already supports the modular foundation required for this pivot: separate domain packages, JSON configuration, SQLite persistence, workbook export, a PySide6 dashboard shell, an application entry point, and deterministic monthly advancement for the kingdom economy and resources.
+
+The major remaining gap is not architecture. The major remaining gap is behavioral depth: a real calendar model, autonomous faction loops, pulse-based progression, historical memory, richer logs, and observer-grade summaries that explain world motion over time.

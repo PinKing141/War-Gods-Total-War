@@ -4,7 +4,6 @@ from pathlib import Path
 
 import openpyxl
 import sqlite3
-import pytest
 
 from warfare_simulation.app import WarfareSimulationApp
 
@@ -49,6 +48,7 @@ def test_app_run_loads_config_seeds_sqlite_and_exports_workbook(tmp_path):
     workbook = openpyxl.load_workbook(output_path, data_only=False)
     assert workbook.sheetnames == EXPECTED_SHEETS
 
+    assert app.game_state.current_day == 1
     assert app.game_state.current_turn == 1
     assert len(app.repos.kingdom.list_all()) == 1
     assert len(app.repos.province.list_all()) == 4
@@ -69,10 +69,12 @@ def test_advance_turn_updates_campaign_clock_and_economy(tmp_path):
     state = app.campaign.advance_turn()
 
     assert state is app.game_state
+    assert state.current_day == 1
     assert state.current_turn == 2
     assert state.current_month == 2
     assert state.current_year == 1
 
+    assert kingdom.current_day == 1
     assert kingdom.current_turn == 2
     assert kingdom.current_month == 2
     assert kingdom.current_year == 1
@@ -80,24 +82,25 @@ def test_advance_turn_updates_campaign_clock_and_economy(tmp_path):
     assert food.stored == 5100
 
 
-def test_app_run_creates_expected_sqlite_schema(tmp_path):
-    """The app should create the complete Phase 6 runtime schema before export."""
-    db_path = tmp_path / "phase6_schema.db"
-    output_path = tmp_path / "phase6_schema.xlsx"
+def test_export_campaign_reflects_advanced_turn_state(tmp_path):
+    """Export should read the live repository state after a turn advances."""
+    db_path = tmp_path / "phase7_export.db"
+    output_path = tmp_path / "phase7_export.xlsx"
 
     app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
-    app.run(output_path)
+    app.campaign.advance_turn()
+    exported_path = app.export_campaign(output_path)
 
-    with sqlite3.connect(db_path) as conn:
-        tables = {
-            row[0]
-            for row in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table'"
-            ).fetchall()
-        }
+    assert exported_path == output_path
 
-    with pytest.raises(NotImplementedError, match="Turn simulation comes after export parity"):
-        app.campaign.advance_turn()
+    workbook = openpyxl.load_workbook(output_path, data_only=False)
+    dashboard = workbook["Kingdom Dashboard"]
+    resources = workbook["Resources"]
+
+    assert dashboard["B5"].value == 525700
+    assert dashboard["B13"].value == 2
+    assert resources["A2"].value == "Food"
+    assert resources["B2"].value == 5100
 
 
 def test_app_run_creates_expected_sqlite_schema(tmp_path):
@@ -126,3 +129,4 @@ def test_app_run_creates_expected_sqlite_schema(tmp_path):
         assert conn.execute("SELECT COUNT(*) FROM faction").fetchone()[0] == 3
         assert conn.execute("SELECT COUNT(*) FROM relation").fetchone()[0] == 3
         assert conn.execute("SELECT COUNT(*) FROM resource").fetchone()[0] == 4
+        assert conn.execute("SELECT COUNT(*) FROM event").fetchone()[0] == 0

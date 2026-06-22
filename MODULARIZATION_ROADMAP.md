@@ -1,55 +1,62 @@
 # Warfare Simulation Campaign Engine — Modularization Roadmap
 
-**Document Version**: 1.1  
-**Last Updated**: 2026-06-17  
-**Status**: Phases 1–6 Complete; Phase 7 — Turn Simulation (In Progress)
+**Document Version**: 2.0  
+**Last Updated**: 2026-06-20  
+**Status**: Foundations Complete; Observer Simulation Pivot Approved
 
 ---
 
 ## Executive Summary
 
-Transform the monolithic `campaign_engine_initialiser.py` (~200 lines) into a **production-grade, domain-driven campaign engine** capable of supporting:
+The project is no longer primarily a player-order campaign engine. It is now a **living-world observer simulation** with spreadsheet export and desktop dashboard presentation layers.
 
-- Multiple game systems (combat, diplomacy, events, logistics)
-- Persistent state management (JSON config + SQLite runtime)
-- Extensible architecture (add new domains without refactoring existing code)
-- Clean separation of concerns (each domain is independently testable)
+The original modularization goal has been achieved well enough to support the pivot:
 
-**Phases 1–6 are complete.** The current milestone is **Phase 7**: expand turn simulation from a verified export-first foundation into persistent campaign progression with richer resolution systems.
+- Domain-driven package structure exists.
+- SQLite runtime state exists.
+- JSON seed configuration exists.
+- Workbook export exists.
+- A PySide6 dashboard shell exists.
+- Deterministic monthly advancement for the active kingdom and resources exists.
 
-**Target**: The modular foundation is in place. Phase 7 now focuses on persisting advanced turn state back to SQLite and adding richer campaign-resolution systems such as orders, combat, fog of war, and turn summaries.
+The new target is a **synthetic-history simulation engine** that:
+
+1. Advances an in-world `DD/MM/YYYY` calendar automatically.
+2. Resolves daily, weekly, monthly, seasonal, and yearly pulses.
+3. Simulates autonomous factions rather than accepting player orders.
+4. Produces auditable, explainable history through logs and summaries.
+5. Exposes world state through workbook exports and the desktop observatory UI.
+
+This roadmap preserves completed work while redefining the upcoming phases around the observer model documented in [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md).
 
 ---
 
 ## Current Status
 
-| Phase                  | Status         | Notes                                                              |
-| ---------------------- | -------------- | ------------------------------------------------------------------ |
-| 1 — Foundation         | ✓ Complete     | Core abstractions, constants, exceptions, logging, validation      |
-| 2 — Domains            | ✓ Complete     | All six domains (models, repository, service)                      |
-| 3 — Data & Persistence | ✓ Complete     | JSON configs, schemas, SQLite, migrations, **CampaignBootstrap** (JSON→DB seeding) |
-| 4 — Export             | ✓ Complete     | Modular workbook factory, style manager, 8 sheet generators, parity tests |
-| 5 — Application        | ✓ Complete     | Thin slice app loads JSON, seeds SQLite, hydrates repos, and exports |
-| 6 — Verification & Docs | ✓ Complete     | Domain, persistence, export parity tests, architecture/API/extension docs |
-| 7 — Turn Simulation | → In Progress | Clock, economy, resource advancement, checkpoints, and DB persistence exist; richer systems still pending |
+| Phase | Status | Notes |
+| --- | --- | --- |
+| 1 — Foundation | ✓ Complete | Core abstractions, constants, exceptions, logging, validation |
+| 2 — Domains | ✓ Complete | All six domains (models, repository, service) |
+| 3 — Data & Persistence | ✓ Complete | JSON configs, schemas, SQLite, migrations, `CampaignBootstrap` |
+| 4 — Export | ✓ Complete | Workbook factory, style manager, repository-backed sheet generators |
+| 5 — Application | ✓ Complete | Thin app loads JSON, seeds SQLite, hydrates repos, exports state |
+| 6 — Verification & Docs | ✓ Complete | Tests, architecture docs, API docs, extension docs |
+| 7 — Runtime State | ✓ Complete | Kingdom/resource persistence, checkpoints, startup state hydration |
+| 8 — Observer Pivot | → Current | Calendar model, pulse loop, autonomous actors, and observer summaries are not yet implemented |
 
-**Reference implementation**: `campaign_engine_initialiser.py` is deprecated and retained only as a golden reference while parity coverage remains useful.
+**Reference implementation**: `campaign_engine_initialiser.py` remains deprecated. It is now only a historical export reference, not a target design for future behavior.
 
 ---
 
-## Guiding Principles (v1.1 Adjustments)
+## Guiding Principles (v2.0 Observer Pivot)
 
-These refinements keep the roadmap pragmatic as implementation proceeds:
-
-1. **Phase 5 is complete.** The runnable application remains thin: load JSON → seed SQLite → `WorkbookFactory` → `Auster_Campaign_Engine.xlsx`.
-
-2. **Keep the monolith until parity is proven.** `campaign_engine_initialiser.py` is the golden reference for sheet names, row counts, formulas, and formatting. Retire it only during Phase 6 cleanup after parity coverage is accepted.
-
-3. **Keep Phase 7 incremental.** `CampaignOrchestrator.advance_turn()` should grow through tested slices: deterministic clock/economy/resource advancement first, then persistence, orders, combat, fog of war, and summaries.
-
-4. **Keep the integration test strong.** `tests/test_export_parity.py` now guards sheet order, row counts, cell values, header styling, and column widths.
-
-5. **Keep progress trackers in sync.** Update this checklist and `README.md` whenever a phase completes so planning reflects reality.
+1. **The simulation is the product.** Workbook exports and the desktop dashboard are observer surfaces, not the place where the world is authored by hand.
+2. **Time is continuous in-world, not turn-only.** The primary observer clock is `DD/MM/YYYY`.
+3. **Autonomy comes before content sprawl.** Build faction decision loops, pulse scheduling, and causal logs before adding large numbers of new mechanics.
+4. **Explainability is non-negotiable.** Every major rise, collapse, war, famine, treaty, rebellion, and succession event must be traceable through logs.
+5. **Keep UI and engine separate.** The service layer and read-model boundary already added for the dashboard should remain strict.
+6. **Ship in pulses, not fantasies.** Add daily, weekly, monthly, seasonal, and yearly systems incrementally with tests at each layer.
+7. **Use the rules document as contract.** The observer rules framework defines the allowed architecture and feature ordering for future work.
 
 ---
 
@@ -281,7 +288,255 @@ Warfare Simulation/
 
 ---
 
-## Phase Breakdown
+## Observer Simulation Pivot Roadmap
+
+The sections below define the forward plan from the current foundation to a full autonomous observer simulation.
+
+### Product Goal
+
+Build a living world that advances automatically on a simulated `DD/MM/YYYY` calendar, resolves autonomous faction behavior through deterministic and stochastic systems, and surfaces its history through workbook exports, logs, and the PySide6 observatory UI.
+
+### Delivery Horizon
+
+| Horizon | Outcome |
+| --- | --- |
+| Horizon 1 | Stable real-time-in-sim calendar, pulse engine, pause/speed controls |
+| Horizon 2 | Autonomous faction loop, province pressure, and observer-grade event logs |
+| Horizon 3 | Emergent wars, rebellions, diplomacy arcs, and multi-year replayable history |
+| Horizon 4 | Synthetic-history sandbox with scenarios, balancing, and long-run stability tooling |
+
+### Phase 8: Calendar and Time Engine (Estimated: 1-2 weeks)
+
+**Goal**: Replace the month-only state model with a real simulation calendar and support pausable real-time progression.
+
+**Tasks**:
+
+1. Introduce a canonical `SimDate` or equivalent date model with `day`, `month`, and `year`.
+2. Add calendar utilities for month lengths, year rollover, and formatting as `DD/MM/YYYY`.
+3. Replace `GameState`'s turn-centric assumptions with date-centric state while preserving optional turn counters for aggregation.
+4. Add simulation speed states: `paused`, `1x`, `2x`, `5x`, and `fast`.
+5. Add desktop dashboard controls for pause/resume and speed changes.
+6. Persist simulation date and speed-safe checkpoint state.
+
+**Deliverables**:
+
+1. Date model integrated into `GameState` and orchestration.
+2. Dashboard live date display.
+3. Checkpoint round-trip for day/month/year state.
+
+**Exit criteria**:
+
+1. The simulation can advance day by day without corrupting month/year rollover.
+2. The UI shows the live in-world date.
+3. Checkpoint load resumes from the exact stored date.
+
+### Phase 9: Pulse Scheduler and System Cadence (Estimated: 2-3 weeks)
+
+**Goal**: Create the engine loop that schedules daily, weekly, monthly, seasonal, and yearly work without entangling domain code.
+
+**Tasks**:
+
+1. Introduce a pulse scheduler in orchestration.
+2. Define per-pulse hooks for domain services.
+3. Implement daily, weekly, monthly, seasonal, and yearly execution boundaries.
+4. Add deterministic ordering for all pulse types, aligned with [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md).
+5. Add focused tests for pulse boundaries and duplicate-run prevention.
+
+**Deliverables**:
+
+1. `advance_day()` orchestration path.
+2. Registered pulse hooks for all existing domains.
+3. Verified monthly and yearly boundary behavior.
+
+**Exit criteria**:
+
+1. No system executes twice at the same boundary.
+2. Monthly economy and logistics still match expected totals after daily progression.
+3. Year transitions are deterministic and tested.
+
+### Phase 10: Observer Logs and Causality Backbone (Estimated: 2-3 weeks)
+
+**Goal**: Make the world explain itself before making it more complicated.
+
+**Tasks**:
+
+1. Expand the events domain into a structured historical log system.
+2. Add event metadata: date, actor, target, source system, cause chain, and effect summary.
+3. Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution.
+4. Add summary generators for daily/weekly/monthly observer output.
+5. Update exports and the dashboard to surface the latest history clearly.
+
+**Deliverables**:
+
+1. Typed log records for core systems.
+2. Observer-readable event feed in the dashboard.
+3. Exported history sheet or sheets driven by recorded logs.
+
+**Exit criteria**:
+
+1. Any major state change can be traced back through recorded causes.
+2. The dashboard event feed remains readable over long runs.
+3. Logs survive checkpoint save/load.
+
+### Phase 11: Autonomous Faction Decision Loop (Estimated: 3-5 weeks)
+
+**Goal**: Replace player orders with AI state actors that make validated strategic choices.
+
+**Tasks**:
+
+1. Define faction goals, pressures, and risk appetites.
+2. Build a decision-evaluation layer for diplomacy, military posture, and internal stabilization.
+3. Add decision validation so impossible intent is rejected and logged.
+4. Add short-horizon and long-horizon reassessment cadence.
+5. Add tuning parameters for aggressiveness, consolidation preference, and threat response.
+
+**Deliverables**:
+
+1. Autonomous decision service or services.
+2. Logged accepted and rejected decisions.
+3. Dashboard views for faction summaries and current world tensions.
+
+**Exit criteria**:
+
+1. Factions change posture without human input.
+2. Decisions respect treasury, supply, and political constraints.
+3. The world shows divergent behavior across different seeds.
+
+### Phase 12: Province Pressure and Material World Model (Estimated: 3-5 weeks)
+
+**Goal**: Give the world internal motion through food, tax pressure, loyalty, unrest, and administrative drag.
+
+**Tasks**:
+
+1. Expand province state to support unrest, prosperity, and pressure metrics.
+2. Refine food and resource consumption to operate on smaller pulses.
+3. Model taxation, shortage effects, and local stability drift.
+4. Add construction and recruitment progress as ongoing systems rather than single-step updates.
+5. Add administrative-capacity penalties for overextended realms.
+
+**Deliverables**:
+
+1. Province pressure model.
+2. Monthly economy that emerges from provincial state rather than only static kingdom values.
+3. Dashboard hotspots for instability and shortages.
+
+**Exit criteria**:
+
+1. Provinces diverge in meaningful ways over time.
+2. Shortages and overtaxation cause visible downstream effects.
+3. Internal pressure can destabilize even militarily strong states.
+
+### Phase 13: Conflict Emergence, Rebellions, and War Resolution (Estimated: 4-6 weeks)
+
+**Goal**: Let conflict emerge from state pressure and autonomous decisions rather than scripted commands.
+
+**Tasks**:
+
+1. Introduce war declaration and hostility escalation rules.
+2. Add rebellion triggers from province and realm pressure.
+3. Build campaign-level conflict resolution for raids, battles, sieges, and pursuit.
+4. Apply post-conflict effects to morale, manpower, legitimacy, diplomacy, and logistics.
+5. Record all conflicts as auditable historical events.
+
+**Deliverables**:
+
+1. War and rebellion trigger systems.
+2. First-pass battle and siege resolver.
+3. Conflict summaries in logs and exports.
+
+**Exit criteria**:
+
+1. Wars and rebellions can begin, resolve, and alter world state without human control.
+2. Losses and victories propagate into economy and politics.
+3. Conflict outcomes are explainable from recorded inputs.
+
+### Phase 14: Historical Memory, Leadership, and Long-Run Stability (Estimated: 4-8 weeks)
+
+**Goal**: Make the world feel historical rather than stateless.
+
+**Tasks**:
+
+1. Add persistent diplomatic memory of wars, treaties, betrayals, and border loss.
+2. Add ruler or leadership lifecycle mechanics: aging, death, succession, instability.
+3. Add long-horizon cultural, religious, or institutional drift where appropriate.
+4. Add regime-fragility mechanics so collapse and recovery have inertia.
+5. Add replay and timeline inspection tools for long simulations.
+
+**Deliverables**:
+
+1. Historical memory model.
+2. Succession and leadership events.
+3. Multi-year timeline viewer requirements captured in UI and export surfaces.
+
+**Exit criteria**:
+
+1. States remember the consequences of earlier history.
+2. Leadership change creates real but legible instability.
+3. Long-run simulations produce distinct eras, not repeated loops.
+
+### Phase 15: Observatory Experience and Scenario Tooling (Estimated: 3-6 weeks)
+
+**Goal**: Turn the engine into a compelling observer product.
+
+**Tasks**:
+
+1. Expand the desktop dashboard into a world observatory.
+2. Add trend panels, hotspot views, and timeline navigation.
+3. Improve workbook outputs for historical reporting rather than player control.
+4. Add scenario presets and seed controls.
+5. Add balancing dashboards and simulation batch runs.
+
+**Deliverables**:
+
+1. Observer-first dashboard UX.
+2. Scenario configuration flow.
+3. Better exports for history, tensions, and long-term trends.
+
+**Exit criteria**:
+
+1. A user can watch, pause, inspect, and understand a long run without developer help.
+2. Exported reports explain the world rather than merely listing raw values.
+3. Different seeds and scenario presets produce recognizable world archetypes.
+
+### Phase 16: Scale, Balancing, and Synthetic History Platform (Estimated: ongoing)
+
+**Goal**: Make the simulation robust enough for long horizons, alternate scenarios, and repeated study.
+
+**Tasks**:
+
+1. Add simulation profiling and bottleneck detection.
+2. Add statistical run analysis and balance tooling.
+3. Add richer scenario packages, alternate starts, and regional archetypes.
+4. Add curator tools carefully, without undermining observer integrity.
+5. Add replay export and historical archive tooling.
+
+**Deliverables**:
+
+1. Long-run stability benchmarks.
+2. Scenario packs.
+3. Balance reports and anomaly detection.
+
+**Exit criteria**:
+
+1. The simulation can run for long spans without degenerating into nonsense or total stasis.
+2. The project supports multiple starting worlds with consistent observer-quality output.
+3. Historical logs remain interpretable at scale.
+
+### Immediate Build Order
+
+The next practical implementation order should be:
+
+1. Phase 8 — Calendar and Time Engine.
+2. Phase 9 — Pulse Scheduler and System Cadence.
+3. Phase 10 — Observer Logs and Causality Backbone.
+4. Phase 11 — Autonomous Faction Decision Loop.
+5. Phase 12 — Province Pressure and Material World Model.
+
+That order enforces the observer rules: time first, then system cadence, then explainability, then autonomy, then world pressure.
+
+---
+
+## Historical Modularization Archive
 
 ### Phase 1: Project Foundation ✓ Complete (Estimated: 2-3 hours)
 
@@ -1170,7 +1425,7 @@ def test_kingdom_silver_transaction():
 - [ ] Add richer domain systems to each turn: diplomacy, combat, events
 - [ ] Add interactive CLI turn controls
 
-## Next Steps After Phase 7
+## Historical Next Steps After Phase 7 (Superseded)
 
 1. **Diplomacy Engine**: Add NPC faction behavior, opinion shifts, treaty mechanics
 2. **Combat System**: Full turn-based combat with unit matchups, morale effects

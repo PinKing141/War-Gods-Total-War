@@ -85,6 +85,13 @@ class DatabaseManager:
         """Rollback transaction."""
         if self.conn:
             self.conn.rollback()
+
+    def _ensure_column(self, table_name: str, column_name: str, definition: str) -> None:
+        """Add a missing column to an existing table."""
+        cursor = self.execute(f"PRAGMA table_info({table_name})")
+        existing_columns = {row[1] for row in cursor.fetchall()}
+        if column_name not in existing_columns:
+            self.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
     
     def initialize_schema(self) -> None:
         """
@@ -106,6 +113,7 @@ class DatabaseManager:
                     morale INTEGER DEFAULT 75,
                     loyalty INTEGER DEFAULT 75,
                     grain_stores INTEGER DEFAULT 0,
+                    current_day INTEGER DEFAULT 1,
                     current_turn INTEGER DEFAULT 1,
                     current_month INTEGER DEFAULT 1,
                     current_year INTEGER DEFAULT 1,
@@ -113,6 +121,8 @@ class DatabaseManager:
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+            self._ensure_column("kingdom", "current_day", "INTEGER DEFAULT 1")
             
             self.execute("""
                 CREATE TABLE IF NOT EXISTS province (

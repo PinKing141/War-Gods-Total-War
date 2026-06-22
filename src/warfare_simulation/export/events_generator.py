@@ -25,6 +25,20 @@ class EventsGenerator(SheetGenerator):
         headers = ["Turn", "Category", "Event Details", "Impact"]
         self._format_header(headers)
 
+        if self.event_repo is not None:
+            events = self.event_repo.list_all()
+            if events:
+                self._append_data([
+                    [
+                        event.turn,
+                        getattr(event.category, "value", str(event.category)),
+                        event.description,
+                        event.impact,
+                    ]
+                    for event in events
+                ])
+                return
+
         events_data = [
             [0, "System", "Campaign Initialised.", "The Dominion of Auster is ready."],
             [1, "Diplomacy", "Tyra trade envoy arrives in Highreach.", "+500 Silver this turn."],

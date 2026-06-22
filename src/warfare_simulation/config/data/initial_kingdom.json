@@ -9,6 +9,7 @@
     "morale": 85,
     "loyalty": 85,
     "grain_stores": 24,
+    "current_day": 1,
     "current_turn": 1,
     "current_month": 1,
     "current_year": 1
