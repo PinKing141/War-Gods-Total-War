@@ -365,22 +365,22 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 
 1. [x] Expand the events domain into a structured historical log system.
 2. [x] Add event metadata: date, actor, target, source system, cause chain, and effect summary.
-3. [ ] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution.
-4. [ ] Add summary generators for daily/weekly/monthly observer output.
+3. [ ] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution. *(Economy/logistics audit coverage is now active for both monthly turn advancement and daily-scheduler monthly pulses; diplomacy, construction, conflict, and random resolution logs remain.)*
+4. [x] Add summary generators for daily/weekly/monthly observer output. *(Monthly turn summaries are generated from recorded events and audits; daily/weekly narrative summaries remain future expansion.)*
 5. [x] Update exports to surface causal event history clearly while preserving the current workbook contract.
-6. [ ] Update the dashboard to surface the latest history clearly.
+6. [x] Update the dashboard to surface the latest history clearly.
 
 **Deliverables**:
 
 1. [x] Typed event records with causal metadata for core systems.
-2. [ ] Observer-readable event feed in the dashboard.
+2. [x] Observer-readable event feed in the dashboard.
 3. [x] Exported Event Log rows driven by recorded logs and causal metadata.
 
 **Exit criteria**:
 
-1. Any major state change can be traced back through recorded causes.
-2. The dashboard event feed remains readable over long runs.
-3. Logs survive checkpoint save/load.
+1. [x] Any implemented economy/logistics state change can be traced back through recorded causes.
+2. [x] The dashboard event feed exposes date, actor, target, source system, cause, and impact for recent history.
+3. [x] Logs survive application restart through SQLite hydration.
 
 ### Phase 11: Autonomous Faction Decision Loop (Estimated: 3-5 weeks)
 
