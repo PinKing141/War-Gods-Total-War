@@ -1,8 +1,8 @@
 # Warfare Simulation Campaign Engine — Modularization Roadmap
 
 **Document Version**: 2.0  
-**Last Updated**: 2026-06-20  
-**Status**: Foundations Complete; Observer Simulation Pivot Approved
+**Last Updated**: 2026-06-22
+**Status**: Calendar Engine Complete; Pulse Scheduler Next
 
 ---
 
@@ -42,7 +42,8 @@ This roadmap preserves completed work while redefining the upcoming phases aroun
 | 5 — Application | ✓ Complete | Thin app loads JSON, seeds SQLite, hydrates repos, exports state |
 | 6 — Verification & Docs | ✓ Complete | Tests, architecture docs, API docs, extension docs |
 | 7 — Runtime State | ✓ Complete | Kingdom/resource persistence, checkpoints, startup state hydration |
-| 8 — Observer Pivot | → Current | Calendar model, pulse loop, autonomous actors, and observer summaries are not yet implemented |
+| 8 — Calendar and Time Engine | ✓ Complete | Canonical `SimDate`, daily advancement, roadmap speed states, UI speed controls, checkpoints |
+| 9 — Pulse Scheduler | → Current | Daily/weekly/monthly/seasonal/yearly pulse boundaries and registered hooks are next |
 
 **Reference implementation**: `campaign_engine_initialiser.py` remains deprecated. It is now only a historical export reference, not a target design for future behavior.
 
@@ -305,30 +306,30 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 | Horizon 3 | Emergent wars, rebellions, diplomacy arcs, and multi-year replayable history |
 | Horizon 4 | Synthetic-history sandbox with scenarios, balancing, and long-run stability tooling |
 
-### Phase 8: Calendar and Time Engine (Estimated: 1-2 weeks)
+### ✓ Phase 8: Calendar and Time Engine (Complete)
 
 **Goal**: Replace the month-only state model with a real simulation calendar and support pausable real-time progression.
 
 **Tasks**:
 
-1. Introduce a canonical `SimDate` or equivalent date model with `day`, `month`, and `year`.
-2. Add calendar utilities for month lengths, year rollover, and formatting as `DD/MM/YYYY`.
-3. Replace `GameState`'s turn-centric assumptions with date-centric state while preserving optional turn counters for aggregation.
-4. Add simulation speed states: `paused`, `1x`, `2x`, `5x`, and `fast`.
-5. Add desktop dashboard controls for pause/resume and speed changes.
-6. Persist simulation date and speed-safe checkpoint state.
+1. [x] Introduce a canonical `SimDate` or equivalent date model with `day`, `month`, and `year`.
+2. [x] Add calendar utilities for month lengths, year rollover, and formatting as `DD/MM/YYYY`.
+3. [x] Replace `GameState`'s turn-centric assumptions with date-centric state while preserving optional turn counters for aggregation.
+4. [x] Add simulation speed states: `paused`, `1x`, `2x`, `5x`, and `fast`.
+5. [x] Add desktop dashboard controls for pause/resume and speed changes.
+6. [x] Persist simulation date and speed-safe checkpoint state.
 
 **Deliverables**:
 
-1. Date model integrated into `GameState` and orchestration.
-2. Dashboard live date display.
-3. Checkpoint round-trip for day/month/year state.
+1. [x] Date model integrated into `GameState` and orchestration.
+2. [x] Dashboard live date display.
+3. [x] Checkpoint round-trip for day/month/year state.
 
 **Exit criteria**:
 
-1. The simulation can advance day by day without corrupting month/year rollover.
-2. The UI shows the live in-world date.
-3. Checkpoint load resumes from the exact stored date.
+1. [x] The simulation can advance day by day without corrupting month/year rollover.
+2. [x] The UI shows the live in-world date.
+3. [x] Checkpoint load resumes from the exact stored date.
 
 ### Phase 9: Pulse Scheduler and System Cadence (Estimated: 2-3 weeks)
 

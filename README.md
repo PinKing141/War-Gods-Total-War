@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–6 Complete ✓ | Phase 7 (Turn Simulation) — In Progress
+> **Status**: Phases 1–8 Complete ✓ | Phase 9 (Pulse Scheduler) — Next
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ docs/                  # Architecture and API documentation
 
 ## Roadmap
 
-See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 6 — verification, documentation, and deliberate monolith retirement.**
+See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 9 — pulse scheduler and deterministic system cadence.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -138,12 +138,24 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 - [x] Architecture documentation
 - [x] Extension examples
 
-### Phase 7: Turn Simulation
+### ✓ Phase 7: Turn Simulation (Complete)
 - [x] `CampaignOrchestrator.advance_turn()` updates campaign clock
 - [x] Kingdom economy applies monthly net income
 - [x] Logistics resources apply monthly net production
 - [x] `GameState` save/load checkpoints
 - [x] Persist advanced turn state back to SQLite
+
+### ✓ Phase 8: Calendar and Time Engine (Complete)
+- [x] Canonical `SimDate` model with day/month/year validation
+- [x] Day-by-day advancement with month and year rollover
+- [x] Roadmap speed states: `paused`, `1x`, `2x`, `5x`, and `fast`
+- [x] Dashboard pause/resume and speed controls aligned with engine state
+- [x] Checkpoint round-trip for exact date and speed state
+
+### Phase 9: Pulse Scheduler (Next)
+- [ ] Daily, weekly, monthly, seasonal, and yearly pulse boundaries
+- [ ] Registered per-domain pulse hooks
+- [ ] Duplicate-run prevention for boundary systems
 
 ## Usage Examples
 

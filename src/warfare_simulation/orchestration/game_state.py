@@ -9,7 +9,45 @@ from pathlib import Path
 from typing import Any
 
 
-SIMULATION_SPEEDS = ("paused", "0.5x", "1x", "2x", "3x")
+SIMULATION_SPEEDS = ("paused", "1x", "2x", "5x", "fast")
+
+
+@dataclass(frozen=True)
+class SimDate:
+    """Canonical observer-facing in-world calendar date."""
+
+    day: int = 1
+    month: int = 1
+    year: int = 1
+
+    def __post_init__(self) -> None:
+        """Validate date component ranges early."""
+        if self.month < 1 or self.month > 12:
+            raise ValueError(f"Month must be between 1 and 12: {self.month}")
+        if self.year < 1:
+            raise ValueError(f"Year must be positive: {self.year}")
+        max_day = calendar.monthrange(self.year, self.month)[1]
+        if self.day < 1 or self.day > max_day:
+            raise ValueError(f"Day must be between 1 and {max_day}: {self.day}")
+
+    def formatted(self) -> str:
+        """Return the date in observer-facing DD/MM/YYYY format."""
+        return f"{self.day:02d}/{self.month:02d}/{self.year:04d}"
+
+    def advance_day(self) -> tuple["SimDate", bool, bool]:
+        """Return the next date plus month/year rollover flags."""
+        next_day = self.day + 1
+        if next_day <= calendar.monthrange(self.year, self.month)[1]:
+            return SimDate(next_day, self.month, self.year), False, False
+
+        next_month = self.month + 1
+        next_year = self.year
+        year_rolled = False
+        if next_month > 12:
+            next_month = 1
+            next_year += 1
+            year_rolled = True
+        return SimDate(1, next_month, next_year), True, year_rolled
 
 
 @dataclass
@@ -29,6 +67,8 @@ class GameState:
         self.current_month = int(self.current_month)
         self.current_year = int(self.current_year)
         self.simulation_speed = str(self.simulation_speed)
+        # Validate the restored canonical date.
+        self.sim_date
 
     @staticmethod
     def days_in_month(month: int, year: int) -> int:
@@ -41,18 +81,13 @@ class GameState:
         Returns:
             True when the date rolls into a new month.
         """
-        self.current_day += 1
-        if self.current_day <= self.days_in_month(self.current_month, self.current_year):
-            return False
-
-        self.current_day = 1
-        self.current_month += 1
-        if self.current_month > 12:
-            self.current_month = 1
-            self.current_year += 1
-
-        self.current_turn += 1
-        return True
+        next_date, month_rolled, _year_rolled = self.sim_date.advance_day()
+        self.current_day = next_date.day
+        self.current_month = next_date.month
+        self.current_year = next_date.year
+        if month_rolled:
+            self.current_turn += 1
+        return month_rolled
 
     def advance_turn(self) -> None:
         """Advance the global campaign clock by one monthly turn."""
@@ -75,7 +110,12 @@ class GameState:
 
     def formatted_date(self) -> str:
         """Return the observer-facing date string."""
-        return f"{self.current_day:02d}/{self.current_month:02d}/{self.current_year:04d}"
+        return self.sim_date.formatted()
+
+    @property
+    def sim_date(self) -> SimDate:
+        """Return the canonical date object for the current state."""
+        return SimDate(self.current_day, self.current_month, self.current_year)
 
     def sync_from_kingdom(self, kingdom: Any) -> None:
         """Mirror clock fields from the active kingdom aggregate."""

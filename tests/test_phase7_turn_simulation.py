@@ -208,3 +208,22 @@ def test_rehydrated_repositories_include_turn_summaries(tmp_path):
     assert summary.event_count == 1
     assert summary.audit_count == 5
     assert "Logistics resolved 4 resource update(s)." in summary.narrative
+
+
+def test_simulation_speed_contract_matches_observer_roadmap():
+    """The clock should support the roadmap's observer speed controls."""
+    state = GameState()
+
+    for speed in ("paused", "1x", "2x", "5x", "fast"):
+        state.set_speed(speed)
+        assert state.simulation_speed == speed
+
+
+def test_invalid_calendar_date_is_rejected():
+    """Checkpoint hydration should reject impossible calendar dates."""
+    try:
+        GameState(current_day=31, current_month=2, current_year=1)
+    except ValueError as exc:
+        assert "Day must be between" in str(exc)
+    else:  # pragma: no cover - keeps assertion message clear
+        raise AssertionError("Expected invalid SimDate to raise ValueError")
