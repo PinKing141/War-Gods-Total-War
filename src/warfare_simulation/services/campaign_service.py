@@ -69,9 +69,14 @@ class ResourceRow:
 
 @dataclass
 class EventRow:
+    date: str
     turn: int
     category: str
+    actor: str
+    target: str
+    source_system: str
     description: str
+    cause: str
     impact: str
 
 
@@ -182,10 +187,15 @@ class CampaignService:
         )
         return [
             EventRow(
+                date=f"{e.day:02d}/{e.month:02d}/{e.year:04d}",
                 turn=e.turn,
                 category=getattr(e.category, "value", str(e.category)),
+                actor=e.actor,
+                target=e.target or "world",
+                source_system=e.source_system,
                 description=e.description,
-                impact=e.impact,
+                cause=" → ".join(e.cause_chain) if e.cause_chain else "unspecified",
+                impact=e.effect_summary or e.impact,
             )
             for e in events
         ]

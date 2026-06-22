@@ -8,8 +8,8 @@ from PySide6.QtGui import QColor
 
 from warfare_simulation.services.campaign_service import EventRow
 
-_HEADERS = ["Turn", "Category", "Event", "Impact"]
-_FIELDS = ["turn", "category", "description", "impact"]
+_HEADERS = ["Date", "Turn", "Category", "Actor", "Target", "Source", "Event", "Cause", "Impact"]
+_FIELDS = ["date", "turn", "category", "actor", "target", "source_system", "description", "cause", "impact"]
 
 _CATEGORY_COLORS: dict[str, str] = {
     "Military":   "#c45f5f",
@@ -60,7 +60,7 @@ class EventTableModel(QAbstractTableModel):
             return QColor(hex_color)
 
         if role == Qt.ItemDataRole.TextAlignmentRole:
-            if field == "turn":
+            if field in {"date", "turn", "category", "source_system"}:
                 return int(Qt.AlignmentFlag.AlignCenter)
             return int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 

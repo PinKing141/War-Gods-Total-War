@@ -160,7 +160,7 @@ class MainWindow(QMainWindow):
         tabs.addTab(
             SortableTableView(
                 self._event_model,
-                resize_columns=[0, 1],
+                resize_columns=[0, 1, 2, 3, 4, 5],
                 stretch_last=True,
             ),
             "  Event Log  ",

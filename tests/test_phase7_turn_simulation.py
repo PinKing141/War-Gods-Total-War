@@ -320,3 +320,42 @@ def test_event_metadata_survives_restart_and_exports_causal_details(tmp_path):
     assert ws.max_column == 4
     assert "01/02/0001 | kingdom:1 → kingdom:1.treasury_silver" in ws["C2"].value
     assert "Cause: monthly_pulse → collect_monthly_net_income" in ws["C2"].value
+
+
+def test_daily_monthly_pulse_writes_causal_logs_and_summary(tmp_path):
+    """Monthly work reached through day ticks should be as auditable as advance_turn()."""
+    db_path = tmp_path / "phase10_daily_pulse_logs.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    for _ in range(31):
+        app.campaign.advance_day()
+
+    events = app.repos.event.get_by_turn(2)
+    audits = app.repos.audit_log.get_by_turn(2)
+    summaries = app.repos.turn_summary.get_by_turn(2)
+
+    assert any(event.source_system == "Economy" for event in events)
+    assert any(event.source_system == "Logistics" for event in events)
+    assert any("daily_scheduler" in event.cause_chain for event in events)
+    assert any(audit.system == "Economy" for audit in audits)
+    assert any(audit.system == "Logistics" for audit in audits)
+    assert summaries and summaries[-1].event_count == len(events)
+
+
+def test_dashboard_event_rows_expose_observer_causality_fields(tmp_path):
+    """The UI service should provide event-feed fields needed by the observatory."""
+    db_path = tmp_path / "phase10_dashboard_event_feed.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+
+    for _ in range(31):
+        app.campaign.advance_day()
+
+    row = service.get_events()[0]
+
+    assert row.date == "01/02/0001"
+    assert row.actor.startswith("kingdom:")
+    assert row.target
+    assert row.source_system in {"Economy", "Logistics"}
+    assert "daily_scheduler" in row.cause
+    assert row.impact
