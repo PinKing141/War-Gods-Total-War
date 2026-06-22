@@ -237,10 +237,10 @@ class CampaignService:
         """Return the timer interval for the current speed label."""
         mapping = {
             "paused": None,
-            "0.5x": 2000,
             "1x": 1000,
             "2x": 500,
-            "3x": 333,
+            "5x": 200,
+            "fast": 50,
         }
         return mapping[self._engine.game_state.simulation_speed]
 

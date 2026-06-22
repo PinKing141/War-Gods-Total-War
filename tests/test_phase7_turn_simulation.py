@@ -4,7 +4,8 @@ import sqlite3
 from pathlib import Path
 
 from warfare_simulation.app import WarfareSimulationApp
-from warfare_simulation.orchestration import GameState
+from warfare_simulation.orchestration import GameState, SimDate
+from warfare_simulation.services.campaign_service import CampaignService
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +21,18 @@ def test_game_state_advances_across_year_boundary():
     assert state.current_turn == 13
     assert state.current_month == 1
     assert state.current_year == 2
+
+
+def test_sim_date_formats_and_advances_as_canonical_calendar():
+    """SimDate should provide the canonical observer-facing calendar behavior."""
+    date = SimDate(day=28, month=2, year=4)
+
+    next_date, month_rolled = date.advance_day()
+
+    assert date.format() == "28/02/0004"
+    assert next_date == SimDate(day=29, month=2, year=4)
+    assert month_rolled is False
+    assert next_date.advance_day() == (SimDate(day=1, month=3, year=4), True)
 
 
 def test_game_state_advances_day_across_month_and_year_boundary():
@@ -50,6 +63,24 @@ def test_game_state_checkpoint_round_trip(tmp_path):
     restored = GameState.load_checkpoint(saved_path)
 
     assert restored == state
+
+
+def test_phase8_simulation_speeds_match_observer_controls(tmp_path):
+    """The supported speed labels should match the observer-pivot roadmap."""
+    db_path = tmp_path / "phase8_speeds.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+
+    for speed, expected_interval in {
+        "paused": None,
+        "1x": 1000,
+        "2x": 500,
+        "5x": 200,
+        "fast": 50,
+    }.items():
+        service.set_simulation_speed(speed)
+        assert service.get_simulation_status().simulation_speed == speed
+        assert service.get_speed_interval_ms() == expected_interval
 
 
 def test_advance_turn_persists_mutable_state_to_sqlite(tmp_path):
