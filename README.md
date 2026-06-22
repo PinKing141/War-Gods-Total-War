@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–6 Complete ✓ | Phase 7 (Turn Simulation) — In Progress
+> **Status**: Phases 1–7 Complete ✓ | Phase 8 (Observer Calendar) — Complete | Phase 9 (Pulse Scheduler) — Next
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Phase 8 — observer pivot stabilization and simulation-loop buildup.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Phase 9 — pulse scheduler and system cadence.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -155,12 +155,23 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Architecture documentation
 - [x] Extension examples
 
-### Phase 7: Turn Simulation
+### ✓ Phase 7: Runtime State (Complete)
 - [x] `CampaignOrchestrator.advance_turn()` updates campaign clock
 - [x] Kingdom economy applies monthly net income
 - [x] Logistics resources apply monthly net production
 - [x] `GameState` save/load checkpoints
 - [x] Persist advanced turn state back to SQLite
+
+### ✓ Phase 8: Observer Calendar (Complete)
+- [x] Canonical `SimDate` calendar model
+- [x] Day/month/year advancement and `DD/MM/YYYY` formatting
+- [x] Dashboard pause/resume plus `1x`, `2x`, `5x`, and `fast` speed controls
+- [x] Checkpoint round-trip for date and simulation speed
+
+### Phase 9: Pulse Scheduler
+- [ ] Add daily, weekly, monthly, seasonal, and yearly pulse boundaries
+- [ ] Prevent duplicate system execution at pulse boundaries
+- [ ] Preserve monthly economy/logistics totals through daily progression
 
 ## Usage Examples
 

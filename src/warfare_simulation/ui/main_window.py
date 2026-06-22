@@ -57,7 +57,7 @@ class _TickWorker(QObject):
 class MainWindow(QMainWindow):
     """Campaign observatory window backed only by the service layer."""
 
-    _SPEED_STEPS = ["0.5x", "1x", "2x", "3x"]
+    _SPEED_STEPS = ["1x", "2x", "5x", "fast"]
 
     def __init__(self, service: CampaignService, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
