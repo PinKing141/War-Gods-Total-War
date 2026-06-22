@@ -657,14 +657,14 @@ Save/load is core infrastructure, not polish.
 
 - `README.md`: quick start and project overview.
 - `MODULARIZATION_ROADMAP.md`: historical modularization/technical refactor plan.
-- `docs/RULES_FRAMEWORK.md`: enforceable campaign operating rules.
-- `docs/ARCHITECTURE.md`: architecture overview.
-- `docs/API.md`: public API reference.
-- `docs/EXTENDING.md`: how to add systems.
+- `../RULES_FRAMEWORK.md`: enforceable campaign operating rules.
+- `../ARCHITECTURE.md`: architecture overview.
+- `../API.md`: public API reference.
+- `../EXTENDING.md`: how to add systems.
 
 ### New docs to add over time
 
-- `docs/LIVING_CHRONICLE_ROADMAP.md`: this product/simulation roadmap.
+- `LIVING_CHRONICLE_ROADMAP.md`: this product/simulation roadmap.
 - `docs/SIMULATION_LOOP.md`: exact daily/monthly/yearly phase order.
 - `docs/EVENT_SCHEMA.md`: audit, dice, scheduled event, chronicle schemas.
 - `docs/FACTION_AI.md`: pressure/intent/personality rules.

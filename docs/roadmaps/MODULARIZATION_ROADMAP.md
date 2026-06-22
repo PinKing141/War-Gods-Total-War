@@ -27,7 +27,7 @@ The new target is a **synthetic-history simulation engine** that:
 4. Produces auditable, explainable history through logs and summaries.
 5. Exposes world state through workbook exports and the desktop observatory UI.
 
-This roadmap preserves completed work while redefining the upcoming phases around the observer model documented in [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md).
+This roadmap preserves completed work while redefining the upcoming phases around the observer model documented in [../RULES_FRAMEWORK.md](../RULES_FRAMEWORK.md).
 
 ---
 
@@ -272,15 +272,16 @@ Warfare Simulation/
 │   └── ...
 │
 ├── docs/                            # Documentation
+│   ├── roadmaps/                    # Planning and execution order docs
 │   ├── ARCHITECTURE.md              # Detailed architecture guide
 │   ├── EXTENDING.md                 # How to add new domains/systems
 │   └── API.md                       # Public API reference
 │
-├── MODULARIZATION_ROADMAP.md        # This file
+├── scripts/                         # Launchers and manual run helpers
+├── docs/roadmaps/MODULARIZATION_ROADMAP.md
 ├── README.md                        # Project overview, quick start
 ├── requirements.txt                 # Dependencies: openpyxl, pydantic, etc.
 ├── pyproject.toml                   # Package metadata
-├── setup.py                         # Installation configuration
 ├── .gitignore                       # Exclude generated files, DB, __pycache__
 │
 └── war_sim.db                       # (Generated at runtime) SQLite database
@@ -339,7 +340,7 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 1. Introduce a pulse scheduler in orchestration.
 2. Define per-pulse hooks for domain services.
 3. Implement daily, weekly, monthly, seasonal, and yearly execution boundaries.
-4. Add deterministic ordering for all pulse types, aligned with [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md).
+4. Add deterministic ordering for all pulse types, aligned with [../RULES_FRAMEWORK.md](../RULES_FRAMEWORK.md).
 5. Add focused tests for pulse boundaries and duplicate-run prevention.
 
 **Deliverables**:

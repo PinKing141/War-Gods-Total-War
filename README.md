@@ -24,6 +24,16 @@ pip install -r requirements.txt
 python src/warfare_simulation/main.py
 ```
 
+### Run Desktop Observatory
+```bash
+python scripts/run_ui.py
+```
+
+### Export Workbook Directly
+```bash
+python scripts/run_export.py
+```
+
 This will:
 1. Initialize the campaign from JSON configs
 2. Create/populate SQLite database
@@ -72,6 +82,14 @@ Export Layer (SheetGenerators, WorkbookFactory)
 ## Project Structure
 
 ```
+docs/
+├── roadmaps/            # Ordered planning docs and build sequence
+├── ARCHITECTURE.md      # Architecture overview
+├── API.md               # Public API reference
+├── EXTENDING.md         # System extension guide
+└── RULES_FRAMEWORK.md   # Observer-sim rules contract
+
+scripts/                 # Preferred runnable entrypoints
 src/warfare_simulation/
 ├── core/              # Shared abstractions (base classes, constants, exceptions)
 ├── config/            # Configuration management & JSON data files
@@ -83,12 +101,11 @@ src/warfare_simulation/
 └── main.py            # CLI entry point
 
 tests/                 # Unit & integration tests
-docs/                  # Architecture and API documentation
 ```
 
 ## Roadmap
 
-See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 6 — verification, documentation, and deliberate monolith retirement.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Phase 8 — observer pivot stabilization and simulation-loop buildup.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -203,18 +220,23 @@ flake8 src/
 
 ## Documentation
 
-- [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) — Detailed modularization and turn-simulation plan
-- [docs/LIVING_CHRONICLE_ROADMAP.md](docs/LIVING_CHRONICLE_ROADMAP.md) — Product roadmap for the no-player-agency Living Chronicle Simulator direction
+- [docs/roadmaps/README.md](docs/roadmaps/README.md) — Linear roadmap reading order and execution priority
+- [docs/roadmaps/MODULARIZATION_ROADMAP.md](docs/roadmaps/MODULARIZATION_ROADMAP.md) — Detailed technical roadmap and implementation history
+- [docs/roadmaps/LIVING_CHRONICLE_ROADMAP.md](docs/roadmaps/LIVING_CHRONICLE_ROADMAP.md) — Product roadmap for the no-player-agency Living Chronicle Simulator direction
+- [docs/roadmaps/CONTENT_ROADMAP.md](docs/roadmaps/CONTENT_ROADMAP.md) — Parked content-expansion backlog
 - [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md) — Spreadsheet-first campaign operating rules
-- `docs/ARCHITECTURE.md` — Architecture deep-dive (Phase 6)
-- `docs/EXTENDING.md` — How to add new systems (Phase 6)
-- `docs/API.md` — Public API reference (Phase 6)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Architecture deep-dive (Phase 6)
+- [docs/EXTENDING.md](docs/EXTENDING.md) — How to add new systems (Phase 6)
+- [docs/API.md](docs/API.md) — Public API reference (Phase 6)
+- [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) — Repository layout and folder rules
 
 ## Key Files
 
-- [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) — Complete technical modularization roadmap with code examples
-- [docs/LIVING_CHRONICLE_ROADMAP.md](docs/LIVING_CHRONICLE_ROADMAP.md) — Full product roadmap for the autonomous historical chronicle simulator
+- [docs/roadmaps/MODULARIZATION_ROADMAP.md](docs/roadmaps/MODULARIZATION_ROADMAP.md) — Complete technical modularization roadmap with code examples
+- [docs/roadmaps/LIVING_CHRONICLE_ROADMAP.md](docs/roadmaps/LIVING_CHRONICLE_ROADMAP.md) — Full product roadmap for the autonomous historical chronicle simulator
 - [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md) — Enforceable campaign rules framework
+- [scripts/run_ui.py](scripts/run_ui.py) — Preferred desktop observatory launcher
+- [scripts/run_export.py](scripts/run_export.py) — Preferred export launcher
 - [src/warfare_simulation/core/base.py](src/warfare_simulation/core/base.py) — Abstract base classes
 - [src/warfare_simulation/core/constants.py](src/warfare_simulation/core/constants.py) — Enums and constants
 - [src/warfare_simulation/core/exceptions.py](src/warfare_simulation/core/exceptions.py) — Exception hierarchy
