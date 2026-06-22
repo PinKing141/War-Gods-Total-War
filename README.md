@@ -204,6 +204,7 @@ flake8 src/
 ## Documentation
 
 - [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) — Detailed modularization and turn-simulation plan
+- [docs/LIVING_CHRONICLE_ROADMAP.md](docs/LIVING_CHRONICLE_ROADMAP.md) — Product roadmap for the no-player-agency Living Chronicle Simulator direction
 - [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md) — Spreadsheet-first campaign operating rules
 - `docs/ARCHITECTURE.md` — Architecture deep-dive (Phase 6)
 - `docs/EXTENDING.md` — How to add new systems (Phase 6)
@@ -211,7 +212,8 @@ flake8 src/
 
 ## Key Files
 
-- [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) — Complete roadmap with code examples
+- [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) — Complete technical modularization roadmap with code examples
+- [docs/LIVING_CHRONICLE_ROADMAP.md](docs/LIVING_CHRONICLE_ROADMAP.md) — Full product roadmap for the autonomous historical chronicle simulator
 - [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md) — Enforceable campaign rules framework
 - [src/warfare_simulation/core/base.py](src/warfare_simulation/core/base.py) — Abstract base classes
 - [src/warfare_simulation/core/constants.py](src/warfare_simulation/core/constants.py) — Enums and constants
