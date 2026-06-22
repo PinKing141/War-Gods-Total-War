@@ -291,6 +291,28 @@ class DatabaseManager:
                 )
             """)
             
+
+
+            self.execute("""
+                CREATE TABLE IF NOT EXISTS observer_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    turn INTEGER NOT NULL,
+                    day INTEGER NOT NULL,
+                    month INTEGER NOT NULL,
+                    year INTEGER NOT NULL,
+                    stream TEXT NOT NULL,
+                    actor TEXT NOT NULL,
+                    target TEXT NOT NULL,
+                    source_system TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    details TEXT,
+                    source_event_id INTEGER,
+                    source_audit_id INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(source_event_id) REFERENCES event(id),
+                    FOREIGN KEY(source_audit_id) REFERENCES audit_log(id)
+                )
+            """)
             self.execute("""
                 CREATE TABLE IF NOT EXISTS migration (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

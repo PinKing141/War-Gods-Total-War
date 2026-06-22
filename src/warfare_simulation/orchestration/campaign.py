@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from warfare_simulation.core.constants import EventCategory
-from warfare_simulation.domain.events.models import AuditLog, Event, TurnSummary
+from warfare_simulation.domain.events.models import AuditLog, Event, ObserverLog, TurnSummary
 from warfare_simulation.export.workbook_factory import WorkbookFactory
 from warfare_simulation.orchestration.game_state import GameState
 from warfare_simulation.orchestration.pulse_scheduler import PulseReport, PulseScheduler
@@ -108,6 +108,23 @@ class CampaignOrchestrator:
                             reason="Monthly economy pulse reached by daily scheduler.",
                         )
                     )
+                self._write_observer_log(
+                    stream="economics",
+                    turn=kingdom.current_turn,
+                    day=kingdom.current_day,
+                    month=kingdom.current_month,
+                    year=kingdom.current_year,
+                    actor=f"kingdom:{kingdom.id}",
+                    target=f"kingdom:{kingdom.id}.treasury_silver",
+                    source_system="Economy",
+                    summary=f"{kingdom.name} treasury changed from {previous_treasury} to {kingdom.treasury_silver} silver.",
+                    details={
+                        "previous_treasury": previous_treasury,
+                        "new_treasury": kingdom.treasury_silver,
+                        "monthly_income": kingdom.monthly_income,
+                        "monthly_expenses": kingdom.monthly_expenses,
+                    },
+                )
                 if event_repo is not None:
                     event_repo.create(
                         Event(
@@ -160,6 +177,23 @@ class CampaignOrchestrator:
                             reason="Monthly logistics pulse reached by daily scheduler.",
                         )
                     )
+                self._write_observer_log(
+                    stream="logistics",
+                    turn=self.game_state.current_turn,
+                    day=self.game_state.current_day,
+                    month=self.game_state.current_month,
+                    year=self.game_state.current_year,
+                    actor=f"kingdom:{resource.kingdom_id}",
+                    target=f"resource:{resource.id}.stored",
+                    source_system="Logistics",
+                    summary=f"Resource {resource.id} stockpile changed from {previous_stored} to {resource.stored}.",
+                    details={
+                        "previous_stored": previous_stored,
+                        "new_stored": resource.stored,
+                        "monthly_production": resource.monthly_production,
+                        "monthly_consumption": resource.monthly_consumption,
+                    },
+                )
                 if event_repo is not None:
                     event_repo.create(
                         Event(
@@ -227,6 +261,23 @@ class CampaignOrchestrator:
                         reason="Monthly income minus expenses during turn advancement.",
                     )
                 )
+            self._write_observer_log(
+                stream="economics",
+                turn=kingdom.current_turn,
+                day=kingdom.current_day,
+                month=kingdom.current_month,
+                year=kingdom.current_year,
+                actor=f"kingdom:{kingdom.id}",
+                target=f"kingdom:{kingdom.id}.treasury_silver",
+                source_system="Economy",
+                summary=f"{kingdom.name} treasury changed from {previous_treasury} to {kingdom.treasury_silver} silver.",
+                details={
+                    "previous_treasury": previous_treasury,
+                    "new_treasury": kingdom.treasury_silver,
+                    "monthly_income": kingdom.monthly_income,
+                    "monthly_expenses": kingdom.monthly_expenses,
+                },
+            )
             if event_repo is not None:
                 event_repo.create(
                     Event(
@@ -278,6 +329,23 @@ class CampaignOrchestrator:
                             reason="Monthly production minus consumption during turn advancement.",
                         )
                     )
+                self._write_observer_log(
+                    stream="logistics",
+                    turn=self.game_state.current_turn + 1,
+                    day=1,
+                    month=(self.game_state.current_month % 12) + 1,
+                    year=self.game_state.current_year + (1 if self.game_state.current_month == 12 else 0),
+                    actor=f"kingdom:{resource.kingdom_id}",
+                    target=f"resource:{resource.id}.stored",
+                    source_system="Logistics",
+                    summary=f"Resource {resource.id} stockpile changed from {previous_stored} to {resource.stored}.",
+                    details={
+                        "previous_stored": previous_stored,
+                        "new_stored": resource.stored,
+                        "monthly_production": resource.monthly_production,
+                        "monthly_consumption": resource.monthly_consumption,
+                    },
+                )
 
         if kingdoms:
             self.game_state.sync_from_kingdom(kingdoms[0])
@@ -286,6 +354,43 @@ class CampaignOrchestrator:
 
         self._write_turn_summary()
         return self.game_state
+
+    def _write_observer_log(
+        self,
+        *,
+        stream: str,
+        turn: int,
+        day: int,
+        month: int,
+        year: int,
+        actor: str,
+        target: str,
+        source_system: str,
+        summary: str,
+        details: dict[str, Any],
+        source_event_id: int | None = None,
+        source_audit_id: int | None = None,
+    ) -> ObserverLog | None:
+        """Write a domain-specific observer log if the repository is available."""
+        observer_repo = self.repos.get("observer_log")
+        if observer_repo is None:
+            return None
+        return observer_repo.create(
+            ObserverLog(
+                turn=turn,
+                day=day,
+                month=month,
+                year=year,
+                stream=stream,
+                actor=actor,
+                target=target,
+                source_system=source_system,
+                summary=summary,
+                details=details,
+                source_event_id=source_event_id,
+                source_audit_id=source_audit_id,
+            )
+        )
 
     def _write_turn_summary(self) -> TurnSummary | None:
         """Create an auditable high-level summary for the completed turn."""

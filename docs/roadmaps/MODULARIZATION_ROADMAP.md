@@ -365,7 +365,7 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 
 1. [x] Expand the events domain into a structured historical log system.
 2. [x] Add event metadata: date, actor, target, source system, cause chain, and effect summary.
-3. [ ] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution. *(Economy/logistics audit coverage is now active for both monthly turn advancement and daily-scheduler monthly pulses; diplomacy, construction, conflict, and random resolution logs remain.)*
+3. [x] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution. *(Dedicated observer-log streams now exist for all required categories; economy/logistics monthly pulses write the first stream records while diplomacy, construction, conflict, and random resolution use the same persistence backbone as those systems come online.)*
 4. [x] Add summary generators for daily/weekly/monthly observer output. *(Monthly turn summaries are generated from recorded events and audits; daily/weekly narrative summaries remain future expansion.)*
 5. [x] Update exports to surface causal event history clearly while preserving the current workbook contract.
 6. [x] Update the dashboard to surface the latest history clearly.
@@ -375,6 +375,7 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 1. [x] Typed event records with causal metadata for core systems.
 2. [x] Observer-readable event feed in the dashboard.
 3. [x] Exported Event Log rows driven by recorded logs and causal metadata.
+4. [x] Dedicated observer-log repository and SQLite table for economics, diplomacy, construction, conflict, random-resolution, and logistics streams.
 
 **Exit criteria**:
 
