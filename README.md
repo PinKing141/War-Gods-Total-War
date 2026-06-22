@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–8 Complete ✓ | Phase 9 (Pulse Scheduler) — Next
+> **Status**: Phases 1–9 Complete ✓ | Phase 10 (Observer Logs) — Next
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ docs/                  # Architecture and API documentation
 
 ## Roadmap
 
-See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 9 — pulse scheduler and deterministic system cadence.**
+See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Current focus: **Phase 10 — observer logs and causality backbone.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -152,10 +152,16 @@ See [MODULARIZATION_ROADMAP.md](MODULARIZATION_ROADMAP.md) for the full plan. Cu
 - [x] Dashboard pause/resume and speed controls aligned with engine state
 - [x] Checkpoint round-trip for exact date and speed state
 
-### Phase 9: Pulse Scheduler (Next)
-- [ ] Daily, weekly, monthly, seasonal, and yearly pulse boundaries
-- [ ] Registered per-domain pulse hooks
-- [ ] Duplicate-run prevention for boundary systems
+### ✓ Phase 9: Pulse Scheduler (Complete)
+- [x] Daily, weekly, monthly, seasonal, and yearly pulse boundaries
+- [x] Registered per-domain pulse hooks
+- [x] Duplicate-run prevention for boundary systems
+- [x] Monthly economy/logistics still resolve exactly once during daily progression
+
+### Phase 10: Observer Logs and Causality Backbone (Next)
+- [ ] Structured event metadata for actor, target, source system, causes, and effects
+- [ ] Dedicated observer summaries for daily, weekly, and monthly history
+- [ ] Export/dashboard surfaces for richer historical logs
 
 ## Usage Examples
 

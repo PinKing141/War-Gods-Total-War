@@ -3,7 +3,7 @@
 **Document Version**: 1.0  
 **Last Updated**: 2026-06-22  
 **Strategic Direction**: Autonomous Historical Chronicle Simulator  
-**Current Codebase Status**: Modular campaign foundation complete; early turn simulation in progress
+**Current Codebase Status**: Modular campaign foundation, calendar engine, and pulse scheduler complete
 
 ---
 
@@ -67,8 +67,9 @@ The repository already has a strong modular foundation:
 - SQLite runtime persistence and repository hydration.
 - Workbook export with dashboard, provinces, resources, army, commanders, diplomacy, logistics, and event sheets.
 - A thin application layer that loads config, seeds SQLite, hydrates repositories, and exports the campaign workbook.
-- Early `CampaignOrchestrator.advance_turn()` support for monthly clock progression, kingdom economy, resource advancement, and persisted turn state.
-- Tests covering domain behavior, config/persistence, export parity, application startup/export, checkpointing, and persisted turn advancement.
+- Calendar-backed daily advancement with deterministic daily, weekly, monthly, seasonal, and yearly pulse boundaries.
+- Monthly kingdom economy, resource advancement, persisted turn state, audits, and summaries are executed through registered pulse hooks during day-by-day progression.
+- Tests covering domain behavior, config/persistence, export parity, application startup/export, checkpointing, persisted turn advancement, and pulse scheduling.
 
 ### Existing systems to preserve
 
@@ -84,8 +85,8 @@ The repository already has a strong modular foundation:
 ### Existing gaps to plan around
 
 - The world has state but not autonomous will.
-- `advance_turn()` currently handles only clock/economy/resources.
-- There is no event scheduler/day-tick queue.
+- Autonomous decisions still need to move onto the pulse scheduler.
+- Event scheduling exists as pulse boundaries, but no action queue or delayed event queue exists yet.
 - There is no full audit/dice log schema.
 - Battle resolution is documented but not implemented.
 - Movement is mostly a stored location, not a route/time/supply process.

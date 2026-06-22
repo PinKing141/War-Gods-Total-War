@@ -2,7 +2,7 @@
 
 **Document Version**: 2.0  
 **Last Updated**: 2026-06-22
-**Status**: Calendar Engine Complete; Pulse Scheduler Next
+**Status**: Pulse Scheduler Complete; Observer Logs Next
 
 ---
 
@@ -43,7 +43,8 @@ This roadmap preserves completed work while redefining the upcoming phases aroun
 | 6 — Verification & Docs | ✓ Complete | Tests, architecture docs, API docs, extension docs |
 | 7 — Runtime State | ✓ Complete | Kingdom/resource persistence, checkpoints, startup state hydration |
 | 8 — Calendar and Time Engine | ✓ Complete | Canonical `SimDate`, daily advancement, roadmap speed states, UI speed controls, checkpoints |
-| 9 — Pulse Scheduler | → Current | Daily/weekly/monthly/seasonal/yearly pulse boundaries and registered hooks are next |
+| 9 — Pulse Scheduler | ✓ Complete | Deterministic pulse boundaries, duplicate hook prevention, monthly domain hooks, placeholder higher-cadence hooks |
+| 10 — Observer Logs and Causality Backbone | → Current | Typed event metadata and richer observer history are next |
 
 **Reference implementation**: `campaign_engine_initialiser.py` remains deprecated. It is now only a historical export reference, not a target design for future behavior.
 
@@ -331,29 +332,29 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 2. [x] The UI shows the live in-world date.
 3. [x] Checkpoint load resumes from the exact stored date.
 
-### Phase 9: Pulse Scheduler and System Cadence (Estimated: 2-3 weeks)
+### ✓ Phase 9: Pulse Scheduler and System Cadence (Complete)
 
 **Goal**: Create the engine loop that schedules daily, weekly, monthly, seasonal, and yearly work without entangling domain code.
 
 **Tasks**:
 
-1. Introduce a pulse scheduler in orchestration.
-2. Define per-pulse hooks for domain services.
-3. Implement daily, weekly, monthly, seasonal, and yearly execution boundaries.
-4. Add deterministic ordering for all pulse types, aligned with [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md).
-5. Add focused tests for pulse boundaries and duplicate-run prevention.
+1. [x] Introduce a pulse scheduler in orchestration.
+2. [x] Define per-pulse hooks for domain services.
+3. [x] Implement daily, weekly, monthly, seasonal, and yearly execution boundaries.
+4. [x] Add deterministic ordering for all pulse types, aligned with [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md).
+5. [x] Add focused tests for pulse boundaries and duplicate-run prevention.
 
 **Deliverables**:
 
-1. `advance_day()` orchestration path.
-2. Registered pulse hooks for all existing domains.
-3. Verified monthly and yearly boundary behavior.
+1. [x] `advance_day()` orchestration path.
+2. [x] Registered pulse hooks for all existing domains.
+3. [x] Verified monthly and yearly boundary behavior.
 
 **Exit criteria**:
 
-1. No system executes twice at the same boundary.
-2. Monthly economy and logistics still match expected totals after daily progression.
-3. Year transitions are deterministic and tested.
+1. [x] No system executes twice at the same boundary.
+2. [x] Monthly economy and logistics still match expected totals after daily progression.
+3. [x] Year transitions are deterministic and tested.
 
 ### Phase 10: Observer Logs and Causality Backbone (Estimated: 2-3 weeks)
 
