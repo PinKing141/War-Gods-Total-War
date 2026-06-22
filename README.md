@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–7 Complete ✓ | Phase 8 (Observer Calendar) — Complete | Phase 9 (Pulse Scheduler) — Next
+> **Status**: Phases 1–8 Complete ✓ | Phase 9 (Pulse Scheduler) — In Progress
 
 ## Quick Start
 
@@ -169,9 +169,9 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Checkpoint round-trip for date and simulation speed
 
 ### Phase 9: Pulse Scheduler
-- [ ] Add daily, weekly, monthly, seasonal, and yearly pulse boundaries
-- [ ] Prevent duplicate system execution at pulse boundaries
-- [ ] Preserve monthly economy/logistics totals through daily progression
+- [x] Add daily, weekly, monthly, seasonal, and yearly pulse boundaries
+- [x] Prevent duplicate system execution at pulse boundaries
+- [x] Preserve monthly economy/logistics totals through daily progression
 
 ## Usage Examples
 

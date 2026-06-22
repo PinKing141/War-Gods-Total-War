@@ -239,3 +239,57 @@ def test_rehydrated_repositories_include_turn_summaries(tmp_path):
     assert summary.event_count == 1
     assert summary.audit_count == 5
     assert "Logistics resolved 4 resource update(s)." in summary.narrative
+
+
+def test_pulse_scheduler_reports_ordered_boundaries_once():
+    """Scheduler should emit ordered pulse boundaries without duplicates."""
+    from warfare_simulation.orchestration import PulseScheduler
+
+    scheduler = PulseScheduler()
+    calls = []
+    for pulse in ("daily", "weekly", "monthly", "seasonal", "yearly"):
+        scheduler.register(pulse, lambda date, pulse=pulse: calls.append((pulse, date.format())))
+
+    previous_date = SimDate(day=31, month=12, year=1)
+    current_date = SimDate(day=1, month=1, year=2)
+
+    report = scheduler.run_due_pulses(previous_date, current_date)
+    duplicate_report = scheduler.run_due_pulses(previous_date, current_date)
+
+    assert report.pulses == ("daily", "monthly", "seasonal", "yearly")
+    assert duplicate_report.pulses == ()
+    assert calls == [
+        ("daily", "01/01/0002"),
+        ("monthly", "01/01/0002"),
+        ("seasonal", "01/01/0002"),
+        ("yearly", "01/01/0002"),
+    ]
+
+
+def test_advance_day_records_weekly_monthly_seasonal_and_yearly_pulses(tmp_path):
+    """Daily orchestration should expose the scheduler pulse report for boundaries."""
+    db_path = tmp_path / "phase9_pulses.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    for _ in range(6):
+        app.campaign.advance_day()
+    assert app.campaign.last_pulse_report.pulses == ("daily", "weekly")
+
+    for _ in range(24):
+        app.campaign.advance_day()
+    assert app.campaign.last_pulse_report.pulses == ("daily",)
+
+    app.campaign.advance_day()
+    assert app.campaign.last_pulse_report.pulses == ("daily", "monthly")
+
+    kingdom = app.repos.kingdom.get_current_kingdom()
+    kingdom.current_day = 31
+    kingdom.current_month = 12
+    kingdom.current_year = 1
+    kingdom.current_turn = 12
+    app.repos.kingdom.update(kingdom)
+    app.game_state.sync_from_kingdom(kingdom)
+    app.campaign.advance_day()
+
+    assert app.campaign.last_pulse_report.pulses == ("daily", "monthly", "seasonal", "yearly")
+    assert app.game_state.formatted_date() == "01/01/0002"
