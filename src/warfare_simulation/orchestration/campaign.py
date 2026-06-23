@@ -5,6 +5,7 @@ from typing import Any, Mapping
 
 from warfare_simulation.core.constants import EventCategory
 from warfare_simulation.domain.events.models import AuditLog, Event, ObserverLog, TurnSummary
+from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
 from warfare_simulation.export.workbook_factory import WorkbookFactory
 from warfare_simulation.orchestration.game_state import GameState
 from warfare_simulation.orchestration.pulse_scheduler import PulseReport, PulseScheduler
@@ -17,6 +18,7 @@ class CampaignOrchestrator:
         self.repos = dict(repos)
         self.game_state = game_state or GameState()
         self.pulse_scheduler = PulseScheduler()
+        self.summary_generator = ObserverSummaryGenerator()
         self.last_pulse_report: PulseReport | None = None
         self._register_pulse_hooks()
         self._sync_game_state_from_repos()
@@ -400,32 +402,17 @@ class CampaignOrchestrator:
 
         event_repo = self.repos.get("event")
         audit_repo = self.repos.get("audit_log")
+        observer_repo = self.repos.get("observer_log")
         events = event_repo.get_by_turn(self.game_state.current_turn) if event_repo is not None else []
         audits = audit_repo.get_by_turn(self.game_state.current_turn) if audit_repo is not None else []
-        highlights = [event.description for event in events[:3]]
-        if not highlights:
-            highlights = ["No major campaign events were recorded."]
+        observer_logs = observer_repo.get_by_turn(self.game_state.current_turn) if observer_repo is not None else []
 
-        economy_audits = [audit for audit in audits if audit.system == "Economy"]
-        logistics_audits = [audit for audit in audits if audit.system == "Logistics"]
-        narrative_parts = [
-            f"Turn {self.game_state.current_turn} closed in month {self.game_state.current_month}, year {self.game_state.current_year}.",
-            f"Recorded {len(events)} event(s) and {len(audits)} auditable state change(s).",
-        ]
-        if economy_audits:
-            narrative_parts.append(f"Economy resolved {len(economy_audits)} treasury update(s).")
-        if logistics_audits:
-            narrative_parts.append(f"Logistics resolved {len(logistics_audits)} resource update(s).")
-
-        return summary_repo.create(
-            TurnSummary(
-                turn=self.game_state.current_turn,
-                month=self.game_state.current_month,
-                year=self.game_state.current_year,
-                title=f"Turn {self.game_state.current_turn} Summary",
-                narrative=" ".join(narrative_parts),
-                event_count=len(events),
-                audit_count=len(audits),
-                highlights=highlights,
-            )
+        summary = self.summary_generator.generate_monthly(
+            month=self.game_state.current_month,
+            year=self.game_state.current_year,
+            turn=self.game_state.current_turn,
+            events=events,
+            audits=audits,
+            observer_logs=observer_logs,
         )
+        return summary_repo.create(self.summary_generator.to_turn_summary(summary))

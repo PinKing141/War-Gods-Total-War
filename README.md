@@ -178,8 +178,8 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Persist and rehydrate event metadata through SQLite
 - [x] Surface observer-readable causal details in the Event Log export without breaking legacy workbook shape
 - [x] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution
-- [ ] Add summary generators for daily/weekly/monthly observer output
-- [ ] Update dashboard event feed for long-run readability
+- [x] Add summary generators for daily/weekly/monthly observer output
+- [x] Update dashboard event feed for long-run readability
 
 ## Usage Examples
 

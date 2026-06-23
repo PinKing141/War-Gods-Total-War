@@ -382,3 +382,37 @@ def test_phase10_dedicated_observer_logs_persist_by_stream(tmp_path):
     assert len(restarted.repos.observer_log.get_by_stream("logistics")) == len(logistics_logs)
     assert rehydrated[0].summary
     assert "new_" in " ".join(rehydrated[0].details.keys())
+
+
+def test_observer_summary_generator_builds_daily_weekly_monthly_views(tmp_path):
+    """The observer layer should expose readable daily/weekly/monthly summaries."""
+    db_path = tmp_path / "phase10_observer_summaries.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+
+    app.campaign.advance_turn()
+    summaries = service.get_observer_summaries()
+
+    assert [summary.period for summary in summaries] == ["daily", "weekly", "monthly"]
+    monthly = summaries[-1]
+    assert monthly.event_count == 1
+    assert monthly.audit_count == 5
+    assert monthly.observer_log_count == 5
+    assert "Active streams: economics, logistics." in monthly.narrative
+    assert "The Dominion of Auster collected monthly net income." in monthly.highlights
+
+
+def test_event_feed_limits_recent_rows_for_long_run_readability(tmp_path):
+    """Long observer runs should not force the dashboard event feed to render everything."""
+    db_path = tmp_path / "phase10_event_feed_limit.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+
+    for _ in range(3):
+        app.campaign.advance_turn()
+
+    rows = service.get_events(limit=2)
+
+    assert len(rows) == 2
+    assert rows[0].turn == 4
+    assert rows[1].turn == 3
