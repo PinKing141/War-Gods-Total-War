@@ -83,6 +83,7 @@ class EventCategory(Enum):
     LOGISTICS = "Logistics"
     NATURAL = "Natural"
     INTRIGUE = "Intrigue"
+    POLITICS = "Politics"
 
 
 # ============================================================================
