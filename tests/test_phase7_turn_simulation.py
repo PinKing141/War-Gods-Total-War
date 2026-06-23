@@ -833,3 +833,20 @@ def test_phase8_observer_dashboard_chronicle_rows_are_ui_ready(tmp_path):
     assert all(isinstance(row.turn, int) for row in rows)
     assert any("event(s)" in row.narrative for row in rows)
     assert all(isinstance(row.highlights, str) for row in rows)
+
+
+def test_phase8_observer_dashboard_army_rows_are_ui_ready(tmp_path):
+    """Living Chronicle Phase 8 should expose army inspector rows for the observer dashboard."""
+    db_path = tmp_path / "phase8_army_dashboard.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+
+    rows = service.get_armies()
+
+    assert rows
+    assert all(row.name for row in rows)
+    assert all(row.location for row in rows)
+    assert all(row.commander for row in rows)
+    assert all(row.strength == row.soldiers + row.veterans for row in rows)
+    assert all(0 <= row.morale <= 100 for row in rows)
+    assert all(0 <= row.fatigue <= 100 for row in rows)
