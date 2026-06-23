@@ -793,7 +793,7 @@ Scope:
 
 Exit criteria:
 
-- Army arrival, spy mission, harvest event, and monthly report can occur on different days within the same month. ◐ Generic scheduled-event queue and SQLite reload path implemented; domain-specific resolvers remain.
+- Army arrival, spy mission, harvest event, and monthly report can occur on different days within the same month. ✓ Initial domain-specific resolvers implemented
 
 ### Phase 3 — Faction AI v1
 

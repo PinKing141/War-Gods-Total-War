@@ -591,3 +591,72 @@ def test_scheduled_events_persist_to_sqlite_and_reload(tmp_path):
         ).fetchone()[0]
 
     assert status == "completed"
+
+
+def test_phase2_scheduler_resolves_domain_events_on_distinct_days(tmp_path):
+    """Roadmap Phase 2 domain events should resolve on independent in-month dates."""
+    from warfare_simulation.orchestration import ScheduledEvent
+
+    db_path = tmp_path / "phase2_domain_scheduled_events.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    for event in (
+        ScheduledEvent(
+            id="arrival-001",
+            due_date=SimDate(day=2, month=1, year=1),
+            event_type="army_arrival",
+            actor="army:1",
+            target="province:2",
+            payload={"route": ["province:1", "province:2"]},
+        ),
+        ScheduledEvent(
+            id="spy-001",
+            due_date=SimDate(day=3, month=1, year=1),
+            event_type="spy_mission",
+            actor="spy:1",
+            target="faction:2",
+            payload={"difficulty": 40, "result": "rumor_confirmed"},
+        ),
+        ScheduledEvent(
+            id="harvest-001",
+            due_date=SimDate(day=4, month=1, year=1),
+            event_type="harvest",
+            actor="province:1",
+            target="kingdom:1",
+            payload={"grain": 25},
+        ),
+        ScheduledEvent(
+            id="report-001",
+            due_date=SimDate(day=5, month=1, year=1),
+            event_type="monthly_report",
+            actor="scribe:1",
+            target="kingdom:1",
+            payload={"report": "midmonth ledgers"},
+        ),
+    ):
+        app.campaign.schedule_event(event)
+
+    for _ in range(4):
+        app.campaign.advance_day()
+
+    events = app.repos.event.list_all()
+    observer_logs = app.repos.observer_log.list_all()
+
+    assert [row.event_type for row in app.campaign.last_pulse_report.scheduled_events] == [
+        "monthly_report"
+    ]
+    assert [
+        (event.day, event.source_system, event.actor, event.target)
+        for event in events
+        if event.source_system.startswith("ScheduledEvent.")
+    ] == [
+        (2, "ScheduledEvent.ArmyArrival", "army:1", "province:2"),
+        (3, "ScheduledEvent.SpyMission", "spy:1", "faction:2"),
+        (4, "ScheduledEvent.Harvest", "province:1", "kingdom:1"),
+        (5, "ScheduledEvent.MonthlyReport", "scribe:1", "kingdom:1"),
+    ]
+    assert [
+        log.details["scheduled_event_id"]
+        for log in observer_logs
+        if log.source_system.startswith("ScheduledEvent.")
+    ] == ["arrival-001", "spy-001", "harvest-001", "report-001"]

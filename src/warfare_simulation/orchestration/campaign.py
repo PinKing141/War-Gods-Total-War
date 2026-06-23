@@ -32,6 +32,16 @@ class CampaignOrchestrator:
         self.pulse_scheduler.register("monthly", self._resolve_monthly_economy_and_logistics)
         self.pulse_scheduler.register("monthly", self._resolve_monthly_faction_intents)
         self.pulse_scheduler.register("monthly", self._write_monthly_turn_summary)
+        self.pulse_scheduler.register_scheduled_event_hook(
+            "army_arrival", self._resolve_army_arrival_event
+        )
+        self.pulse_scheduler.register_scheduled_event_hook(
+            "spy_mission", self._resolve_spy_mission_event
+        )
+        self.pulse_scheduler.register_scheduled_event_hook("harvest", self._resolve_harvest_event)
+        self.pulse_scheduler.register_scheduled_event_hook(
+            "monthly_report", self._resolve_monthly_report_event
+        )
 
     def _sync_game_state_from_repos(self) -> None:
         """Initialize the shared game clock from persisted kingdom state when available."""
@@ -337,6 +347,139 @@ class CampaignOrchestrator:
     def _write_monthly_turn_summary(self, _date: Any) -> None:
         """Persist the monthly observer summary after all monthly hooks run."""
         self._write_turn_summary()
+
+    def _resolve_army_arrival_event(self, event: Any, date: Any) -> None:
+        """Record an army arrival as a military scheduled-event outcome."""
+        route = event.payload.get("route", [])
+        route_note = f" after route {' -> '.join(route)}" if route else ""
+        self._record_scheduled_event_resolution(
+            event=event,
+            date=date,
+            category=EventCategory.MILITARY,
+            stream="conflict",
+            source_system="ScheduledEvent.ArmyArrival",
+            action="resolve_army_arrival",
+            summary=f"{event.actor} arrived at {event.target}{route_note}.",
+            impact="Army location became publicly observable through the scheduled event queue.",
+        )
+
+    def _resolve_spy_mission_event(self, event: Any, date: Any) -> None:
+        """Record a spy mission completion as an intrigue scheduled-event outcome."""
+        result = event.payload.get("result", "completed")
+        difficulty = event.payload.get("difficulty", "unknown")
+        self._record_scheduled_event_resolution(
+            event=event,
+            date=date,
+            category=EventCategory.INTRIGUE,
+            stream="diplomacy",
+            source_system="ScheduledEvent.SpyMission",
+            action="resolve_spy_mission",
+            summary=(
+                f"{event.actor} completed a spy mission against {event.target} "
+                f"with result {result} and difficulty {difficulty}."
+            ),
+            impact="Spy mission outcome was logged for observer-facing intelligence history.",
+        )
+
+    def _resolve_harvest_event(self, event: Any, date: Any) -> None:
+        """Record a harvest as a natural/logistics scheduled-event outcome."""
+        grain = event.payload.get("grain", event.payload.get("food", "unmeasured"))
+        self._record_scheduled_event_resolution(
+            event=event,
+            date=date,
+            category=EventCategory.NATURAL,
+            stream="logistics",
+            source_system="ScheduledEvent.Harvest",
+            action="resolve_harvest",
+            summary=f"{event.actor} delivered a harvest for {event.target}: {grain} grain.",
+            impact="Harvest timing became a dated logistics input instead of a monthly abstraction.",
+        )
+
+    def _resolve_monthly_report_event(self, event: Any, date: Any) -> None:
+        """Record a monthly report scheduled for a specific in-world day."""
+        self._record_scheduled_event_resolution(
+            event=event,
+            date=date,
+            category=EventCategory.SYSTEM,
+            stream="system",
+            source_system="ScheduledEvent.MonthlyReport",
+            action="resolve_monthly_report",
+            summary=f"{event.actor} issued a scheduled monthly report for {event.target}.",
+            impact="Monthly reporting can now be scheduled independently from other same-month events.",
+        )
+
+    def _record_scheduled_event_resolution(
+        self,
+        *,
+        event: Any,
+        date: Any,
+        category: EventCategory,
+        stream: str,
+        source_system: str,
+        action: str,
+        summary: str,
+        impact: str,
+    ) -> None:
+        """Write audit, event, and observer rows for a resolved scheduled event."""
+        details = {
+            "scheduled_event_id": event.id,
+            "event_type": event.event_type,
+            "due_date": event.due_date.format(),
+            "resolved_date": date.format(),
+            "payload": dict(event.payload),
+        }
+        event_repo = self.repos.get("event")
+        audit_repo = self.repos.get("audit_log")
+        if audit_repo is not None:
+            audit_repo.create(
+                AuditLog(
+                    turn=self.game_state.current_turn,
+                    month=date.month,
+                    year=date.year,
+                    actor=event.actor,
+                    target=event.target,
+                    system=source_system,
+                    action=action,
+                    previous_value="pending",
+                    new_value="completed",
+                    reason=f"Scheduled event {event.id} became due on {date.format()}.",
+                )
+            )
+        self._write_observer_log(
+            stream=stream,
+            turn=self.game_state.current_turn,
+            day=date.day,
+            month=date.month,
+            year=date.year,
+            actor=event.actor,
+            target=event.target,
+            source_system=source_system,
+            summary=summary,
+            details=details,
+        )
+        if event_repo is not None:
+            event_repo.create(
+                Event(
+                    turn=self.game_state.current_turn,
+                    category=category,
+                    description=summary,
+                    impact=impact,
+                    affected_entities=[event.actor, event.target],
+                    day=date.day,
+                    month=date.month,
+                    year=date.year,
+                    actor=event.actor,
+                    target=event.target,
+                    source_system=source_system,
+                    cause_chain=[
+                        "daily_scheduler",
+                        "scheduled_event_queue",
+                        event.event_type,
+                        event.id,
+                    ],
+                    effect_summary=impact,
+                )
+            )
 
     def advance_turn(self) -> GameState:
         """Advance the campaign by one monthly turn.
