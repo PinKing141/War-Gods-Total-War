@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from warfare_simulation.app import WarfareSimulationApp
+from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
 
 
 # ---------------------------------------------------------------------------
@@ -68,6 +69,19 @@ class ResourceRow:
 
 
 @dataclass
+class ObserverSummaryRow:
+    period: str
+    title: str
+    date_range: str
+    turn: int
+    narrative: str
+    event_count: int
+    audit_count: int
+    observer_log_count: int
+    highlights: str
+
+
+@dataclass
 class EventRow:
     date: str
     turn: int
@@ -113,6 +127,7 @@ class CampaignService:
 
     def __init__(self, engine: WarfareSimulationApp) -> None:
         self._engine = engine
+        self._summary_generator = ObserverSummaryGenerator()
 
     # ------------------------------------------------------------------
     # Read models
@@ -179,12 +194,14 @@ class CampaignService:
             for r in self._engine.repos.resource.list_all()
         ]
 
-    def get_events(self) -> List[EventRow]:
+    def get_events(self, limit: int | None = 200) -> List[EventRow]:
         events = sorted(
             self._engine.repos.event.list_all(),
             key=lambda e: (e.turn, e.id if e.id else 0),
             reverse=True,
         )
+        if limit is not None:
+            events = events[:limit]
         return [
             EventRow(
                 date=f"{e.day:02d}/{e.month:02d}/{e.year:04d}",
@@ -198,6 +215,59 @@ class CampaignService:
                 impact=e.effect_summary or e.impact,
             )
             for e in events
+        ]
+
+
+    def get_observer_summaries(self) -> List[ObserverSummaryRow]:
+        """Return generated daily, weekly, and monthly summaries for observer views."""
+        state = self._engine.game_state
+        events = self._engine.repos.event.list_all()
+        audits = self._engine.repos.audit_log.list_all()
+        observer_logs = self._engine.repos.observer_log.list_all()
+        summaries = [
+            self._summary_generator.generate_daily(
+                day=state.current_day,
+                month=state.current_month,
+                year=state.current_year,
+                turn=state.current_turn,
+                events=events,
+                audits=audits,
+                observer_logs=observer_logs,
+            ),
+            self._summary_generator.generate_weekly(
+                start_day=max(1, state.current_day - 6),
+                start_month=state.current_month,
+                start_year=state.current_year,
+                end_day=state.current_day,
+                end_month=state.current_month,
+                end_year=state.current_year,
+                turn=state.current_turn,
+                events=events,
+                audits=audits,
+                observer_logs=observer_logs,
+            ),
+            self._summary_generator.generate_monthly(
+                month=state.current_month,
+                year=state.current_year,
+                turn=state.current_turn,
+                events=events,
+                audits=audits,
+                observer_logs=observer_logs,
+            ),
+        ]
+        return [
+            ObserverSummaryRow(
+                period=summary.period,
+                title=summary.title,
+                date_range=summary.date_range,
+                turn=summary.turn,
+                narrative=summary.narrative,
+                event_count=summary.event_count,
+                audit_count=summary.audit_count,
+                observer_log_count=summary.observer_log_count,
+                highlights=" | ".join(summary.highlights),
+            )
+            for summary in summaries
         ]
 
     def get_factions(self) -> List[FactionRow]:

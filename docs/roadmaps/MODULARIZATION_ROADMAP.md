@@ -44,7 +44,7 @@ This roadmap preserves completed work while redefining the upcoming phases aroun
 | 7 — Runtime State | ✓ Complete | Kingdom/resource persistence, checkpoints, startup state hydration |
 | 8 — Observer Pivot | ✓ Complete | Calendar model, dashboard speed controls, date checkpointing, and initial pulse loop are complete; autonomous actors and observer summaries remain next |
 | 9 — Pulse Scheduler | ✓ Complete | Daily, weekly, monthly, seasonal, and yearly cadence boundaries are implemented and tested |
-| 10 — Observer Logs | In Progress | Structured event metadata now records date, actor, target, source system, cause chain, and effect summary |
+| 10 — Observer Logs | In Progress | Structured event metadata, observer log streams, daily/weekly/monthly summary generation, and long-run event-feed limits are implemented |
 
 **Reference implementation**: `campaign_engine_initialiser.py` remains deprecated. It is now only a historical export reference, not a target design for future behavior.
 
@@ -366,7 +366,7 @@ Build a living world that advances automatically on a simulated `DD/MM/YYYY` cal
 1. [x] Expand the events domain into a structured historical log system.
 2. [x] Add event metadata: date, actor, target, source system, cause chain, and effect summary.
 3. [x] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution. *(Dedicated observer-log streams now exist for all required categories; economy/logistics monthly pulses write the first stream records while diplomacy, construction, conflict, and random resolution use the same persistence backbone as those systems come online.)*
-4. [x] Add summary generators for daily/weekly/monthly observer output. *(Monthly turn summaries are generated from recorded events and audits; daily/weekly narrative summaries remain future expansion.)*
+4. [x] Add summary generators for daily/weekly/monthly observer output. *(Daily, weekly, and monthly summaries are generated from event, audit, and observer-log streams; monthly summaries are also persisted as turn summaries.)*
 5. [x] Update exports to surface causal event history clearly while preserving the current workbook contract.
 6. [x] Update the dashboard to surface the latest history clearly.
 
