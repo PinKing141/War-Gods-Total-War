@@ -873,3 +873,27 @@ def test_phase8_observer_dashboard_timeline_rows_are_ui_ready(tmp_path):
     assert all(row.system for row in rows)
     assert all(row.title for row in rows)
     assert all(row.details for row in rows)
+
+
+def test_phase9_balance_health_report_flags_impossible_state(tmp_path):
+    """Living Chronicle Phase 9 should expose non-mutating soak-test balance checks."""
+    db_path = tmp_path / "phase9_balance_health.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+    province = app.repos.province.list_all()[0]
+    province.loyalty = 125
+    province.garrison_size = province.garrison_capacity + 1
+    app.repos.province.update(province)
+
+    report = service.get_balance_health_report(years_simulated=100)
+
+    assert report.years_simulated == 100
+    assert report.faction_count == 3
+    assert report.province_count == 4
+    assert report.status == "watch"
+    assert report.warning_count == 2
+    assert "100-year balance check: watch" in report.summary
+    assert {(warning.subject, warning.metric) for warning in report.warnings} == {
+        (province.name, "loyalty"),
+        (province.name, "garrison_size"),
+    }

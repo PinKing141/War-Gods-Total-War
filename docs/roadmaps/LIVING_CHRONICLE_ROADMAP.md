@@ -897,7 +897,7 @@ Exit criteria:
 
 ### Phase 9 — Content expansion and balance
 
-**Goal**: Increase scenario richness after the full loop works.
+**Goal**: Increase scenario richness after the full loop works. ✓ Initial balance-health implementation
 
 Scope:
 
@@ -907,11 +907,11 @@ Scope:
 - More event types.
 - More chronicle templates.
 - More diplomacy/politics outcomes.
-- Soak testing and balancing.
+- Soak testing and balancing. ✓ Initial non-mutating balance health report implemented
 
 Exit criteria:
 
-- 100-year simulations produce varied but plausible histories without impossible state.
+- 100-year simulations produce varied but plausible histories without impossible state. ✓ Initial plausibility checks flag impossible faction/province scores and capacities
 
 ### Phase 10 — Release hardening
 
