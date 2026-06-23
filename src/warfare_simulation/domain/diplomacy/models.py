@@ -22,6 +22,7 @@ class Faction(GameEntity):
         power_level: Military power (0-100)
         wealth: Economic power (0-100)
         stability: Internal stability (0-100)
+        personality_traits: Comma-separated ruler personality traits for autonomous AI weighting
     """
     
     name: str = ""
@@ -30,6 +31,7 @@ class Faction(GameEntity):
     power_level: int = 50
     wealth: int = 50
     stability: int = 50
+    personality_traits: str = ""
 
 
 @dataclass

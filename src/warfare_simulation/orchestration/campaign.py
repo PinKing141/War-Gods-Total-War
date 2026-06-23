@@ -289,6 +289,8 @@ class CampaignOrchestrator:
                 "valid": intent.valid,
                 "failure_reason": intent.failure_reason,
                 "pressure": intent.pressure.as_dict(),
+                "personality_traits": list(intent.personality_traits),
+                "weighted_scores": intent.weighted_scores or {},
             }
             if audit_repo is not None:
                 audit_repo.create(

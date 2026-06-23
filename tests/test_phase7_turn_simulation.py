@@ -660,3 +660,63 @@ def test_phase2_scheduler_resolves_domain_events_on_distinct_days(tmp_path):
         for log in observer_logs
         if log.source_system.startswith("ScheduledEvent.")
     ] == ["arrival-001", "spy-001", "harvest-001", "report-001"]
+
+
+def test_phase3_personality_weighted_intents_shift_same_pressure_distribution():
+    """Living Chronicle Phase 3 should let ruler personality alter intent choice."""
+    from warfare_simulation.domain.diplomacy.intent import FactionIntentEngine
+    from warfare_simulation.domain.diplomacy.models import Faction
+
+    engine = FactionIntentEngine()
+    cautious = Faction(
+        id=1,
+        name="Cautious March",
+        power_level=70,
+        wealth=70,
+        stability=70,
+        personality_traits="cautious",
+    )
+    mercantile = Faction(
+        id=2,
+        name="Ledger League",
+        power_level=70,
+        wealth=70,
+        stability=70,
+        personality_traits="mercantile",
+    )
+
+    cautious_intent, mercantile_intent = engine.generate_intents([mercantile, cautious], [])
+
+    assert cautious_intent.intent_type == "stabilize_realm"
+    assert cautious_intent.weighted_scores == {
+        "stability": 45,
+        "economy": 30,
+        "military": 30,
+        "diplomatic": 10,
+    }
+    assert mercantile_intent.intent_type == "replenish_treasury"
+    assert mercantile_intent.weighted_scores["economy"] == 50
+    assert cautious_intent.cause_chain[-2] == "personality:cautious"
+
+
+def test_phase3_invalid_faction_intent_is_rejected_without_mutation():
+    """Living Chronicle Phase 3 validation should reject invalid intents audibly."""
+    from warfare_simulation.domain.diplomacy.intent import FactionIntentEngine
+    from warfare_simulation.domain.diplomacy.models import Faction
+
+    engine = FactionIntentEngine()
+    invalid_faction = Faction(
+        id=0,
+        name="Unpersisted Pretender",
+        power_level=20,
+        wealth=80,
+        stability=80,
+        personality_traits="militant",
+    )
+
+    intent = engine.generate_intents([invalid_faction], [])[0]
+
+    assert intent.valid is False
+    assert intent.intent_type == "rebuild_forces"
+    assert intent.failure_reason == "Faction intent requires a persisted faction id."
+    assert intent.cause_chain[-1] == "reject_intent"

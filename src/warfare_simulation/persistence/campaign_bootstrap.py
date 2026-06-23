@@ -207,8 +207,8 @@ class CampaignBootstrap:
             cursor = db.execute(
                 """
                 INSERT INTO faction (
-                    name, faction_type, government_type, power_level, wealth, stability
-                ) VALUES (?, ?, ?, ?, ?, ?)
+                    name, faction_type, government_type, power_level, wealth, stability, personality_traits
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     faction.name,
@@ -217,6 +217,7 @@ class CampaignBootstrap:
                     faction.power_level,
                     faction.wealth,
                     faction.stability,
+                    faction.personality_traits,
                 ),
             )
             faction_id_map[config_id] = cursor.lastrowid
@@ -478,6 +479,7 @@ class CampaignBootstrap:
                 power_level=row[4],
                 wealth=row[5],
                 stability=row[6],
+                personality_traits=row[7] or "",
             )
             repo.hydrate(entity)
 
