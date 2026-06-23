@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–9 Complete ✓ | Phase 10 (Observer Logs & Causality) — In Progress
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 1A (Autonomous Faction Intent Skeleton) — In Progress
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Phase 10 — observer logs and causality backbone.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 1A — autonomous faction pressure-to-intent skeleton.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -173,13 +173,21 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Prevent duplicate system execution at pulse boundaries
 - [x] Preserve monthly economy/logistics totals through daily progression
 
-### Phase 10: Observer Logs and Causality Backbone
+### ✓ Phase 10: Observer Logs and Causality Backbone
 - [x] Add structured event metadata for date, actor, target, source system, cause chain, and effect summary
 - [x] Persist and rehydrate event metadata through SQLite
 - [x] Surface observer-readable causal details in the Event Log export without breaking legacy workbook shape
 - [x] Add dedicated logs for economics, diplomacy, construction, conflict, and random resolution
 - [x] Add summary generators for daily/weekly/monthly observer output
 - [x] Update dashboard event feed for long-run readability
+
+
+### Living Chronicle Phase 1A: Autonomous Faction Intent Skeleton
+- [x] Evaluate monthly faction pressure from stability, wealth, military power, and hostile relations
+- [x] Generate deterministic autonomous strategic intents
+- [x] Validate intents before mutation hooks are allowed
+- [x] Record faction-intent events, audits, and diplomacy observer logs
+- [x] Include faction-intent notes in monthly observer summaries
 
 ## Usage Examples
 

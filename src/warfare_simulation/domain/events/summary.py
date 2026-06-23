@@ -191,4 +191,7 @@ class ObserverSummaryGenerator:
             parts.append(f"Economy resolved {economy} update(s).")
         if logistics:
             parts.append(f"Logistics resolved {logistics} resource update(s).")
+        for system in sorted({audit.system for audit in audits} - {"Economy", "Logistics"}):
+            count = sum(1 for audit in audits if audit.system == system)
+            parts.append(f"{system} recorded {count} observer note(s).")
         return " ".join(parts)

@@ -684,9 +684,9 @@ Save/load is core infrastructure, not polish.
 - Audit log.
 - Structured event metadata with date, actor, target, source system, cause chain, and effect summary. ✓ Initial implementation
 - Dice/random log.
-- Faction pressure evaluation.
-- Basic autonomous intent generation.
-- Intent validation and failure reasons.
+- Faction pressure evaluation. ✓ Initial implementation
+- Basic autonomous intent generation. ✓ Initial implementation
+- Intent validation and failure reasons. ✓ Initial implementation
 - Basic logistics shortage consequences.
 - Basic movement over time.
 - Basic battle resolver.
@@ -769,8 +769,8 @@ Systems:
 
 - Explicit monthly phase pipeline.
 - Audit/event log expansion.
-- Basic pressure evaluator.
-- Basic intent generation.
+- Basic pressure evaluator. ✓ Initial implementation
+- Basic intent generation. ✓ Initial implementation
 - Basic chronicle generation from logs.
 
 Exit criteria:
@@ -972,8 +972,8 @@ The Living Chronicle Simulator direction is proven when the system can:
 4. Implement Phase 1 in thin slices:
    - explicit turn pipeline,
    - event/audit log schema,
-   - basic pressure evaluator,
-   - basic intent generator,
+   - basic pressure evaluator, ✓ Initial implementation
+   - basic intent generator, ✓ Initial implementation
    - chronicle skeleton.
 5. Add tests before expanding depth.
 6. Avoid UI/art/polish until the autonomous loop is proven.
