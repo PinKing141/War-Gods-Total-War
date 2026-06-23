@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 6 (Internal politics and collapse v1) — Initial crisis implementation ✓
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 7 (Historian mode v1) — Initial unreliable-account implementation ✓
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 6 — Internal politics and collapse v1** (initial internal-crisis slice complete; deeper civil-war chains remain future work).
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 7 — Historian mode v1** (initial multi-account historian slice complete; deeper public/faction knowledge persistence remains future work).
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -200,6 +200,11 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Checkpoint and restore scheduler queue state for pending and completed events
 - [x] Persist scheduled events to SQLite for long-running campaign reloads
 - [x] Resolve army arrival, spy mission, harvest, and monthly report events on distinct in-month days
+
+### ✓ Living Chronicle Phase 7A: Historian Account Skeleton
+- [x] Generate master-truth, public, faction, and later-historian accounts from a canonical event
+- [x] Track account confidence, rumor state, age, cited events, cited observer logs, and contradiction notes
+- [x] Verify differing accounts stay tied to the same hidden truth event
 
 ## Usage Examples
 

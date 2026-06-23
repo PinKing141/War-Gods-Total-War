@@ -864,19 +864,19 @@ Exit criteria:
 
 ### Phase 7 — Historian mode v1
 
-**Goal**: Make records interesting and unreliable.
+**Goal**: Make records interesting and unreliable. ✓ Initial implementation
 
 Scope:
 
-- Master truth vs public account.
-- Faction knowledge reports.
-- Rumor/confidence/age fields.
-- Later historian summaries.
-- Contradictory accounts for selected major events.
+- Master truth vs public account. ✓ Initial account generator
+- Faction knowledge reports. ✓ Initial actor-framed account
+- Rumor/confidence/age fields. ✓ Initial account metadata
+- Later historian summaries. ✓ Initial later-annal account
+- Contradictory accounts for selected major events. ✓ Initial contradiction notes
 
 Exit criteria:
 
-- One battle, famine, or revolt can produce multiple differing accounts tied to the same hidden truth.
+- One battle, famine, or revolt can produce multiple differing accounts tied to the same hidden truth. ✓ Initial implementation validates a revolt event creates four accounts tied to one event ID
 
 ### Phase 8 — Observer tool / dashboard
 
