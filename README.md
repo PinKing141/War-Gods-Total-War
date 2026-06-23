@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 8 (Observer tool / dashboard) — Timeline viewer, army inspector, and workbook export button ✓
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 9 (Content expansion and balance) — Balance health report ✓
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 8 — Observer tool / dashboard** (chronicle reader, timeline viewer, army inspection, and workbook export button complete; richer dashboard navigation remains future work).
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 9 — Content expansion and balance** (initial non-mutating balance health report complete; richer content packs and long-run tuning remain future work).
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -200,6 +200,11 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Checkpoint and restore scheduler queue state for pending and completed events
 - [x] Persist scheduled events to SQLite for long-running campaign reloads
 - [x] Resolve army arrival, spy mission, harvest, and monthly report events on distinct in-month days
+
+### ✓ Living Chronicle Phase 9A: Balance Health Report
+- Added a non-mutating balance analyzer for soak-test plausibility checks.
+- Added a UI/service-facing health report that counts factions, provinces, events, and impossible-state warnings.
+- Added coverage for 100-year balance-report warnings before larger content packs are introduced.
 
 ### ✓ Living Chronicle Phase 7A: Historian Account Skeleton
 - [x] Generate master-truth, public, faction, and later-historian accounts from a canonical event

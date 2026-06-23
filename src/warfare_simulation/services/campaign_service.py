@@ -13,6 +13,7 @@ from typing import List, Optional
 
 from warfare_simulation.app import WarfareSimulationApp
 from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
+from warfare_simulation.services.balance import BalanceAnalyzer, BalanceHealthReport
 
 # ---------------------------------------------------------------------------
 # Read models — plain dataclasses, no domain objects exposed to UI
@@ -155,6 +156,7 @@ class CampaignService:
     def __init__(self, engine: WarfareSimulationApp) -> None:
         self._engine = engine
         self._summary_generator = ObserverSummaryGenerator()
+        self._balance_analyzer = BalanceAnalyzer()
 
     # ------------------------------------------------------------------
     # Read models
@@ -366,6 +368,17 @@ class CampaignService:
             )
             for summary in summaries
         ]
+
+    def get_balance_health_report(self, years_simulated: int | None = None) -> BalanceHealthReport:
+        """Return a Phase 9 non-mutating plausibility report for soak testing."""
+        state = self._engine.game_state
+        years = years_simulated if years_simulated is not None else max(0, state.current_year - 1)
+        return self._balance_analyzer.build_report(
+            years_simulated=years,
+            factions=self._engine.repos.faction.list_all(),
+            provinces=self._engine.repos.province.list_all(),
+            events=self._engine.repos.event.list_all(),
+        )
 
     def get_factions(self) -> List[FactionRow]:
         return [
