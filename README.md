@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 3 (Faction AI v1) — Complete ✓
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 4 (Logistics and movement v1) — Initial implementation ✓
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 4 — Logistics and movement v1.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 5 — Battle and siege v1.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -256,6 +256,12 @@ isort src/
 # Lint
 flake8 src/
 ```
+
+### ✓ Living Chronicle Phase 4: Logistics and Movement v1
+- [x] Group units into auditable army movement orders
+- [x] Advance route progress by day with weather and road modifiers
+- [x] Track supply endurance through supplied/strained/hungry/starving shortage levels
+- [x] Surface contact detection while marching and allow starving armies in bad weather to turn back
 
 ## Documentation
 

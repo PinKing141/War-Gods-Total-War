@@ -293,3 +293,55 @@ def run_all_tests():
 if __name__ == "__main__":
     success = run_all_tests()
     sys.exit(0 if success else 1)
+
+
+def test_living_chronicle_phase4_army_movement_constraints():
+    """Logistics Phase 4 should model route progress, supply shortage, and contact."""
+    from warfare_simulation.domain.logistics.repository import (
+        ArmyMovementRepository,
+        ProjectRepository,
+        ResourceRepository,
+        SupplyRouteRepository,
+    )
+    from warfare_simulation.domain.logistics.service import LogisticsService
+
+    service = LogisticsService(
+        ResourceRepository(),
+        ProjectRepository(),
+        SupplyRouteRepository(),
+        ValidationService(),
+        movement_repo=ArmyMovementRepository(),
+    )
+
+    movement = service.create_army_movement(
+        army_name="Veyl Relief Column",
+        kingdom_id=1,
+        unit_ids=[1, 2],
+        route=[10, 11, 12],
+        supply_days=1,
+        base_daily_progress=50,
+    )
+
+    first_day = service.advance_army_movement_day(
+        movement.id,
+        weather_modifier=0.8,
+        road_modifier=0.5,
+        enemy_present=True,
+    )
+    assert first_day["status"] == "marching"
+    assert first_day["progress_gained"] == 20
+    assert first_day["shortage_level"] == "supplied"
+    assert first_day["contact_detected"] is True
+
+    for _ in range(6):
+        final_day = service.advance_army_movement_day(
+            movement.id,
+            weather_modifier=0.6,
+            road_modifier=0.5,
+        )
+
+    stored = service.movement_repo.get(movement.id)
+    assert stored is not None
+    assert final_day["status"] == "turned_back"
+    assert stored.shortage_level == "starving"
+    assert stored.attrition_taken > 0

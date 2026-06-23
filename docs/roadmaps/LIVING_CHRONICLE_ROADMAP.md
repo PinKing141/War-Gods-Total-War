@@ -814,20 +814,20 @@ Exit criteria:
 
 ### Phase 4 — Logistics and movement v1
 
-**Goal**: Make physical constraints matter.
+**Goal**: Make physical constraints matter. ✓ Initial implementation
 
 Scope:
 
-- Army grouping.
-- Route/progress movement.
-- Supply endurance.
-- Shortage ladder.
-- Weather/road modifiers.
-- Contact detection.
+- Army grouping. ✓ In-memory grouped movement orders
+- Route/progress movement. ✓ Deterministic per-day leg progress
+- Supply endurance. ✓ Supply days tick down during movement
+- Shortage ladder. ✓ Supplied/strained/hungry/starving consequences
+- Weather/road modifiers. ✓ Caller-provided modifiers alter progress and turn-back risk
+- Contact detection. ✓ Enemy presence is surfaced as movement contact while marching
 
 Exit criteria:
 
-- An army can fail, turn back, suffer attrition, or arrive weakened due to supply/weather.
+- An army can fail, turn back, suffer attrition, or arrive weakened due to supply/weather. ✓ Initial implementation
 
 ### Phase 5 — Battle and siege v1
 

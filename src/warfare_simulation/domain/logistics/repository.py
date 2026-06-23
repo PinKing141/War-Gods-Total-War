@@ -8,7 +8,7 @@ from typing import Optional, List
 from warfare_simulation.persistence.repository import Repository
 from warfare_simulation.core.exceptions import RepositoryError
 from warfare_simulation.core.constants import ResourceType
-from .models import Resource, Project, SupplyRoute
+from .models import Resource, Project, SupplyRoute, ArmyMovement
 
 
 class ResourceRepository(Repository[Resource]):
@@ -199,3 +199,53 @@ class SupplyRouteRepository(Repository[SupplyRoute]):
     def list_all(self) -> List[SupplyRoute]:
         """Fetch all routes."""
         return list(self._routes.values())
+
+class ArmyMovementRepository(Repository[ArmyMovement]):
+    """In-memory repository for active army movement plans."""
+
+    def __init__(self, db_manager=None):
+        """Initialize army movement repository."""
+        super().__init__(db_manager)
+        self._movements: dict = {}
+        self._next_id = 1
+
+    def create(self, entity: ArmyMovement) -> ArmyMovement:
+        """Create a new movement plan."""
+        if not entity.army_name:
+            raise RepositoryError("Army movement must have an army name")
+        if len(entity.route) < 2:
+            raise RepositoryError(
+                "Army movement route must include at least origin and destination"
+            )
+        entity.id = self._next_id
+        entity.mark_updated()
+        self._movements[self._next_id] = entity
+        self._next_id += 1
+        return entity
+
+    def get(self, entity_id: int) -> Optional[ArmyMovement]:
+        """Fetch movement by ID."""
+        return self._movements.get(entity_id)
+
+    def update(self, entity: ArmyMovement) -> ArmyMovement:
+        """Update an existing movement plan."""
+        if entity.id not in self._movements:
+            raise RepositoryError(f"Army movement with ID {entity.id} not found")
+        entity.mark_updated()
+        self._movements[entity.id] = entity
+        return entity
+
+    def delete(self, entity_id: int) -> bool:
+        """Delete movement by ID."""
+        if entity_id in self._movements:
+            del self._movements[entity_id]
+            return True
+        return False
+
+    def list_all(self) -> List[ArmyMovement]:
+        """Fetch all movement plans."""
+        return list(self._movements.values())
+
+    def get_active(self) -> List[ArmyMovement]:
+        """Fetch movement plans that are still marching."""
+        return [m for m in self._movements.values() if m.status == "marching"]

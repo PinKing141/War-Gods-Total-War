@@ -110,6 +110,113 @@ class Project(GameEntity):
 
 
 @dataclass
+class ArmyMovement(GameEntity):
+    """
+    Represents an army group moving through a planned route.
+
+    The model is intentionally deterministic for the Living Chronicle logistics
+    slice: callers provide weather/road modifiers, and each daily advance records
+    the resulting progress, supply pressure, attrition, or contact state.
+    """
+
+    army_name: str = ""
+    kingdom_id: int = 0
+    unit_ids: List[int] = field(default_factory=list)
+    route: List[int] = field(default_factory=list)
+    current_leg_index: int = 0
+    progress_on_leg: int = 0
+    base_daily_progress: int = 25
+    supply_days_remaining: int = 0
+    shortage_level: str = "supplied"
+    morale_penalty: int = 0
+    attrition_taken: int = 0
+    status: str = "marching"
+    contact_detected: bool = False
+
+    def current_location_id(self) -> Optional[int]:
+        """Return the route node currently occupied or last reached."""
+        if not self.route:
+            return None
+        return self.route[min(self.current_leg_index, len(self.route) - 1)]
+
+    def destination_id(self) -> Optional[int]:
+        """Return the final route destination."""
+        return self.route[-1] if self.route else None
+
+    def advance_day(
+        self,
+        *,
+        weather_modifier: float = 1.0,
+        road_modifier: float = 1.0,
+        enemy_present: bool = False,
+    ) -> dict:
+        """Advance the army one day and return an auditable outcome."""
+        if self.status in {"arrived", "turned_back", "destroyed"}:
+            return {
+                "status": self.status,
+                "progress_gained": 0,
+                "shortage_level": self.shortage_level,
+            }
+        if len(self.route) < 2:
+            self.status = "arrived"
+            return {
+                "status": self.status,
+                "progress_gained": 0,
+                "shortage_level": self.shortage_level,
+            }
+
+        self.supply_days_remaining -= 1
+        if self.supply_days_remaining >= 0:
+            self.shortage_level = "supplied"
+        elif self.supply_days_remaining >= -2:
+            self.shortage_level = "strained"
+            self.morale_penalty += 1
+        elif self.supply_days_remaining >= -5:
+            self.shortage_level = "hungry"
+            self.morale_penalty += 2
+            self.attrition_taken += 1
+        else:
+            self.shortage_level = "starving"
+            self.morale_penalty += 4
+            self.attrition_taken += 3
+
+        if self.shortage_level == "starving" and weather_modifier < 0.75:
+            self.status = "turned_back"
+        else:
+            progress_gained = max(
+                1,
+                int(self.base_daily_progress * weather_modifier * road_modifier),
+            )
+            self.progress_on_leg += progress_gained
+            while self.progress_on_leg >= 100 and self.current_leg_index < len(self.route) - 1:
+                self.progress_on_leg -= 100
+                self.current_leg_index += 1
+            if self.current_leg_index >= len(self.route) - 1:
+                self.current_leg_index = len(self.route) - 1
+                self.progress_on_leg = 100
+                self.status = "arrived"
+        self.contact_detected = bool(enemy_present and self.status == "marching")
+        self.mark_updated()
+        return {
+            "status": self.status,
+            "progress_gained": (
+                0
+                if self.status == "turned_back"
+                else max(
+                    1,
+                    int(self.base_daily_progress * weather_modifier * road_modifier),
+                )
+            ),
+            "shortage_level": self.shortage_level,
+            "morale_penalty": self.morale_penalty,
+            "attrition_taken": self.attrition_taken,
+            "contact_detected": self.contact_detected,
+            "current_location_id": self.current_location_id(),
+            "destination_id": self.destination_id(),
+        }
+
+
+@dataclass
 class SupplyRoute(GameEntity):
     """
     Represents a supply/trade route.
