@@ -5,6 +5,7 @@ from typing import Any, Mapping
 
 from warfare_simulation.core.constants import EventCategory
 from warfare_simulation.domain.events.models import AuditLog, Event, ObserverLog, TurnSummary
+from warfare_simulation.domain.diplomacy.intent import FactionIntentEngine
 from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
 from warfare_simulation.export.workbook_factory import WorkbookFactory
 from warfare_simulation.orchestration.game_state import GameState
@@ -19,6 +20,7 @@ class CampaignOrchestrator:
         self.game_state = game_state or GameState()
         self.pulse_scheduler = PulseScheduler()
         self.summary_generator = ObserverSummaryGenerator()
+        self.faction_intent_engine = FactionIntentEngine()
         self.last_pulse_report: PulseReport | None = None
         self._register_pulse_hooks()
         self._sync_game_state_from_repos()
@@ -27,6 +29,8 @@ class CampaignOrchestrator:
         """Register implemented domain work with the pulse scheduler."""
         self.pulse_scheduler.register("daily", self._sync_daily_calendar_to_kingdoms)
         self.pulse_scheduler.register("monthly", self._resolve_monthly_economy_and_logistics)
+        self.pulse_scheduler.register("monthly", self._resolve_monthly_faction_intents)
+        self.pulse_scheduler.register("monthly", self._write_monthly_turn_summary)
 
     def _sync_game_state_from_repos(self) -> None:
         """Initialize the shared game clock from persisted kingdom state when available."""
@@ -224,6 +228,90 @@ class CampaignOrchestrator:
         if kingdoms:
             self.game_state.sync_from_kingdom(kingdoms[0])
 
+    def _resolve_monthly_faction_intents(self, _date: Any) -> None:
+        """Evaluate autonomous faction pressure and record monthly strategic intents."""
+        faction_repo = self.repos.get("faction")
+        relation_repo = self.repos.get("relation")
+        if faction_repo is None or not hasattr(faction_repo, "list_all"):
+            return
+
+        factions = faction_repo.list_all()
+        relations = relation_repo.list_all() if relation_repo is not None and hasattr(relation_repo, "list_all") else []
+        intents = self.faction_intent_engine.generate_intents(factions, relations)
+        event_repo = self.repos.get("event")
+        audit_repo = self.repos.get("audit_log")
+
+        for intent in intents:
+            actor = f"faction:{intent.faction_id}"
+            target = f"faction:{intent.faction_id}.strategic_intent"
+            summary = (
+                f"{intent.faction_name} chose {intent.intent_type}: {intent.description}."
+                if intent.valid
+                else f"{intent.faction_name} failed to choose {intent.intent_type}: {intent.failure_reason}"
+            )
+            details = {
+                "intent_type": intent.intent_type,
+                "description": intent.description,
+                "valid": intent.valid,
+                "failure_reason": intent.failure_reason,
+                "pressure": intent.pressure.as_dict(),
+            }
+            if audit_repo is not None:
+                audit_repo.create(
+                    AuditLog(
+                        turn=self.game_state.current_turn,
+                        month=self.game_state.current_month,
+                        year=self.game_state.current_year,
+                        actor=actor,
+                        target=target,
+                        system="FactionIntent",
+                        action="choose_monthly_strategic_intent" if intent.valid else "reject_monthly_strategic_intent",
+                        previous_value=None,
+                        new_value=details,
+                        reason="Monthly autonomous faction pressure evaluation.",
+                    )
+                )
+            self._write_observer_log(
+                stream="diplomacy",
+                turn=self.game_state.current_turn,
+                day=self.game_state.current_day,
+                month=self.game_state.current_month,
+                year=self.game_state.current_year,
+                actor=actor,
+                target=target,
+                source_system="FactionIntent",
+                summary=summary,
+                details=details,
+            )
+            if event_repo is not None:
+                event_repo.create(
+                    Event(
+                        turn=self.game_state.current_turn,
+                        category=EventCategory.DIPLOMACY,
+                        description=summary,
+                        impact=(
+                            "Faction posture recorded for observers; no direct state mutation in Phase 1A."
+                            if intent.valid
+                            else "Invalid faction posture was logged without mutating state."
+                        ),
+                        affected_entities=[intent.faction_id],
+                        day=self.game_state.current_day,
+                        month=self.game_state.current_month,
+                        year=self.game_state.current_year,
+                        actor=actor,
+                        target=target,
+                        source_system="FactionIntent",
+                        cause_chain=intent.cause_chain,
+                        effect_summary=(
+                            f"Strategic intent recorded: {intent.intent_type}."
+                            if intent.valid
+                            else f"Strategic intent rejected: {intent.failure_reason}"
+                        ),
+                    )
+                )
+
+    def _write_monthly_turn_summary(self, _date: Any) -> None:
+        """Persist the monthly observer summary after all monthly hooks run."""
         self._write_turn_summary()
 
     def advance_turn(self) -> GameState:
@@ -354,6 +442,7 @@ class CampaignOrchestrator:
         else:
             self.game_state.advance_turn()
 
+        self._resolve_monthly_faction_intents(None)
         self._write_turn_summary()
         return self.game_state
 

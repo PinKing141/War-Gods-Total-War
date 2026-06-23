@@ -221,8 +221,9 @@ def test_advance_turn_persists_turn_summary(tmp_path):
             """
         ).fetchone()
 
-    assert summary[:6] == (2, 2, 1, "Turn 2 Summary", 1, 5)
+    assert summary[:6] == (2, 2, 1, "Turn 2 Summary", 4, 8)
     assert "The Dominion of Auster collected monthly net income." in summary[6]
+    assert "Kingdom of Norland chose watch_rivals" in summary[6]
 
 
 def test_rehydrated_repositories_include_turn_summaries(tmp_path):
@@ -236,9 +237,10 @@ def test_rehydrated_repositories_include_turn_summaries(tmp_path):
     summary = restarted.repos.turn_summary.get_latest()
 
     assert summary.turn == 2
-    assert summary.event_count == 1
-    assert summary.audit_count == 5
+    assert summary.event_count == 4
+    assert summary.audit_count == 8
     assert "Logistics resolved 4 resource update(s)." in summary.narrative
+    assert "FactionIntent recorded 3 observer note(s)." in summary.narrative
 
 
 def test_pulse_scheduler_reports_ordered_boundaries_once():
@@ -302,7 +304,11 @@ def test_event_metadata_survives_restart_and_exports_causal_details(tmp_path):
 
     app.campaign.advance_turn()
     restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
-    event = restarted.repos.event.get_recent(1)[0]
+    event = next(
+        event
+        for event in restarted.repos.event.list_all()
+        if event.source_system == "Economy"
+    )
 
     assert event.day == 1
     assert event.month == 2
@@ -351,7 +357,7 @@ def test_dashboard_event_rows_expose_observer_causality_fields(tmp_path):
     for _ in range(31):
         app.campaign.advance_day()
 
-    row = service.get_events()[0]
+    row = next(row for row in service.get_events() if row.source_system in {"Economy", "Logistics"})
 
     assert row.date == "01/02/0001"
     assert row.actor.startswith("kingdom:")
@@ -395,12 +401,61 @@ def test_observer_summary_generator_builds_daily_weekly_monthly_views(tmp_path):
 
     assert [summary.period for summary in summaries] == ["daily", "weekly", "monthly"]
     monthly = summaries[-1]
-    assert monthly.event_count == 1
-    assert monthly.audit_count == 5
-    assert monthly.observer_log_count == 5
-    assert "Active streams: economics, logistics." in monthly.narrative
+    assert monthly.event_count == 4
+    assert monthly.audit_count == 8
+    assert monthly.observer_log_count == 8
+    assert "Active streams: diplomacy, economics, logistics." in monthly.narrative
     assert "The Dominion of Auster collected monthly net income." in monthly.highlights
+    assert "Kingdom of Norland chose watch_rivals" in monthly.highlights
 
+
+def test_phase1a_autonomous_faction_intents_are_logged(tmp_path):
+    """Living Chronicle Phase 1A should turn faction pressure into auditable intents."""
+    db_path = tmp_path / "phase1a_faction_intents.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    app.campaign.advance_turn()
+
+    diplomacy_logs = app.repos.observer_log.get_by_stream("diplomacy")
+    faction_events = [
+        event for event in app.repos.event.list_all()
+        if event.source_system == "FactionIntent"
+    ]
+    faction_audits = [
+        audit for audit in app.repos.audit_log.list_all()
+        if audit.system == "FactionIntent"
+    ]
+
+    assert len(diplomacy_logs) == 3
+    assert len(faction_events) == 3
+    assert len(faction_audits) == 3
+    assert all(log.details["valid"] for log in diplomacy_logs)
+    assert {log.details["intent_type"] for log in diplomacy_logs} == {"watch_rivals", "rebuild_forces"}
+    assert all("evaluate_faction_pressure" in event.cause_chain for event in faction_events)
+
+    restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    assert len(restarted.repos.observer_log.get_by_stream("diplomacy")) == 3
+
+
+def test_phase1a_twelve_month_unattended_run_keeps_intents_auditable(tmp_path):
+    """A one-year observer run should produce monthly faction intents without player orders."""
+    db_path = tmp_path / "phase1a_twelve_month_run.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    for _ in range(12):
+        app.campaign.advance_turn()
+
+    faction_events = [
+        event for event in app.repos.event.list_all()
+        if event.source_system == "FactionIntent"
+    ]
+    summaries = app.repos.turn_summary.list_all()
+
+    assert app.game_state.current_turn == 13
+    assert len(faction_events) == 36
+    assert len(summaries) == 12
+    assert all(event.cause_chain[-1] == "validate_intent" for event in faction_events)
+    assert all(summary.event_count >= 4 for summary in summaries)
 
 def test_event_feed_limits_recent_rows_for_long_run_readability(tmp_path):
     """Long observer runs should not force the dashboard event feed to render everything."""
@@ -415,4 +470,5 @@ def test_event_feed_limits_recent_rows_for_long_run_readability(tmp_path):
 
     assert len(rows) == 2
     assert rows[0].turn == 4
-    assert rows[1].turn == 3
+    assert rows[1].turn == 4
+    assert all(row.source_system == "FactionIntent" for row in rows)
