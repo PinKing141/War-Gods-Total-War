@@ -35,6 +35,7 @@ from warfare_simulation.domain.logistics.repository import ResourceRepository
 from warfare_simulation.domain.military.models import Commander, Unit
 from warfare_simulation.domain.military.repository import CommanderRepository, UnitRepository
 from warfare_simulation.persistence.database import DatabaseManager
+from warfare_simulation.persistence.scheduled_events import ScheduledEventRepository
 
 logger = get_logger(__name__)
 
@@ -60,6 +61,7 @@ class CampaignRepositories:
     audit_log: AuditLogRepository
     observer_log: ObserverLogRepository
     turn_summary: TurnSummaryRepository
+    scheduled_event: ScheduledEventRepository
 
 
 class CampaignBootstrap:
@@ -277,6 +279,7 @@ class CampaignBootstrap:
         audit_log_repo = AuditLogRepository(db)
         observer_log_repo = ObserverLogRepository(db)
         turn_summary_repo = TurnSummaryRepository(db)
+        scheduled_event_repo = ScheduledEventRepository(db)
 
         cls._hydrate_kingdoms(db, kingdom_repo)
         cls._hydrate_provinces(db, province_repo)
@@ -302,6 +305,7 @@ class CampaignBootstrap:
             audit_log=audit_log_repo,
             observer_log=observer_log_repo,
             turn_summary=turn_summary_repo,
+            scheduled_event=scheduled_event_repo,
         )
 
     @classmethod
@@ -321,6 +325,7 @@ class CampaignBootstrap:
         """Remove seeded campaign data (for tests)."""
         for table in (
             "observer_log",
+            "scheduled_event",
             "audit_log",
             "turn_summary",
             "event",

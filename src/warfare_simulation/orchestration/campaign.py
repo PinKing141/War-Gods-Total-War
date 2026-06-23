@@ -24,6 +24,7 @@ class CampaignOrchestrator:
         self.last_pulse_report: PulseReport | None = None
         self._register_pulse_hooks()
         self._sync_game_state_from_repos()
+        self._restore_scheduled_events_from_repos()
 
     def _register_pulse_hooks(self) -> None:
         """Register implemented domain work with the pulse scheduler."""
@@ -64,7 +65,30 @@ class CampaignOrchestrator:
             previous_date,
             self.game_state.sim_date,
         )
+        self._persist_scheduled_events_to_repos()
         return self.game_state
+
+    def schedule_event(self, event: Any) -> Any:
+        """Schedule a day-level event and persist the queue snapshot when available."""
+        scheduled = self.pulse_scheduler.schedule_event(event)
+        self._persist_scheduled_events_to_repos()
+        return scheduled
+
+    def _restore_scheduled_events_from_repos(self) -> None:
+        """Hydrate the in-memory scheduler queue from SQLite on campaign reload."""
+        scheduled_event_repo = self.repos.get("scheduled_event")
+        if scheduled_event_repo is None or not hasattr(scheduled_event_repo, "list_all"):
+            return
+        self.pulse_scheduler.restore_checkpoint(
+            {"scheduled_events": [event.to_dict() for event in scheduled_event_repo.list_all()]}
+        )
+
+    def _persist_scheduled_events_to_repos(self) -> None:
+        """Persist pending and completed scheduled events for long-running reloads."""
+        scheduled_event_repo = self.repos.get("scheduled_event")
+        if scheduled_event_repo is None or not hasattr(scheduled_event_repo, "replace_all"):
+            return
+        scheduled_event_repo.replace_all(self.pulse_scheduler.scheduled_events)
 
     def _sync_daily_calendar_to_kingdoms(self, _date: Any) -> None:
         """Persist the daily clock to kingdom aggregates without monthly effects."""

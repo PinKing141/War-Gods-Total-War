@@ -786,14 +786,14 @@ Exit criteria:
 Scope:
 
 - Day-level clock. ✓ Initial implementation
-- Scheduled events. ✓ In-memory deterministic queue and checkpoint state
+- Scheduled events. ✓ In-memory deterministic queue, checkpoint state, and SQLite persistence
 - Run controls. ✓ Basic speed labels
 - End-of-month resolution. ✓ Monthly pulse hooks via daily scheduler
-- Checkpoint scheduler state. ✓ Queue checkpoint/restore implemented; SQLite persistence remains
+- Checkpoint scheduler state. ✓ Queue checkpoint/restore and SQLite persistence implemented
 
 Exit criteria:
 
-- Army arrival, spy mission, harvest event, and monthly report can occur on different days within the same month. ◐ Generic scheduled-event queue implemented; domain-specific resolvers remain.
+- Army arrival, spy mission, harvest event, and monthly report can occur on different days within the same month. ◐ Generic scheduled-event queue and SQLite reload path implemented; domain-specific resolvers remain.
 
 ### Phase 3 — Faction AI v1
 

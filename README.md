@@ -198,7 +198,7 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Add deterministic day-level scheduled events with due date, actor, target, type, payload, and status
 - [x] Resolve due scheduled events once per in-world day after pulse hooks
 - [x] Checkpoint and restore scheduler queue state for pending and completed events
-- [ ] Persist scheduled events to SQLite for long-running campaign reloads
+- [x] Persist scheduled events to SQLite for long-running campaign reloads
 
 ## Usage Examples
 

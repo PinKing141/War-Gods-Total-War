@@ -33,6 +33,7 @@ class WarfareSimulationApp:
                 "audit_log": self.repos.audit_log,
                 "observer_log": self.repos.observer_log,
                 "turn_summary": self.repos.turn_summary,
+                "scheduled_event": self.repos.scheduled_event,
             },
             game_state=self.game_state,
         )
