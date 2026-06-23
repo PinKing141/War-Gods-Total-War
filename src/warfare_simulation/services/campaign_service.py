@@ -83,6 +83,21 @@ class ObserverSummaryRow:
 
 
 @dataclass
+class ArmyRow:
+    name: str
+    unit_type: str
+    soldiers: int
+    veterans: int
+    strength: int
+    morale: int
+    fatigue: int
+    armor: str
+    status: str
+    location: str
+    commander: str
+
+
+@dataclass
 class EventRow:
     date: str
     turn: int
@@ -194,6 +209,27 @@ class CampaignService:
                 max_storage=r.max_storage,
             )
             for r in self._engine.repos.resource.list_all()
+        ]
+
+    def get_armies(self) -> List[ArmyRow]:
+        """Return army units with resolved commander and province names for the observer UI."""
+        commanders = {c.id: c.name for c in self._engine.repos.commander.list_all()}
+        provinces = {p.id: p.name for p in self._engine.repos.province.list_all()}
+        return [
+            ArmyRow(
+                name=u.name,
+                unit_type=getattr(u.unit_type, "value", str(u.unit_type)),
+                soldiers=u.soldiers,
+                veterans=u.veterans,
+                strength=u.get_total_strength(),
+                morale=u.morale,
+                fatigue=u.fatigue,
+                armor=getattr(u.armor, "value", str(u.armor)),
+                status=getattr(u.status, "value", str(u.status)),
+                location=provinces.get(u.location_id, str(u.location_id)),
+                commander=commanders.get(u.commander_id, "Unassigned") if u.commander_id else "Unassigned",
+            )
+            for u in self._engine.repos.unit.list_all()
         ]
 
     def get_events(self, limit: int | None = 200) -> List[EventRow]:

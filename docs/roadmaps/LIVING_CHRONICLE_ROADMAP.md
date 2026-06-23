@@ -886,14 +886,14 @@ Scope:
 
 - Timeline viewer.
 - Event log browser. ✓ Initial event feed implementation
-- Faction/province/army inspectors. ✓ Initial faction and province inspectors; army inspector remains future work
+- Faction/province/army inspectors. ✓ Initial faction, province, and army inspectors implemented
 - Simulation controls. ✓ Pause/play and speed controls implemented
 - Chronicle reader. ✓ Initial daily/weekly/monthly/yearly observer-summary tab
-- Export buttons.
+- Export buttons. ✓ Workbook export button implemented
 
 Exit criteria:
 
-- User can run, pause, inspect, and read history without opening raw SQLite/workbook files. ✓ Initial desktop observatory slice supports run/pause, inspection tables, event log, and chronicle reading
+- User can run, pause, inspect, export, and read history without opening raw SQLite/workbook files. ✓ Initial desktop observatory slice supports run/pause, inspection tables, event log, chronicle reading, army inspection, and workbook export
 
 ### Phase 9 — Content expansion and balance
 

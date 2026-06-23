@@ -13,6 +13,7 @@ from typing import Optional
 from PySide6.QtCore import QObject, QThread, QTimer, Signal, Slot
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -26,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from warfare_simulation.services.campaign_service import CampaignService
+from warfare_simulation.ui.models.army_model import ArmyTableModel
 from warfare_simulation.ui.models.event_model import EventTableModel
 from warfare_simulation.ui.models.faction_model import FactionTableModel
 from warfare_simulation.ui.models.observer_summary_model import ObserverSummaryTableModel
@@ -73,6 +75,7 @@ class MainWindow(QMainWindow):
         self._resource_model = ResourceTableModel()
         self._event_model = EventTableModel()
         self._faction_model = FactionTableModel()
+        self._army_model = ArmyTableModel()
         self._observer_summary_model = ObserverSummaryTableModel()
 
         self._build_ui()
@@ -134,12 +137,16 @@ class MainWindow(QMainWindow):
         self._faster_btn = QPushButton("+ Speed")
         self._faster_btn.clicked.connect(self._on_faster)
 
+        self._export_btn = QPushButton("Export Workbook")
+        self._export_btn.clicked.connect(self._on_export_workbook)
+
         bar.addWidget(spacer)
         bar.addWidget(self._date_label)
         bar.addWidget(self._speed_label)
         bar.addWidget(self._pause_btn)
         bar.addWidget(self._slower_btn)
         bar.addWidget(self._faster_btn)
+        bar.addWidget(self._export_btn)
         return bar
 
     def _make_tabs(self) -> QTabWidget:
@@ -158,6 +165,14 @@ class MainWindow(QMainWindow):
                 stretch_last=False,
             ),
             "  Factions  ",
+        )
+        tabs.addTab(
+            SortableTableView(
+                self._army_model,
+                resize_columns=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                stretch_last=True,
+            ),
+            "  Armies  ",
         )
         tabs.addTab(
             SortableTableView(
@@ -207,6 +222,7 @@ class MainWindow(QMainWindow):
         self._resource_model.refresh(self._service.get_resources())
         self._event_model.refresh(self._service.get_events())
         self._faction_model.refresh(self._service.get_factions())
+        self._army_model.refresh(self._service.get_armies())
         self._observer_summary_model.refresh(self._service.get_observer_summaries())
 
         self._date_label.setText(sim.formatted_date)
@@ -275,6 +291,7 @@ class MainWindow(QMainWindow):
         self._pause_btn.setEnabled(False)
         self._slower_btn.setEnabled(False)
         self._faster_btn.setEnabled(False)
+        self._export_btn.setEnabled(False)
         self._status.showMessage("Advancing day…")
 
         self._thread = QThread(self)
@@ -302,6 +319,7 @@ class MainWindow(QMainWindow):
         self._pause_btn.setEnabled(True)
         self._slower_btn.setEnabled(True)
         self._faster_btn.setEnabled(True)
+        self._export_btn.setEnabled(True)
 
     @Slot(str)
     def _on_tick_error(self, msg: str) -> None:
@@ -309,3 +327,18 @@ class MainWindow(QMainWindow):
         self._pause_btn.setEnabled(True)
         self._slower_btn.setEnabled(True)
         self._faster_btn.setEnabled(True)
+        self._export_btn.setEnabled(True)
+
+    @Slot()
+    def _on_export_workbook(self) -> None:
+        """Export the current observer-visible campaign state to an Excel workbook."""
+        filename, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Campaign Workbook",
+            "Auster_Campaign_Engine.xlsx",
+            "Excel Workbooks (*.xlsx)",
+        )
+        if not filename:
+            return
+        output_path = self._service.export_workbook(Path(filename))
+        self._status.showMessage(f"Exported campaign workbook to {output_path}")
