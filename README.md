@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 1B (Chronicle Summary Surfaces) — In Progress
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 2A (Scheduled Event Queue) — In Progress
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 1B — monthly and yearly chronicle summary surfaces.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 2A — deterministic day-level scheduled event queue and checkpoint state.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -193,6 +193,12 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Generate observer-facing yearly chronicle summaries from event, audit, and observer-log streams
 - [x] Expose daily, weekly, monthly, and yearly summary cards through the campaign service
 - [x] Verify a 12-month unattended run produces an auditable yearly chronicle
+
+### Living Chronicle Phase 2A: Scheduled Event Queue
+- [x] Add deterministic day-level scheduled events with due date, actor, target, type, payload, and status
+- [x] Resolve due scheduled events once per in-world day after pulse hooks
+- [x] Checkpoint and restore scheduler queue state for pending and completed events
+- [ ] Persist scheduled events to SQLite for long-running campaign reloads
 
 ## Usage Examples
 

@@ -2,6 +2,13 @@
 
 from .campaign import CampaignOrchestrator
 from .game_state import GameState, SimDate
-from .pulse_scheduler import PulseReport, PulseScheduler
+from .pulse_scheduler import PulseReport, PulseScheduler, ScheduledEvent
 
-__all__ = ["CampaignOrchestrator", "GameState", "PulseReport", "PulseScheduler", "SimDate"]
+__all__ = [
+    "CampaignOrchestrator",
+    "GameState",
+    "PulseReport",
+    "PulseScheduler",
+    "ScheduledEvent",
+    "SimDate",
+]

@@ -484,3 +484,55 @@ def test_event_feed_limits_recent_rows_for_long_run_readability(tmp_path):
     assert rows[0].turn == 4
     assert rows[1].turn == 4
     assert all(row.source_system == "FactionIntent" for row in rows)
+
+
+def test_pulse_scheduler_resolves_scheduled_events_once_and_checkpoints_queue():
+    """Scheduled day-level events should resolve deterministically and survive checkpoints."""
+    from warfare_simulation.orchestration import PulseScheduler, ScheduledEvent
+
+    scheduler = PulseScheduler()
+    resolved = []
+    scheduler.register_scheduled_event_hook(
+        "army_arrival",
+        lambda event, date: resolved.append((event.id, event.actor, event.target, date.format())),
+    )
+    scheduler.schedule_event(
+        ScheduledEvent(
+            id="arrival-001",
+            due_date=SimDate(day=3, month=1, year=1),
+            event_type="army_arrival",
+            actor="army:1",
+            target="province:2",
+            payload={"route": ["province:1", "province:2"]},
+        )
+    )
+    scheduler.schedule_event(
+        ScheduledEvent(
+            id="spy-001",
+            due_date=SimDate(day=5, month=1, year=1),
+            event_type="spy_mission",
+            actor="spy:1",
+            target="faction:2",
+            payload={"difficulty": 40},
+        )
+    )
+
+    report = scheduler.run_due_pulses(
+        SimDate(day=2, month=1, year=1), SimDate(day=3, month=1, year=1)
+    )
+    duplicate_report = scheduler.run_due_pulses(
+        SimDate(day=2, month=1, year=1), SimDate(day=3, month=1, year=1)
+    )
+    checkpoint = scheduler.checkpoint()
+
+    restored = PulseScheduler()
+    restored.restore_checkpoint(checkpoint)
+
+    assert [event.id for event in report.scheduled_events] == ["arrival-001"]
+    assert report.scheduled_events[0].status == "completed"
+    assert duplicate_report.scheduled_events == ()
+    assert resolved == [("arrival-001", "army:1", "province:2", "03/01/0001")]
+    assert [(event.id, event.status) for event in restored.scheduled_events] == [
+        ("arrival-001", "completed"),
+        ("spy-001", "pending"),
+    ]
