@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 4 (Logistics and movement v1) — Initial implementation ✓
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 5 (Battle and siege v1) — Initial battle implementation ✓
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 5 — Battle and siege v1.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 5 — Battle and siege v1** (initial field-battle slice complete; siege depth remains future work).
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
