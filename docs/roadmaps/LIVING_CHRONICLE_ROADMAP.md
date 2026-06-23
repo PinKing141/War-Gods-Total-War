@@ -1,7 +1,7 @@
 # Living Chronicle Simulator Roadmap
 
 **Document Version**: 1.0  
-**Last Updated**: 2026-06-22  
+**Last Updated**: 2026-06-23  
 **Strategic Direction**: Autonomous Historical Chronicle Simulator  
 **Current Codebase Status**: Modular campaign foundation complete; early turn simulation in progress
 
@@ -849,18 +849,18 @@ Exit criteria:
 
 ### Phase 6 — Internal politics and collapse v1
 
-**Goal**: Make factions vulnerable from within.
+**Goal**: Make factions vulnerable from within. ✓ Initial crisis implementation
 
 Scope:
 
-- Legitimacy/public support/corruption/war exhaustion/tax burden.
-- Revolt and coup checks.
-- Noble loyalty consequences.
-- Civil war/collapse events.
+- Legitimacy/public support/corruption/war exhaustion/tax burden. ✓ Initial derived pressure model
+- Revolt and coup checks. ✓ Initial deterministic crisis thresholds
+- Noble loyalty consequences. ✓ Included in internal pressure scoring
+- Civil war/collapse events. ✓ Initial collapse classification and auditable logs
 
 Exit criteria:
 
-- A strong military faction can still collapse from famine, debt, legitimacy loss, or noble betrayal.
+- A strong military faction can still collapse from famine, debt, legitimacy loss, or noble betrayal. ✓ Initial implementation validates strong-but-unstable factions can revolt/collapse
 
 ### Phase 7 — Historian mode v1
 

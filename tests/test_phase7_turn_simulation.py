@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from warfare_simulation.app import WarfareSimulationApp
+from warfare_simulation.core.constants import EventCategory
 from warfare_simulation.orchestration import GameState, SimDate
 from warfare_simulation.services.campaign_service import CampaignService
 
@@ -720,3 +721,53 @@ def test_phase3_invalid_faction_intent_is_rejected_without_mutation():
     assert intent.intent_type == "rebuild_forces"
     assert intent.failure_reason == "Faction intent requires a persisted faction id."
     assert intent.cause_chain[-1] == "reject_intent"
+
+
+def test_phase6_internal_politics_engine_flags_strong_unstable_faction():
+    """Living Chronicle Phase 6 should let strong factions suffer internal crises."""
+    from warfare_simulation.domain.diplomacy.models import Faction
+    from warfare_simulation.domain.diplomacy.politics import InternalPoliticsEngine
+
+    crisis = InternalPoliticsEngine().evaluate([
+        Faction(id=9, name="Iron Regency", power_level=90, wealth=75, stability=35)
+    ])[0]
+
+    assert crisis.crisis_type == "revolt"
+    assert crisis.severity >= 60
+    assert crisis.previous_stability == 35
+    assert crisis.new_stability == 25
+    assert "evaluate_internal_politics" in crisis.cause_chain
+
+
+def test_phase6_monthly_internal_politics_crisis_is_audited_and_persisted(tmp_path):
+    """Living Chronicle Phase 6 should mutate faction stability only through auditable crisis logs."""
+    db_path = tmp_path / "phase6_internal_politics.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    faction = app.repos.faction.get_by_name("Kingdom of Norland")
+    faction.power_level = 90
+    faction.wealth = 75
+    faction.stability = 35
+    app.repos.faction.update(faction)
+
+    app.campaign.advance_turn()
+
+    updated = app.repos.faction.get(faction.id)
+    politics_events = [
+        event for event in app.repos.event.list_all() if event.source_system == "InternalPolitics"
+    ]
+    politics_audits = app.repos.audit_log.get_by_system("InternalPolitics")
+    politics_logs = [
+        log for log in app.repos.observer_log.list_all() if log.source_system == "InternalPolitics"
+    ]
+
+    assert updated.stability == 25
+    assert len(politics_events) == 1
+    assert politics_events[0].category == EventCategory.POLITICS
+    assert politics_events[0].cause_chain[-1] == "crisis:revolt"
+    assert politics_audits[0].previous_value == 35
+    assert politics_audits[0].new_value == 25
+    assert politics_logs[0].details["crisis_type"] == "revolt"
+
+    restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    assert restarted.repos.faction.get(faction.id).stability == 25
+    assert restarted.repos.audit_log.get_by_system("InternalPolitics")[0].new_value == 25

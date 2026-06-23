@@ -6,6 +6,7 @@ from typing import Any, Mapping
 from warfare_simulation.core.constants import EventCategory
 from warfare_simulation.domain.events.models import AuditLog, Event, ObserverLog, TurnSummary
 from warfare_simulation.domain.diplomacy.intent import FactionIntentEngine
+from warfare_simulation.domain.diplomacy.politics import InternalPoliticsEngine
 from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
 from warfare_simulation.export.workbook_factory import WorkbookFactory
 from warfare_simulation.orchestration.game_state import GameState
@@ -21,6 +22,7 @@ class CampaignOrchestrator:
         self.pulse_scheduler = PulseScheduler()
         self.summary_generator = ObserverSummaryGenerator()
         self.faction_intent_engine = FactionIntentEngine()
+        self.internal_politics_engine = InternalPoliticsEngine()
         self.last_pulse_report: PulseReport | None = None
         self._register_pulse_hooks()
         self._sync_game_state_from_repos()
@@ -31,6 +33,7 @@ class CampaignOrchestrator:
         self.pulse_scheduler.register("daily", self._sync_daily_calendar_to_kingdoms)
         self.pulse_scheduler.register("monthly", self._resolve_monthly_economy_and_logistics)
         self.pulse_scheduler.register("monthly", self._resolve_monthly_faction_intents)
+        self.pulse_scheduler.register("monthly", self._resolve_monthly_internal_politics)
         self.pulse_scheduler.register("monthly", self._write_monthly_turn_summary)
         self.pulse_scheduler.register_scheduled_event_hook(
             "army_arrival", self._resolve_army_arrival_event
@@ -346,6 +349,78 @@ class CampaignOrchestrator:
                     )
                 )
 
+
+    def _resolve_monthly_internal_politics(self, _date: Any) -> None:
+        """Resolve audible internal crises for unstable factions."""
+        faction_repo = self.repos.get("faction")
+        if faction_repo is None or not hasattr(faction_repo, "list_all"):
+            return
+
+        event_repo = self.repos.get("event")
+        audit_repo = self.repos.get("audit_log")
+        crises = self.internal_politics_engine.evaluate(faction_repo.list_all())
+        for crisis in crises:
+            faction = faction_repo.get(crisis.faction_id)
+            if faction is None:
+                continue
+            faction.stability = crisis.new_stability
+            faction_repo.update(faction)
+            actor = f"faction:{crisis.faction_id}"
+            target = f"faction:{crisis.faction_id}.stability"
+            details = {
+                "crisis_type": crisis.crisis_type,
+                "severity": crisis.severity,
+                "pressure": crisis.pressure,
+                "previous_stability": crisis.previous_stability,
+                "new_stability": crisis.new_stability,
+                "stability_delta": crisis.stability_delta,
+            }
+            if audit_repo is not None:
+                audit_repo.create(
+                    AuditLog(
+                        turn=self.game_state.current_turn,
+                        month=self.game_state.current_month,
+                        year=self.game_state.current_year,
+                        actor=actor,
+                        target=target,
+                        system="InternalPolitics",
+                        action=f"resolve_{crisis.crisis_type}",
+                        previous_value=crisis.previous_stability,
+                        new_value=crisis.new_stability,
+                        reason="Monthly internal politics pressure crossed the crisis threshold.",
+                    )
+                )
+            self._write_observer_log(
+                stream="diplomacy",
+                turn=self.game_state.current_turn,
+                day=self.game_state.current_day,
+                month=self.game_state.current_month,
+                year=self.game_state.current_year,
+                actor=actor,
+                target=target,
+                source_system="InternalPolitics",
+                summary=crisis.description,
+                details=details,
+            )
+            if event_repo is not None:
+                event_repo.create(
+                    Event(
+                        turn=self.game_state.current_turn,
+                        category=EventCategory.POLITICS,
+                        description=crisis.description,
+                        impact=f"Stability changed from {crisis.previous_stability} to {crisis.new_stability}.",
+                        affected_entities=[crisis.faction_id],
+                        day=self.game_state.current_day,
+                        month=self.game_state.current_month,
+                        year=self.game_state.current_year,
+                        actor=actor,
+                        target=target,
+                        source_system="InternalPolitics",
+                        cause_chain=crisis.cause_chain,
+                        effect_summary=f"{crisis.crisis_type.title()} resolved with severity {crisis.severity}.",
+                    )
+                )
+
     def _write_monthly_turn_summary(self, _date: Any) -> None:
         """Persist the monthly observer summary after all monthly hooks run."""
         self._write_turn_summary()
@@ -612,6 +687,7 @@ class CampaignOrchestrator:
             self.game_state.advance_turn()
 
         self._resolve_monthly_faction_intents(None)
+        self._resolve_monthly_internal_politics(None)
         self._write_turn_summary()
         return self.game_state
 

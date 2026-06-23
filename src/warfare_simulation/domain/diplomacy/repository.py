@@ -47,6 +47,26 @@ class FactionRepository(Repository[Faction]):
             raise RepositoryError(f"Faction with ID {entity.id} not found")
         
         entity.mark_updated()
+        if self.db_manager is not None and self.db_manager.conn:
+            self.db_manager.execute(
+                """
+                UPDATE faction
+                SET name = ?, faction_type = ?, government_type = ?, power_level = ?,
+                    wealth = ?, stability = ?, personality_traits = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (
+                    entity.name,
+                    entity.faction_type,
+                    entity.government_type,
+                    entity.power_level,
+                    entity.wealth,
+                    entity.stability,
+                    entity.personality_traits,
+                    entity.id,
+                ),
+            )
+            self.db_manager.commit()
         self._factions[entity.id] = entity
         return entity
     
