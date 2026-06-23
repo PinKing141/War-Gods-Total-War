@@ -884,7 +884,7 @@ Exit criteria:
 
 Scope:
 
-- Timeline viewer.
+- Timeline viewer. ✓ Initial unified timeline tab implemented
 - Event log browser. ✓ Initial event feed implementation
 - Faction/province/army inspectors. ✓ Initial faction, province, and army inspectors implemented
 - Simulation controls. ✓ Pause/play and speed controls implemented
@@ -893,7 +893,7 @@ Scope:
 
 Exit criteria:
 
-- User can run, pause, inspect, export, and read history without opening raw SQLite/workbook files. ✓ Initial desktop observatory slice supports run/pause, inspection tables, event log, chronicle reading, army inspection, and workbook export
+- User can run, pause, inspect, export, and read history without opening raw SQLite/workbook files. ✓ Initial desktop observatory slice supports run/pause, timeline navigation, inspection tables, event log, chronicle reading, army inspection, and workbook export
 
 ### Phase 9 — Content expansion and balance
 

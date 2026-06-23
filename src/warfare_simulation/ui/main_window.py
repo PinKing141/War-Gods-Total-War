@@ -33,6 +33,7 @@ from warfare_simulation.ui.models.faction_model import FactionTableModel
 from warfare_simulation.ui.models.observer_summary_model import ObserverSummaryTableModel
 from warfare_simulation.ui.models.province_model import ProvinceTableModel
 from warfare_simulation.ui.models.resource_model import ResourceTableModel
+from warfare_simulation.ui.models.timeline_model import TimelineTableModel
 from warfare_simulation.ui.widgets.kingdom_panel import KingdomPanel
 from warfare_simulation.ui.widgets.table_view import SortableTableView
 
@@ -77,6 +78,7 @@ class MainWindow(QMainWindow):
         self._faction_model = FactionTableModel()
         self._army_model = ArmyTableModel()
         self._observer_summary_model = ObserverSummaryTableModel()
+        self._timeline_model = TimelineTableModel()
 
         self._build_ui()
         self._load_stylesheet()
@@ -153,6 +155,14 @@ class MainWindow(QMainWindow):
         tabs = QTabWidget()
         tabs.setDocumentMode(True)
 
+        tabs.addTab(
+            SortableTableView(
+                self._timeline_model,
+                resize_columns=[0, 1, 2, 3, 4],
+                stretch_last=True,
+            ),
+            "  Timeline  ",
+        )
         tabs.addTab(SortableTableView(self._province_model), "  Provinces  ")
         tabs.addTab(
             SortableTableView(self._resource_model, resize_columns=[0, 1, 2, 3, 4, 5, 6]),
@@ -224,6 +234,7 @@ class MainWindow(QMainWindow):
         self._faction_model.refresh(self._service.get_factions())
         self._army_model.refresh(self._service.get_armies())
         self._observer_summary_model.refresh(self._service.get_observer_summaries())
+        self._timeline_model.refresh(self._service.get_timeline())
 
         self._date_label.setText(sim.formatted_date)
         self._pause_btn.setText("▶ Play" if sim.is_paused else "⏸ Pause")
