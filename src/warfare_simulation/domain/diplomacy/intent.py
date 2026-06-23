@@ -58,6 +58,8 @@ class FactionIntent:
     pressure: FactionPressure
     valid: bool = True
     failure_reason: str = ""
+    personality_traits: tuple[str, ...] = ()
+    weighted_scores: dict[str, int] | None = None
 
     @property
     def cause_chain(self) -> list[str]:
@@ -67,12 +69,41 @@ class FactionIntent:
             "evaluate_faction_pressure",
             f"dominant_pressure:{self.pressure.dominant}",
             f"intent:{self.intent_type}",
+            f"personality:{','.join(self.personality_traits) or 'balanced'}",
             "validate_intent" if self.valid else "reject_intent",
         ]
 
 
 class FactionIntentEngine:
-    """Deterministic first-pass pressure-to-intent engine."""
+    """Deterministic personality-weighted pressure-to-intent engine."""
+
+    _AXES = ("stability", "economy", "military", "diplomatic")
+    _TRAIT_WEIGHTS = {
+        "cautious": {"stability": 15, "diplomatic": 10},
+        "mercantile": {"economy": 20, "diplomatic": 5},
+        "militant": {"military": 20, "diplomatic": 10},
+        "pragmatic": {"economy": 10, "stability": 10},
+        "diplomatic": {"diplomatic": 20, "economy": 5},
+        "authoritarian": {"stability": 20, "military": 5},
+    }
+
+    def normalize_personality_traits(self, faction: Faction) -> tuple[str, ...]:
+        """Return stable lowercase personality traits used by the selector."""
+        return tuple(
+            trait.strip().lower()
+            for trait in faction.personality_traits.split(",")
+            if trait.strip()
+        )
+
+    def score_intent_axes(
+        self, pressure: FactionPressure, personality_traits: Iterable[str]
+    ) -> dict[str, int]:
+        """Apply ruler personality weights to pressure axes deterministically."""
+        scores = {axis: int(getattr(pressure, axis)) for axis in self._AXES}
+        for trait in personality_traits:
+            for axis, bonus in self._TRAIT_WEIGHTS.get(trait, {}).items():
+                scores[axis] += bonus
+        return scores
 
     def evaluate_pressure(self, faction: Faction, relations: Iterable[Relation]) -> FactionPressure:
         """Score pressure from current faction stats and known relations."""
@@ -99,8 +130,10 @@ class FactionIntentEngine:
             diplomatic=max(worst_opinion_pressure, hostile_status_pressure),
         )
 
-    def choose_intent(self, pressure: FactionPressure) -> FactionIntent:
-        """Choose one simple strategic intent from the dominant pressure axis."""
+    def choose_intent(
+        self, pressure: FactionPressure, personality_traits: Iterable[str] = ()
+    ) -> FactionIntent:
+        """Choose one strategic intent using pressure plus ruler personality weights."""
         intent_map = {
             "stability": (
                 "stabilize_realm",
@@ -119,7 +152,13 @@ class FactionIntentEngine:
                 "monitor rivals and avoid diplomatic surprise",
             ),
         }
-        intent_type, description = intent_map[pressure.dominant]
+        traits = tuple(personality_traits)
+        weighted_scores = self.score_intent_axes(pressure, traits)
+        selected_axis = max(
+            self._AXES,
+            key=lambda axis: (weighted_scores[axis], -self._AXES.index(axis)),
+        )
+        intent_type, description = intent_map[selected_axis]
         return self.validate_intent(
             FactionIntent(
                 faction_id=pressure.faction_id,
@@ -127,6 +166,8 @@ class FactionIntentEngine:
                 intent_type=intent_type,
                 description=description,
                 pressure=pressure,
+                personality_traits=traits,
+                weighted_scores=weighted_scores,
             )
         )
 
@@ -145,6 +186,8 @@ class FactionIntentEngine:
                 description=intent.description,
                 pressure=intent.pressure,
                 valid=False,
+                personality_traits=intent.personality_traits,
+                weighted_scores=intent.weighted_scores,
                 failure_reason="Faction intent requires a persisted faction id.",
             )
         return intent
@@ -157,6 +200,9 @@ class FactionIntentEngine:
         """Evaluate every faction and return deterministic monthly intents."""
         relation_list = list(relations)
         return [
-            self.choose_intent(self.evaluate_pressure(faction, relation_list))
+            self.choose_intent(
+                self.evaluate_pressure(faction, relation_list),
+                self.normalize_personality_traits(faction),
+            )
             for faction in sorted(factions, key=lambda item: item.id)
         ]

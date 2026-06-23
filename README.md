@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 2 (Scheduler and Daily Ticks) — Complete ✓
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 3 (Faction AI v1) — Complete ✓
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 3 — Faction AI v1 personality-weighted autonomous intent selection.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 4 — Logistics and movement v1.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure

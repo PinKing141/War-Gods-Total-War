@@ -797,20 +797,20 @@ Exit criteria:
 
 ### Phase 3 — Faction AI v1
 
-**Goal**: Make factions behave differently.
+**Goal**: Make factions behave differently. ✓ Initial implementation
 
 Scope:
 
-- Personality traits.
-- Pressure scoring.
-- Weighted intent selection.
-- Intent validation.
-- Failure logging.
+- Personality traits. ✓ Configured per faction and hydrated from SQLite
+- Pressure scoring. ✓ Existing pressure axes retained as the AI inputs
+- Weighted intent selection. ✓ Personality bonuses deterministically shift axis choice
+- Intent validation. ✓ Invalid unpersisted factions are rejected
+- Failure logging. ✓ Rejections preserve cause-chain and failure reason details
 
 Exit criteria:
 
-- Same state with different ruler personalities produces different intent distributions.
-- Invalid intents are logged and do not mutate state.
+- Same state with different ruler personalities produces different intent distributions. ✓ Initial implementation
+- Invalid intents are logged and do not mutate state. ✓ Initial implementation
 
 ### Phase 4 — Logistics and movement v1
 

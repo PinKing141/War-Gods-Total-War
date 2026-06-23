@@ -191,10 +191,12 @@ class DatabaseManager:
                     power_level INTEGER DEFAULT 50,
                     wealth INTEGER DEFAULT 50,
                     stability INTEGER DEFAULT 50,
+                    personality_traits TEXT DEFAULT '',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            self._ensure_column("faction", "personality_traits", "TEXT DEFAULT ''")
             
             self.execute("""
                 CREATE TABLE IF NOT EXISTS relation (

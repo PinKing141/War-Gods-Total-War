@@ -6,7 +6,8 @@
       "government_type": "monarchy",
       "power_level": 75,
       "wealth": 70,
-      "stability": 80
+      "stability": 80,
+      "personality_traits": "diplomatic, cautious"
     },
     {
       "name": "Free Cities Alliance",
@@ -14,7 +15,8 @@
       "government_type": "democracy",
       "power_level": 60,
       "wealth": 85,
-      "stability": 65
+      "stability": 65,
+      "personality_traits": "militant, pragmatic"
     },
     {
       "name": "Eastern Empire",
@@ -22,7 +24,8 @@
       "government_type": "autocracy",
       "power_level": 90,
       "wealth": 80,
-      "stability": 70
+      "stability": 70,
+      "personality_traits": "diplomatic, authoritarian"
     }
   ],
   "relations": [

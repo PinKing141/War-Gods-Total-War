@@ -139,6 +139,7 @@ class FactionConfigSchema(BaseModel):
     power_level: int = Field(ge=0, le=100)
     wealth: int = Field(ge=0, le=100)
     stability: int = Field(ge=0, le=100)
+    personality_traits: str = ""
 
 
 class RelationConfigSchema(BaseModel):
