@@ -4,6 +4,7 @@ The UI reads only from this service — never from domain objects directly.
 That boundary keeps presentation code ignorant of persistence, repositories,
 and turn-mutation logic, enabling the engine and UI to evolve independently.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,10 +14,10 @@ from typing import List, Optional
 from warfare_simulation.app import WarfareSimulationApp
 from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
 
-
 # ---------------------------------------------------------------------------
 # Read models — plain dataclasses, no domain objects exposed to UI
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class KingdomSummary:
@@ -118,6 +119,7 @@ class RelationRow:
 # Service class
 # ---------------------------------------------------------------------------
 
+
 class CampaignService:
     """Provides read models and commands for the UI layer.
 
@@ -217,13 +219,14 @@ class CampaignService:
             for e in events
         ]
 
-
     def get_observer_summaries(self) -> List[ObserverSummaryRow]:
-        """Return generated daily, weekly, and monthly summaries for observer views."""
+        """Return generated daily, weekly, monthly, and yearly summaries for observer views."""
         state = self._engine.game_state
         events = self._engine.repos.event.list_all()
         audits = self._engine.repos.audit_log.list_all()
         observer_logs = self._engine.repos.observer_log.list_all()
+        log_years = [item.year for item in [*events, *audits, *observer_logs]]
+        chronicle_year = max(log_years, default=state.current_year)
         summaries = [
             self._summary_generator.generate_daily(
                 day=state.current_day,
@@ -249,6 +252,13 @@ class CampaignService:
             self._summary_generator.generate_monthly(
                 month=state.current_month,
                 year=state.current_year,
+                turn=state.current_turn,
+                events=events,
+                audits=audits,
+                observer_logs=observer_logs,
+            ),
+            self._summary_generator.generate_yearly(
+                year=chronicle_year,
                 turn=state.current_turn,
                 events=events,
                 audits=audits,

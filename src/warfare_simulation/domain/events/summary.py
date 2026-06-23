@@ -13,7 +13,7 @@ from typing import Iterable, Literal
 
 from warfare_simulation.domain.events.models import AuditLog, Event, ObserverLog, TurnSummary
 
-SummaryPeriod = Literal["daily", "weekly", "monthly"]
+SummaryPeriod = Literal["daily", "weekly", "monthly", "yearly"]
 
 
 @dataclass(frozen=True)
@@ -44,7 +44,7 @@ class ObserverSummary:
 
 
 class ObserverSummaryGenerator:
-    """Build daily, weekly, and monthly summaries from campaign log streams."""
+    """Build daily, weekly, monthly, and yearly summaries from campaign log streams."""
 
     def generate_daily(
         self,
@@ -58,9 +58,13 @@ class ObserverSummaryGenerator:
         observer_logs: Iterable[ObserverLog] = (),
     ) -> ObserverSummary:
         """Generate a single-day observer summary."""
-        event_list = [event for event in events if (event.day, event.month, event.year) == (day, month, year)]
+        event_list = [
+            event for event in events if (event.day, event.month, event.year) == (day, month, year)
+        ]
         audit_list = [audit for audit in audits if (audit.month, audit.year) == (month, year)]
-        log_list = [log for log in observer_logs if (log.day, log.month, log.year) == (day, month, year)]
+        log_list = [
+            log for log in observer_logs if (log.day, log.month, log.year) == (day, month, year)
+        ]
         highlights = self._highlights(event_list, log_list)
         return ObserverSummary(
             period="daily",
@@ -100,8 +104,12 @@ class ObserverSummaryGenerator:
         """
         start = (start_year, start_month, start_day)
         end = (end_year, end_month, end_day)
-        event_list = [event for event in events if start <= (event.year, event.month, event.day) <= end]
-        audit_list = [audit for audit in audits if start[:2] <= (audit.year, audit.month) <= end[:2]]
+        event_list = [
+            event for event in events if start <= (event.year, event.month, event.day) <= end
+        ]
+        audit_list = [
+            audit for audit in audits if start[:2] <= (audit.year, audit.month) <= end[:2]
+        ]
         log_list = [log for log in observer_logs if start <= (log.year, log.month, log.day) <= end]
         highlights = self._highlights(event_list, log_list, limit=5)
         return ObserverSummary(
@@ -153,6 +161,37 @@ class ObserverSummaryGenerator:
             highlights=highlights,
         )
 
+    def generate_yearly(
+        self,
+        *,
+        year: int,
+        turn: int,
+        events: Iterable[Event] = (),
+        audits: Iterable[AuditLog] = (),
+        observer_logs: Iterable[ObserverLog] = (),
+    ) -> ObserverSummary:
+        """Generate a yearly chronicle summary from all logs in one campaign year."""
+        event_list = [event for event in events if event.year == year]
+        audit_list = [audit for audit in audits if audit.year == year]
+        log_list = [log for log in observer_logs if log.year == year]
+        highlights = self._highlights(event_list, log_list, limit=8)
+        return ObserverSummary(
+            period="yearly",
+            title=f"Yearly Summary — Year {year}",
+            narrative=self._narrative("year", event_list, audit_list, log_list),
+            start_day=1,
+            start_month=1,
+            start_year=year,
+            end_day=31,
+            end_month=12,
+            end_year=year,
+            turn=turn,
+            event_count=len(event_list),
+            audit_count=len(audit_list),
+            observer_log_count=len(log_list),
+            highlights=highlights,
+        )
+
     def to_turn_summary(self, summary: ObserverSummary) -> TurnSummary:
         """Convert a monthly observer summary to the persisted summary model."""
         return TurnSummary(
@@ -166,7 +205,9 @@ class ObserverSummaryGenerator:
             highlights=summary.highlights,
         )
 
-    def _highlights(self, events: list[Event], observer_logs: list[ObserverLog], limit: int = 3) -> list[str]:
+    def _highlights(
+        self, events: list[Event], observer_logs: list[ObserverLog], limit: int = 3
+    ) -> list[str]:
         highlights = [event.description for event in events[:limit]]
         if len(highlights) < limit:
             highlights.extend(log.summary for log in observer_logs[: limit - len(highlights)])

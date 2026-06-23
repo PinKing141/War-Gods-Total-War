@@ -7,7 +7,6 @@ from warfare_simulation.app import WarfareSimulationApp
 from warfare_simulation.orchestration import GameState, SimDate
 from warfare_simulation.services.campaign_service import CampaignService
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_DIR = ROOT / "src" / "warfare_simulation" / "config" / "data"
 
@@ -91,20 +90,16 @@ def test_advance_turn_persists_mutable_state_to_sqlite(tmp_path):
     app.campaign.advance_turn()
 
     with sqlite3.connect(db_path) as conn:
-        kingdom = conn.execute(
-            """
+        kingdom = conn.execute("""
             SELECT treasury_silver, current_day, current_turn, current_month, current_year
             FROM kingdom
             WHERE id = 1
-            """
-        ).fetchone()
-        food = conn.execute(
-            """
+            """).fetchone()
+        food = conn.execute("""
             SELECT stored
             FROM resource
             WHERE id = 1
-            """
-        ).fetchone()
+            """).fetchone()
 
     assert kingdom == (525700, 1, 2, 2, 1)
     assert food == (5100,)
@@ -167,21 +162,17 @@ def test_advance_turn_writes_event_and_audit_logs(tmp_path):
     app.campaign.advance_turn()
 
     with sqlite3.connect(db_path) as conn:
-        events = conn.execute(
-            """
+        events = conn.execute("""
             SELECT turn, category, description, impact, affected_entities
             FROM event
             ORDER BY id
-            """
-        ).fetchall()
-        audits = conn.execute(
-            """
+            """).fetchall()
+        audits = conn.execute("""
             SELECT turn, month, year, actor, target, system, action,
                    previous_value, new_value, reason
             FROM audit_log
             ORDER BY id
-            """
-        ).fetchall()
+            """).fetchall()
 
     assert events[0] == (
         2,
@@ -213,13 +204,11 @@ def test_advance_turn_persists_turn_summary(tmp_path):
     app.campaign.advance_turn()
 
     with sqlite3.connect(db_path) as conn:
-        summary = conn.execute(
-            """
+        summary = conn.execute("""
             SELECT turn, month, year, title, event_count, audit_count, highlights
             FROM turn_summary
             ORDER BY id
-            """
-        ).fetchone()
+            """).fetchone()
 
     assert summary[:6] == (2, 2, 1, "Turn 2 Summary", 4, 8)
     assert "The Dominion of Auster collected monthly net income." in summary[6]
@@ -305,9 +294,7 @@ def test_event_metadata_survives_restart_and_exports_causal_details(tmp_path):
     app.campaign.advance_turn()
     restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
     event = next(
-        event
-        for event in restarted.repos.event.list_all()
-        if event.source_system == "Economy"
+        event for event in restarted.repos.event.list_all() if event.source_system == "Economy"
     )
 
     assert event.day == 1
@@ -399,8 +386,8 @@ def test_observer_summary_generator_builds_daily_weekly_monthly_views(tmp_path):
     app.campaign.advance_turn()
     summaries = service.get_observer_summaries()
 
-    assert [summary.period for summary in summaries] == ["daily", "weekly", "monthly"]
-    monthly = summaries[-1]
+    assert [summary.period for summary in summaries] == ["daily", "weekly", "monthly", "yearly"]
+    monthly = summaries[2]
     assert monthly.event_count == 4
     assert monthly.audit_count == 8
     assert monthly.observer_log_count == 8
@@ -418,19 +405,20 @@ def test_phase1a_autonomous_faction_intents_are_logged(tmp_path):
 
     diplomacy_logs = app.repos.observer_log.get_by_stream("diplomacy")
     faction_events = [
-        event for event in app.repos.event.list_all()
-        if event.source_system == "FactionIntent"
+        event for event in app.repos.event.list_all() if event.source_system == "FactionIntent"
     ]
     faction_audits = [
-        audit for audit in app.repos.audit_log.list_all()
-        if audit.system == "FactionIntent"
+        audit for audit in app.repos.audit_log.list_all() if audit.system == "FactionIntent"
     ]
 
     assert len(diplomacy_logs) == 3
     assert len(faction_events) == 3
     assert len(faction_audits) == 3
     assert all(log.details["valid"] for log in diplomacy_logs)
-    assert {log.details["intent_type"] for log in diplomacy_logs} == {"watch_rivals", "rebuild_forces"}
+    assert {log.details["intent_type"] for log in diplomacy_logs} == {
+        "watch_rivals",
+        "rebuild_forces",
+    }
     assert all("evaluate_faction_pressure" in event.cause_chain for event in faction_events)
 
     restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
@@ -446,8 +434,7 @@ def test_phase1a_twelve_month_unattended_run_keeps_intents_auditable(tmp_path):
         app.campaign.advance_turn()
 
     faction_events = [
-        event for event in app.repos.event.list_all()
-        if event.source_system == "FactionIntent"
+        event for event in app.repos.event.list_all() if event.source_system == "FactionIntent"
     ]
     summaries = app.repos.turn_summary.list_all()
 
@@ -456,6 +443,31 @@ def test_phase1a_twelve_month_unattended_run_keeps_intents_auditable(tmp_path):
     assert len(summaries) == 12
     assert all(event.cause_chain[-1] == "validate_intent" for event in faction_events)
     assert all(summary.event_count >= 4 for summary in summaries)
+
+
+def test_phase1_chronicle_yearly_summary_aggregates_unattended_run(tmp_path):
+    """Living Chronicle Phase 1 should expose a yearly chronicle after unattended play."""
+    db_path = tmp_path / "phase1_yearly_chronicle.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+
+    for _ in range(12):
+        app.campaign.advance_turn()
+
+    yearly = service.get_observer_summaries()[-1]
+
+    assert yearly.period == "yearly"
+    assert yearly.title == "Yearly Summary — Year 2"
+    assert yearly.date_range == "01/01/0002–31/12/0002"
+    assert yearly.event_count == 4
+    assert yearly.audit_count == 8
+    assert yearly.observer_log_count == 8
+    assert (
+        "This year recorded 4 event(s), 8 auditable state change(s), and 8 observer log entry(ies)."
+        in yearly.narrative
+    )
+    assert "FactionIntent recorded 3 observer note(s)." in yearly.narrative
+
 
 def test_event_feed_limits_recent_rows_for_long_run_readability(tmp_path):
     """Long observer runs should not force the dashboard event feed to render everything."""

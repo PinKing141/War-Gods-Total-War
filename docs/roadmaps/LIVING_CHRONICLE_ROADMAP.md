@@ -762,8 +762,8 @@ Scope:
 - 2 army stats: soldiers and morale.
 - 3 ruler traits.
 - 3 crisis types: famine, revolt, war.
-- Monthly chronicle output.
-- Yearly summary.
+- Monthly chronicle output. ✓ Initial implementation
+- Yearly summary. ✓ Initial implementation
 
 Systems:
 
@@ -771,12 +771,13 @@ Systems:
 - Audit/event log expansion.
 - Basic pressure evaluator. ✓ Initial implementation
 - Basic intent generation. ✓ Initial implementation
-- Basic chronicle generation from logs.
+- Basic chronicle generation from logs. ✓ Monthly summaries implemented; yearly observer summaries implemented
 
 Exit criteria:
 
-- A 12-month unattended run produces plausible state changes and monthly chronicle entries.
-- Every chronicle entry references underlying events/logs.
+- A 12-month unattended run produces plausible state changes and monthly chronicle entries. ✓ Initial implementation
+- Every chronicle entry references underlying events/logs. ✓ Initial implementation
+- A 12-month unattended run exposes a yearly observer summary aggregated from the same event, audit, and observer-log streams. ✓ Initial implementation
 
 ### Phase 2 — Scheduler and daily ticks
 
