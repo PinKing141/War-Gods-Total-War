@@ -831,21 +831,21 @@ Exit criteria:
 
 ### Phase 5 — Battle and siege v1
 
-**Goal**: Resolve violence from state.
+**Goal**: Resolve violence from state. ✓ Initial battle implementation
 
 Scope:
 
-- Simple combat power formula.
-- Casualties.
-- Morale/fatigue shifts.
-- Commander risk.
-- Retreat/pursuit.
-- Battle logs.
-- Battle chronicle entries.
+- Simple combat power formula. ✓ Initial implementation
+- Casualties. ✓ Initial implementation
+- Morale/fatigue shifts. ✓ Initial implementation
+- Commander risk. ✓ Initial implementation
+- Retreat/pursuit. ✓ Initial implementation
+- Battle logs. ✓ Initial implementation
+- Battle chronicle entries. ✓ Initial implementation
 
 Exit criteria:
 
-- Two armies can meet, fight, update state, and produce an auditable report.
+- Two armies can meet, fight, update state, and produce an auditable report. ✓ Initial field-battle implementation
 
 ### Phase 6 — Internal politics and collapse v1
 
