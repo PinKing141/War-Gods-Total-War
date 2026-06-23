@@ -9,8 +9,13 @@ from warfare_simulation.core.validation import ValidationService
 from warfare_simulation.core.exceptions import InvalidCampaignStateError, ResourceError
 from warfare_simulation.core.logger import get_logger
 from warfare_simulation.core.constants import ResourceType, ProjectType
-from .models import Resource, Project, SupplyRoute
-from .repository import ResourceRepository, ProjectRepository, SupplyRouteRepository
+from .models import Resource, Project, SupplyRoute, ArmyMovement
+from .repository import (
+    ArmyMovementRepository,
+    ProjectRepository,
+    ResourceRepository,
+    SupplyRouteRepository,
+)
 
 
 logger = get_logger(__name__)
@@ -29,6 +34,7 @@ class LogisticsService(GameSystem):
         project_repo: ProjectRepository,
         route_repo: SupplyRouteRepository,
         validator: ValidationService,
+        movement_repo: ArmyMovementRepository | None = None,
     ):
         """Initialize Logistics service."""
         super().__init__("Logistics")
@@ -36,6 +42,7 @@ class LogisticsService(GameSystem):
         self.project_repo = project_repo
         self.route_repo = route_repo
         self.validator = validator
+        self.movement_repo = movement_repo or ArmyMovementRepository()
     
     def initialize(self) -> None:
         """Initialize Logistics service."""
@@ -176,7 +183,49 @@ class LogisticsService(GameSystem):
         # Advance all projects
         for project in self.project_repo.get_active():
             self.advance_project_turn(project.id)
-    
+
+    def create_army_movement(
+        self,
+        army_name: str,
+        kingdom_id: int,
+        unit_ids: list[int],
+        route: list[int],
+        supply_days: int,
+        base_daily_progress: int = 25,
+    ) -> ArmyMovement:
+        """Create a grouped army movement order with route and supply endurance."""
+        movement = ArmyMovement(
+            army_name=army_name,
+            kingdom_id=kingdom_id,
+            unit_ids=list(unit_ids),
+            route=list(route),
+            supply_days_remaining=supply_days,
+            base_daily_progress=base_daily_progress,
+        )
+        created = self.movement_repo.create(movement)
+        logger.info("Army movement '%s' created on route %s", army_name, route)
+        return created
+
+    def advance_army_movement_day(
+        self,
+        movement_id: int,
+        *,
+        weather_modifier: float = 1.0,
+        road_modifier: float = 1.0,
+        enemy_present: bool = False,
+    ) -> dict:
+        """Advance a movement order through weather, road, supply, and contact checks."""
+        movement = self.movement_repo.get(movement_id)
+        if not movement:
+            raise InvalidCampaignStateError(f"Army movement {movement_id} not found")
+        outcome = movement.advance_day(
+            weather_modifier=weather_modifier,
+            road_modifier=road_modifier,
+            enemy_present=enemy_present,
+        )
+        self.movement_repo.update(movement)
+        return outcome
+
     def validate_state(self) -> list:
         """
         Validate all logistics state.
