@@ -313,6 +313,24 @@ class DatabaseManager:
                     FOREIGN KEY(source_audit_id) REFERENCES audit_log(id)
                 )
             """)
+
+            self.execute("""
+                CREATE TABLE IF NOT EXISTS scheduled_event (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id TEXT UNIQUE NOT NULL,
+                    due_day INTEGER NOT NULL,
+                    due_month INTEGER NOT NULL,
+                    due_year INTEGER NOT NULL,
+                    event_type TEXT NOT NULL,
+                    actor TEXT NOT NULL,
+                    target TEXT NOT NULL,
+                    payload TEXT DEFAULT '{}',
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             self.execute("""
                 CREATE TABLE IF NOT EXISTS migration (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

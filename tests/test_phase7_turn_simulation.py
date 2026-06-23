@@ -536,3 +536,58 @@ def test_pulse_scheduler_resolves_scheduled_events_once_and_checkpoints_queue():
         ("arrival-001", "completed"),
         ("spy-001", "pending"),
     ]
+
+
+def test_scheduled_events_persist_to_sqlite_and_reload(tmp_path):
+    """Campaign scheduled events should survive SQLite-backed application restarts."""
+    from warfare_simulation.orchestration import ScheduledEvent
+
+    db_path = tmp_path / "phase2a_scheduled_events.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    app.campaign.schedule_event(
+        ScheduledEvent(
+            id="harvest-001",
+            due_date=SimDate(day=2, month=1, year=1),
+            event_type="harvest",
+            actor="province:1",
+            target="kingdom:1",
+            payload={"grain": 25},
+        )
+    )
+
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(
+            """
+            SELECT event_id, due_day, due_month, due_year, event_type, actor, target, payload, status
+            FROM scheduled_event
+            WHERE event_id = ?
+            """,
+            ("harvest-001",),
+        ).fetchone()
+
+    restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    assert row == (
+        "harvest-001",
+        2,
+        1,
+        1,
+        "harvest",
+        "province:1",
+        "kingdom:1",
+        '{"grain": 25}',
+        "pending",
+    )
+    assert [(event.id, event.status) for event in restarted.campaign.pulse_scheduler.scheduled_events] == [
+        ("harvest-001", "pending")
+    ]
+
+    restarted.campaign.advance_day()
+
+    with sqlite3.connect(db_path) as conn:
+        status = conn.execute(
+            "SELECT status FROM scheduled_event WHERE event_id = ?",
+            ("harvest-001",),
+        ).fetchone()[0]
+
+    assert status == "completed"
