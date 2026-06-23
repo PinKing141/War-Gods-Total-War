@@ -817,6 +817,7 @@ def test_phase7_historian_accounts_share_hidden_truth_event():
     assert all(account.cited_log_ids == [5] for account in accounts)
     assert all(account.age_days == 1 for account in accounts)
 
+
 def test_phase8_observer_dashboard_chronicle_rows_are_ui_ready(tmp_path):
     """Living Chronicle Phase 8 should expose chronicle rows for the observer dashboard."""
     db_path = tmp_path / "phase8_chronicle_dashboard.db"
@@ -850,3 +851,25 @@ def test_phase8_observer_dashboard_army_rows_are_ui_ready(tmp_path):
     assert all(row.strength == row.soldiers + row.veterans for row in rows)
     assert all(0 <= row.morale <= 100 for row in rows)
     assert all(0 <= row.fatigue <= 100 for row in rows)
+
+
+def test_phase8_observer_dashboard_timeline_rows_are_ui_ready(tmp_path):
+    """Living Chronicle Phase 8 should expose a unified timeline for the observer dashboard."""
+    db_path = tmp_path / "phase8_timeline_dashboard.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+
+    app.campaign.advance_turn()
+
+    rows = service.get_timeline()
+
+    assert rows
+    assert rows == sorted(
+        rows, key=lambda r: (r.turn, r.date, r.kind, r.system, r.title), reverse=True
+    )
+    assert {"event", "observer", "summary"}.issubset({row.kind for row in rows})
+    assert all(row.date for row in rows)
+    assert all(isinstance(row.turn, int) for row in rows)
+    assert all(row.system for row in rows)
+    assert all(row.title for row in rows)
+    assert all(row.details for row in rows)

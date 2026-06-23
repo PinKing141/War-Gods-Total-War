@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 8 (Observer tool / dashboard) — Army inspector and workbook export button ✓
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 8 (Observer tool / dashboard) — Timeline viewer, army inspector, and workbook export button ✓
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 8 — Observer tool / dashboard** (chronicle reader, army inspection, and workbook export button complete; timeline and richer dashboard navigation remain future work).
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 8 — Observer tool / dashboard** (chronicle reader, timeline viewer, army inspection, and workbook export button complete; richer dashboard navigation remains future work).
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure

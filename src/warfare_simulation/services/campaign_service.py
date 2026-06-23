@@ -98,6 +98,16 @@ class ArmyRow:
 
 
 @dataclass
+class TimelineRow:
+    date: str
+    turn: int
+    kind: str
+    system: str
+    title: str
+    details: str
+
+
+@dataclass
 class EventRow:
     date: str
     turn: int
@@ -227,10 +237,51 @@ class CampaignService:
                 armor=getattr(u.armor, "value", str(u.armor)),
                 status=getattr(u.status, "value", str(u.status)),
                 location=provinces.get(u.location_id, str(u.location_id)),
-                commander=commanders.get(u.commander_id, "Unassigned") if u.commander_id else "Unassigned",
+                commander=(
+                    commanders.get(u.commander_id, "Unassigned") if u.commander_id else "Unassigned"
+                ),
             )
             for u in self._engine.repos.unit.list_all()
         ]
+
+    def get_timeline(self, limit: int | None = 200) -> List[TimelineRow]:
+        """Return an observer-facing timeline of summaries, events, and observer logs."""
+        rows: list[TimelineRow] = []
+        for summary in self._engine.repos.turn_summary.list_all():
+            rows.append(
+                TimelineRow(
+                    date=f"01/{summary.month:02d}/{summary.year:04d}",
+                    turn=summary.turn,
+                    kind="summary",
+                    system="Chronicle",
+                    title=summary.title,
+                    details=summary.narrative or " | ".join(summary.highlights),
+                )
+            )
+        for event in self._engine.repos.event.list_all():
+            rows.append(
+                TimelineRow(
+                    date=f"{event.day:02d}/{event.month:02d}/{event.year:04d}",
+                    turn=event.turn,
+                    kind="event",
+                    system=event.source_system,
+                    title=getattr(event.category, "value", str(event.category)),
+                    details=event.description,
+                )
+            )
+        for log in self._engine.repos.observer_log.list_all():
+            rows.append(
+                TimelineRow(
+                    date=f"{log.day:02d}/{log.month:02d}/{log.year:04d}",
+                    turn=log.turn,
+                    kind="observer",
+                    system=log.stream,
+                    title=log.source_system,
+                    details=log.summary,
+                )
+            )
+        rows.sort(key=lambda r: (r.turn, r.date, r.kind, r.system, r.title), reverse=True)
+        return rows if limit is None else rows[:limit]
 
     def get_events(self, limit: int | None = 200) -> List[EventRow]:
         events = sorted(
