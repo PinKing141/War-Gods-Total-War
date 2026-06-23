@@ -16,6 +16,122 @@ from warfare_simulation.domain.events.models import AuditLog, Event, ObserverLog
 SummaryPeriod = Literal["daily", "weekly", "monthly", "yearly"]
 
 
+HistorianPerspective = Literal["master_truth", "public", "faction", "later_historian"]
+
+
+@dataclass(frozen=True)
+class HistorianAccount:
+    """One observer-facing account of a hidden historical event.
+
+    ``source_event_id`` ties every account back to the same canonical event row.
+    The narrative may omit, soften, or reinterpret facts, but the generator never
+    invents a different underlying event identity.
+    """
+
+    source_event_id: int
+    perspective: HistorianPerspective
+    title: str
+    narrative: str
+    confidence: int
+    rumor: bool
+    age_days: int
+    cited_event_ids: list[int] = field(default_factory=list)
+    cited_log_ids: list[int] = field(default_factory=list)
+    contradictions: list[str] = field(default_factory=list)
+
+    @property
+    def is_reliable(self) -> bool:
+        """Return whether this account is presented as a high-confidence record."""
+        return not self.rumor and self.confidence >= 75
+
+
+class HistorianAccountGenerator:
+    """Generate deliberately different accounts from the same canonical event."""
+
+    def generate_for_event(
+        self,
+        event: Event,
+        *,
+        current_day: int | None = None,
+        current_month: int | None = None,
+        current_year: int | None = None,
+        observer_logs: Iterable[ObserverLog] = (),
+    ) -> list[HistorianAccount]:
+        """Create master, public, faction, and later-historian accounts.
+
+        The event remains the hidden truth. Public and faction accounts expose
+        lower confidence and explicit contradiction notes when they do not reveal
+        the full cause chain/effect summary.
+        """
+        source_event_id = event.id or 0
+        cited_log_ids = [
+            log.id for log in observer_logs if log.source_event_id == event.id and log.id
+        ]
+        age_days = self._age_days(event, current_day, current_month, current_year)
+        cause_note = " → ".join(event.cause_chain) if event.cause_chain else "causes unrecorded"
+        effect = event.effect_summary or event.impact or "No effect summary was recorded."
+        return [
+            HistorianAccount(
+                source_event_id=source_event_id,
+                perspective="master_truth",
+                title=f"Master record: {event.category.value}",
+                narrative=f"{event.description} Cause chain: {cause_note}. Effect: {effect}",
+                confidence=100,
+                rumor=False,
+                age_days=age_days,
+                cited_event_ids=[source_event_id],
+                cited_log_ids=cited_log_ids,
+            ),
+            HistorianAccount(
+                source_event_id=source_event_id,
+                perspective="public",
+                title=f"Public notice: {event.category.value}",
+                narrative=f"Witnesses report that {event.description} Officials state: {event.impact or effect}",
+                confidence=70,
+                rumor=True,
+                age_days=age_days,
+                cited_event_ids=[source_event_id],
+                cited_log_ids=cited_log_ids,
+                contradictions=["Public notice omits the full hidden cause chain."],
+            ),
+            HistorianAccount(
+                source_event_id=source_event_id,
+                perspective="faction",
+                title=f"Faction account from {event.actor}",
+                narrative=f"{event.actor} records the affair as pressure against {event.target or 'the realm'}: {event.description}",
+                confidence=60,
+                rumor=True,
+                age_days=age_days,
+                cited_event_ids=[source_event_id],
+                cited_log_ids=cited_log_ids,
+                contradictions=[
+                    "Faction account frames responsibility through the actor's interests."
+                ],
+            ),
+            HistorianAccount(
+                source_event_id=source_event_id,
+                perspective="later_historian",
+                title=f"Later historian: {event.source_system}",
+                narrative=f"Later annals connect {event.description} to {cause_note} and judge the outcome as: {effect}",
+                confidence=85 if event.cause_chain else 65,
+                rumor=not bool(event.cause_chain),
+                age_days=age_days,
+                cited_event_ids=[source_event_id],
+                cited_log_ids=cited_log_ids,
+                contradictions=(
+                    []
+                    if event.cause_chain
+                    else ["Later historian lacks primary cause-chain evidence."]
+                ),
+            ),
+        ]
+
+    def _age_days(self, event: Event, day: int | None, month: int | None, year: int | None) -> int:
+        if day is None or month is None or year is None:
+            return 0
+        return max(0, (year - event.year) * 372 + (month - event.month) * 31 + (day - event.day))
+
+
 @dataclass(frozen=True)
 class ObserverSummary:
     """Read model for an observer-facing chronicle summary."""

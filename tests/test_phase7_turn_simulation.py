@@ -579,9 +579,9 @@ def test_scheduled_events_persist_to_sqlite_and_reload(tmp_path):
         '{"grain": 25}',
         "pending",
     )
-    assert [(event.id, event.status) for event in restarted.campaign.pulse_scheduler.scheduled_events] == [
-        ("harvest-001", "pending")
-    ]
+    assert [
+        (event.id, event.status) for event in restarted.campaign.pulse_scheduler.scheduled_events
+    ] == [("harvest-001", "pending")]
 
     restarted.campaign.advance_day()
 
@@ -728,9 +728,9 @@ def test_phase6_internal_politics_engine_flags_strong_unstable_faction():
     from warfare_simulation.domain.diplomacy.models import Faction
     from warfare_simulation.domain.diplomacy.politics import InternalPoliticsEngine
 
-    crisis = InternalPoliticsEngine().evaluate([
-        Faction(id=9, name="Iron Regency", power_level=90, wealth=75, stability=35)
-    ])[0]
+    crisis = InternalPoliticsEngine().evaluate(
+        [Faction(id=9, name="Iron Regency", power_level=90, wealth=75, stability=35)]
+    )[0]
 
     assert crisis.crisis_type == "revolt"
     assert crisis.severity >= 60
@@ -771,3 +771,48 @@ def test_phase6_monthly_internal_politics_crisis_is_audited_and_persisted(tmp_pa
     restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
     assert restarted.repos.faction.get(faction.id).stability == 25
     assert restarted.repos.audit_log.get_by_system("InternalPolitics")[0].new_value == 25
+
+
+def test_phase7_historian_accounts_share_hidden_truth_event():
+    """Living Chronicle Phase 7 should generate unreliable records tied to one truth."""
+    from warfare_simulation.domain.events.models import Event, ObserverLog
+    from warfare_simulation.domain.events.summary import HistorianAccountGenerator
+
+    event = Event(
+        id=77,
+        turn=4,
+        category=EventCategory.POLITICS,
+        description="The Iron Regency suffered a bread riot in the capital.",
+        impact="Stability fell by 10.",
+        day=12,
+        month=3,
+        year=2,
+        actor="faction:9",
+        target="faction:9.stability",
+        source_system="InternalPolitics",
+        cause_chain=["monthly_pulse", "famine_pressure", "crisis:revolt"],
+        effect_summary="Revolt resolved with severity 68.",
+    )
+    log = ObserverLog(id=5, source_event_id=77, summary="Bread riot reported.")
+
+    accounts = HistorianAccountGenerator().generate_for_event(
+        event,
+        current_day=13,
+        current_month=3,
+        current_year=2,
+        observer_logs=[log],
+    )
+
+    assert {account.source_event_id for account in accounts} == {77}
+    assert {account.perspective for account in accounts} == {
+        "master_truth",
+        "public",
+        "faction",
+        "later_historian",
+    }
+    assert accounts[0].is_reliable is True
+    assert any(account.rumor for account in accounts if account.perspective != "master_truth")
+    assert any(account.contradictions for account in accounts)
+    assert all(account.cited_event_ids == [77] for account in accounts)
+    assert all(account.cited_log_ids == [5] for account in accounts)
+    assert all(account.age_days == 1 for account in accounts)
