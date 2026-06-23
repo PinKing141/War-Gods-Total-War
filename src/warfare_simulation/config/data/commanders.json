@@ -29,6 +29,26 @@
       "loyalty": 85,
       "status": "Active",
       "traits": "Wise, Diplomatic"
+    },
+    {
+      "name": "Marshal Odric Fen",
+      "role": "GENERAL",
+      "leadership": 76,
+      "tactics": 72,
+      "logistics": 68,
+      "loyalty": 70,
+      "status": "Active",
+      "traits": "Defensive, Weathered"
+    },
+    {
+      "name": "Admiral Maera Saltwind",
+      "role": "AMBASSADOR",
+      "leadership": 64,
+      "tactics": 58,
+      "logistics": 82,
+      "loyalty": 78,
+      "status": "Active",
+      "traits": "Mercantile, Opportunistic"
     }
   ]
 }

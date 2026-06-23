@@ -211,7 +211,7 @@ def test_advance_turn_persists_turn_summary(tmp_path):
             ORDER BY id
             """).fetchone()
 
-    assert summary[:6] == (2, 2, 1, "Turn 2 Summary", 4, 8)
+    assert summary[:6] == (2, 2, 1, "Turn 2 Summary", 6, 10)
     assert "The Dominion of Auster collected monthly net income." in summary[6]
     assert "Kingdom of Norland chose watch_rivals" in summary[6]
 
@@ -227,10 +227,10 @@ def test_rehydrated_repositories_include_turn_summaries(tmp_path):
     summary = restarted.repos.turn_summary.get_latest()
 
     assert summary.turn == 2
-    assert summary.event_count == 4
-    assert summary.audit_count == 8
+    assert summary.event_count == 6
+    assert summary.audit_count == 10
     assert "Logistics resolved 4 resource update(s)." in summary.narrative
-    assert "FactionIntent recorded 3 observer note(s)." in summary.narrative
+    assert "FactionIntent recorded 5 observer note(s)." in summary.narrative
 
 
 def test_pulse_scheduler_reports_ordered_boundaries_once():
@@ -389,9 +389,9 @@ def test_observer_summary_generator_builds_daily_weekly_monthly_views(tmp_path):
 
     assert [summary.period for summary in summaries] == ["daily", "weekly", "monthly", "yearly"]
     monthly = summaries[2]
-    assert monthly.event_count == 4
-    assert monthly.audit_count == 8
-    assert monthly.observer_log_count == 8
+    assert monthly.event_count == 6
+    assert monthly.audit_count == 10
+    assert monthly.observer_log_count == 10
     assert "Active streams: diplomacy, economics, logistics." in monthly.narrative
     assert "The Dominion of Auster collected monthly net income." in monthly.highlights
     assert "Kingdom of Norland chose watch_rivals" in monthly.highlights
@@ -412,9 +412,9 @@ def test_phase1a_autonomous_faction_intents_are_logged(tmp_path):
         audit for audit in app.repos.audit_log.list_all() if audit.system == "FactionIntent"
     ]
 
-    assert len(diplomacy_logs) == 3
-    assert len(faction_events) == 3
-    assert len(faction_audits) == 3
+    assert len(diplomacy_logs) == 5
+    assert len(faction_events) == 5
+    assert len(faction_audits) == 5
     assert all(log.details["valid"] for log in diplomacy_logs)
     assert {log.details["intent_type"] for log in diplomacy_logs} == {
         "watch_rivals",
@@ -423,7 +423,7 @@ def test_phase1a_autonomous_faction_intents_are_logged(tmp_path):
     assert all("evaluate_faction_pressure" in event.cause_chain for event in faction_events)
 
     restarted = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
-    assert len(restarted.repos.observer_log.get_by_stream("diplomacy")) == 3
+    assert len(restarted.repos.observer_log.get_by_stream("diplomacy")) == 5
 
 
 def test_phase1a_twelve_month_unattended_run_keeps_intents_auditable(tmp_path):
@@ -440,10 +440,10 @@ def test_phase1a_twelve_month_unattended_run_keeps_intents_auditable(tmp_path):
     summaries = app.repos.turn_summary.list_all()
 
     assert app.game_state.current_turn == 13
-    assert len(faction_events) == 36
+    assert len(faction_events) == 60
     assert len(summaries) == 12
     assert all(event.cause_chain[-1] == "validate_intent" for event in faction_events)
-    assert all(summary.event_count >= 4 for summary in summaries)
+    assert all(summary.event_count >= 6 for summary in summaries)
 
 
 def test_phase1_chronicle_yearly_summary_aggregates_unattended_run(tmp_path):
@@ -460,14 +460,14 @@ def test_phase1_chronicle_yearly_summary_aggregates_unattended_run(tmp_path):
     assert yearly.period == "yearly"
     assert yearly.title == "Yearly Summary — Year 2"
     assert yearly.date_range == "01/01/0002–31/12/0002"
-    assert yearly.event_count == 4
-    assert yearly.audit_count == 8
-    assert yearly.observer_log_count == 8
+    assert yearly.event_count == 6
+    assert yearly.audit_count == 10
+    assert yearly.observer_log_count == 10
     assert (
-        "This year recorded 4 event(s), 8 auditable state change(s), and 8 observer log entry(ies)."
+        "This year recorded 6 event(s), 10 auditable state change(s), and 10 observer log entry(ies)."
         in yearly.narrative
     )
-    assert "FactionIntent recorded 3 observer note(s)." in yearly.narrative
+    assert "FactionIntent recorded 5 observer note(s)." in yearly.narrative
 
 
 def test_event_feed_limits_recent_rows_for_long_run_readability(tmp_path):
@@ -888,8 +888,8 @@ def test_phase9_balance_health_report_flags_impossible_state(tmp_path):
     report = service.get_balance_health_report(years_simulated=100)
 
     assert report.years_simulated == 100
-    assert report.faction_count == 3
-    assert report.province_count == 4
+    assert report.faction_count == 5
+    assert report.province_count == 6
     assert report.status == "watch"
     assert report.warning_count == 2
     assert "100-year balance check: watch" in report.summary
@@ -897,3 +897,31 @@ def test_phase9_balance_health_report_flags_impossible_state(tmp_path):
         (province.name, "loyalty"),
         (province.name, "garrison_size"),
     }
+
+
+def test_phase9_seed_content_expands_observer_scenario(tmp_path):
+    """Living Chronicle Phase 9 should seed richer factions, provinces, and armies."""
+    db_path = tmp_path / "phase9_content_pack.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+
+    factions = app.repos.faction.list_all()
+    provinces = app.repos.province.list_all()
+    units = app.repos.unit.list_all()
+    commanders = app.repos.commander.list_all()
+
+    assert {faction.name for faction in factions}.issuperset(
+        {"Marches of Greyfen", "Sable Coast League"}
+    )
+    assert {province.name for province in provinces}.issuperset(
+        {"Greyfen March (Frontier)", "Sableport (Harbor)"}
+    )
+    assert {unit.name for unit in units}.issuperset(
+        {"Greyfen Wardens", "Sableport Crossbows"}
+    )
+    assert {commander.name for commander in commanders}.issuperset(
+        {"Marshal Odric Fen", "Admiral Maera Saltwind"}
+    )
+    assert all(0 <= faction.power_level <= 100 for faction in factions)
+    assert all(0 <= faction.wealth <= 100 for faction in factions)
+    assert all(0 <= faction.stability <= 100 for faction in factions)
+    assert all(province.garrison_size <= province.garrison_capacity for province in provinces)

@@ -43,6 +43,28 @@
       "garrison_size": 800,
       "garrison_capacity": 2500,
       "governor_name": "Spymaster Kael"
+    },
+    {
+      "name": "Greyfen March (Frontier)",
+      "population": 55000,
+      "fort_level": 3,
+      "food_stored": 9000,
+      "monthly_tax": 2300,
+      "loyalty": 68,
+      "garrison_size": 650,
+      "garrison_capacity": 1800,
+      "governor_name": "Marshal Odric Fen"
+    },
+    {
+      "name": "Sableport (Harbor)",
+      "population": 95000,
+      "fort_level": 2,
+      "food_stored": 16000,
+      "monthly_tax": 6200,
+      "loyalty": 78,
+      "garrison_size": 350,
+      "garrison_capacity": 1200,
+      "governor_name": "Magistrate Selene Voss"
     }
   ]
 }
