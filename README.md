@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 1A (Autonomous Faction Intent Skeleton) — In Progress
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 1B (Chronicle Summary Surfaces) — In Progress
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 1A — autonomous faction pressure-to-intent skeleton.**
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 1B — monthly and yearly chronicle summary surfaces.**
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -182,12 +182,17 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - [x] Update dashboard event feed for long-run readability
 
 
-### Living Chronicle Phase 1A: Autonomous Faction Intent Skeleton
+### ✓ Living Chronicle Phase 1A: Autonomous Faction Intent Skeleton
 - [x] Evaluate monthly faction pressure from stability, wealth, military power, and hostile relations
 - [x] Generate deterministic autonomous strategic intents
 - [x] Validate intents before mutation hooks are allowed
 - [x] Record faction-intent events, audits, and diplomacy observer logs
 - [x] Include faction-intent notes in monthly observer summaries
+
+### Living Chronicle Phase 1B: Chronicle Summary Surfaces
+- [x] Generate observer-facing yearly chronicle summaries from event, audit, and observer-log streams
+- [x] Expose daily, weekly, monthly, and yearly summary cards through the campaign service
+- [x] Verify a 12-month unattended run produces an auditable yearly chronicle
 
 ## Usage Examples
 
