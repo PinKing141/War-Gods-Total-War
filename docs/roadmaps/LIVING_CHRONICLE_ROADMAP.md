@@ -880,20 +880,20 @@ Exit criteria:
 
 ### Phase 8 — Observer tool / dashboard
 
-**Goal**: Make the project easier and more enjoyable to watch.
+**Goal**: Make the project easier and more enjoyable to watch. ✓ Initial dashboard chronicle implementation
 
 Scope:
 
 - Timeline viewer.
-- Event log browser.
-- Faction/province/army inspectors.
-- Simulation controls.
-- Chronicle reader.
+- Event log browser. ✓ Initial event feed implementation
+- Faction/province/army inspectors. ✓ Initial faction and province inspectors; army inspector remains future work
+- Simulation controls. ✓ Pause/play and speed controls implemented
+- Chronicle reader. ✓ Initial daily/weekly/monthly/yearly observer-summary tab
 - Export buttons.
 
 Exit criteria:
 
-- User can run, pause, inspect, and read history without opening raw SQLite/workbook files.
+- User can run, pause, inspect, and read history without opening raw SQLite/workbook files. ✓ Initial desktop observatory slice supports run/pause, inspection tables, event log, and chronicle reading
 
 ### Phase 9 — Content expansion and balance
 

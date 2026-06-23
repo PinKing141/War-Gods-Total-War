@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 from warfare_simulation.services.campaign_service import CampaignService
 from warfare_simulation.ui.models.event_model import EventTableModel
 from warfare_simulation.ui.models.faction_model import FactionTableModel
+from warfare_simulation.ui.models.observer_summary_model import ObserverSummaryTableModel
 from warfare_simulation.ui.models.province_model import ProvinceTableModel
 from warfare_simulation.ui.models.resource_model import ResourceTableModel
 from warfare_simulation.ui.widgets.kingdom_panel import KingdomPanel
@@ -72,6 +73,7 @@ class MainWindow(QMainWindow):
         self._resource_model = ResourceTableModel()
         self._event_model = EventTableModel()
         self._faction_model = FactionTableModel()
+        self._observer_summary_model = ObserverSummaryTableModel()
 
         self._build_ui()
         self._load_stylesheet()
@@ -165,6 +167,14 @@ class MainWindow(QMainWindow):
             ),
             "  Event Log  ",
         )
+        tabs.addTab(
+            SortableTableView(
+                self._observer_summary_model,
+                resize_columns=[0, 1, 2, 3, 5, 6, 7],
+                stretch_last=True,
+            ),
+            "  Chronicle  ",
+        )
         return tabs
 
     def _load_stylesheet(self) -> None:
@@ -197,6 +207,7 @@ class MainWindow(QMainWindow):
         self._resource_model.refresh(self._service.get_resources())
         self._event_model.refresh(self._service.get_events())
         self._faction_model.refresh(self._service.get_factions())
+        self._observer_summary_model.refresh(self._service.get_observer_summaries())
 
         self._date_label.setText(sim.formatted_date)
         self._pause_btn.setText("▶ Play" if sim.is_paused else "⏸ Pause")

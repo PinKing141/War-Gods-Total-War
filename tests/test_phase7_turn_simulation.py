@@ -816,3 +816,20 @@ def test_phase7_historian_accounts_share_hidden_truth_event():
     assert all(account.cited_event_ids == [77] for account in accounts)
     assert all(account.cited_log_ids == [5] for account in accounts)
     assert all(account.age_days == 1 for account in accounts)
+
+def test_phase8_observer_dashboard_chronicle_rows_are_ui_ready(tmp_path):
+    """Living Chronicle Phase 8 should expose chronicle rows for the observer dashboard."""
+    db_path = tmp_path / "phase8_chronicle_dashboard.db"
+    app = WarfareSimulationApp(config_path=CONFIG_DIR, db_path=db_path)
+    service = CampaignService(app)
+
+    app.campaign.advance_turn()
+
+    rows = service.get_observer_summaries()
+
+    assert [row.period for row in rows] == ["daily", "weekly", "monthly", "yearly"]
+    assert all(row.title for row in rows)
+    assert all(row.date_range for row in rows)
+    assert all(isinstance(row.turn, int) for row in rows)
+    assert any("event(s)" in row.narrative for row in rows)
+    assert all(isinstance(row.highlights, str) for row in rows)
