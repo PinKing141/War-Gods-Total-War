@@ -26,6 +26,24 @@
       "wealth": 80,
       "stability": 70,
       "personality_traits": "diplomatic, authoritarian"
+    },
+    {
+      "name": "Marches of Greyfen",
+      "faction_type": "march",
+      "government_type": "military governorship",
+      "power_level": 52,
+      "wealth": 45,
+      "stability": 58,
+      "personality_traits": "cautious, defensive"
+    },
+    {
+      "name": "Sable Coast League",
+      "faction_type": "merchant league",
+      "government_type": "oligarchy",
+      "power_level": 48,
+      "wealth": 92,
+      "stability": 72,
+      "personality_traits": "diplomatic, opportunistic"
     }
   ],
   "relations": [
@@ -54,6 +72,42 @@
       "opinion": 10,
       "trust": 20,
       "trade_agreement": true,
+      "military_alliance": false
+    },
+    {
+      "faction_a_id": 1,
+      "faction_b_id": 4,
+      "status": "TRADE_PARTNER",
+      "opinion": 25,
+      "trust": 15,
+      "trade_agreement": true,
+      "military_alliance": false
+    },
+    {
+      "faction_a_id": 3,
+      "faction_b_id": 4,
+      "status": "ENEMY",
+      "opinion": -55,
+      "trust": -65,
+      "trade_agreement": false,
+      "military_alliance": false
+    },
+    {
+      "faction_a_id": 2,
+      "faction_b_id": 5,
+      "status": "TRADE_PARTNER",
+      "opinion": 50,
+      "trust": 45,
+      "trade_agreement": true,
+      "military_alliance": false
+    },
+    {
+      "faction_a_id": 4,
+      "faction_b_id": 5,
+      "status": "NEUTRAL",
+      "opinion": 5,
+      "trust": 10,
+      "trade_agreement": false,
       "military_alliance": false
     }
   ]

@@ -2,7 +2,7 @@
 
 A **production-grade, domain-driven campaign engine** for medieval warfare simulation.
 
-> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 9 (Content expansion and balance) — Balance health report ✓
+> **Status**: Phases 1–10 Complete ✓ | Living Chronicle Phase 9 (Content expansion and balance) — Seed content pack and balance health ✓
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ tests/                 # Unit & integration tests
 
 ## Roadmap
 
-See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 9 — Content expansion and balance** (initial non-mutating balance health report complete; richer content packs and long-run tuning remain future work).
+See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading order. Current focus: **Living Chronicle Phase 9 — Content expansion and balance** (initial seed content pack and non-mutating balance health report complete; long-run tuning remains future work).
 
 ### ✓ Phase 1: Foundation (Complete)
 - [x] Package structure
@@ -205,6 +205,12 @@ See [docs/roadmaps/README.md](docs/roadmaps/README.md) for the roadmap reading o
 - Added a non-mutating balance analyzer for soak-test plausibility checks.
 - Added a UI/service-facing health report that counts factions, provinces, events, and impossible-state warnings.
 - Added coverage for 100-year balance-report warnings before larger content packs are introduced.
+
+### ✓ Living Chronicle Phase 9B: Seed Content Pack
+- [x] Expanded the default observer scenario from 3 to 5 factions with additional border and trade powers
+- [x] Expanded the province map from 4 to 6 provinces with frontier and harbor pressure points
+- [x] Added matching commanders and army units so the richer seed can be inspected immediately
+- [x] Verified expanded seed content remains within current balance-health invariants.
 
 ### ✓ Living Chronicle Phase 7A: Historian Account Skeleton
 - [x] Generate master-truth, public, faction, and later-historian accounts from a canonical event

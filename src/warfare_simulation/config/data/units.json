@@ -32,6 +32,28 @@
       "armor": "BRIGANDINE",
       "location_id": 3,
       "status": "ACTIVE"
+    },
+    {
+      "name": "Greyfen Wardens",
+      "unit_type": "LIGHT_SPEARMEN",
+      "soldiers": 320,
+      "veterans": 40,
+      "morale": 72,
+      "fatigue": 0,
+      "armor": "GAMBESON",
+      "location_id": 5,
+      "status": "ACTIVE"
+    },
+    {
+      "name": "Sableport Crossbows",
+      "unit_type": "CROSSBOWS",
+      "soldiers": 260,
+      "veterans": 35,
+      "morale": 74,
+      "fatigue": 0,
+      "armor": "LEATHER",
+      "location_id": 6,
+      "status": "ACTIVE"
     }
   ]
 }

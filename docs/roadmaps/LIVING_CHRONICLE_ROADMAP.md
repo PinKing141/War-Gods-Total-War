@@ -901,17 +901,19 @@ Exit criteria:
 
 Scope:
 
-- More factions.
-- More provinces.
-- More ruler/commander traits.
+- More factions. ✓ Initial seed pack expands the scenario to five factions
+- More provinces. ✓ Initial seed pack expands the map to six provinces
+- More ruler/commander traits. ✓ Initial seed pack adds frontier and harbor leaders
 - More event types.
 - More chronicle templates.
 - More diplomacy/politics outcomes.
 - Soak testing and balancing. ✓ Initial non-mutating balance health report implemented
+- More army variety. ✓ Initial seed pack adds frontier spear and harbor crossbow forces
 
 Exit criteria:
 
 - 100-year simulations produce varied but plausible histories without impossible state. ✓ Initial plausibility checks flag impossible faction/province scores and capacities
+- Default seed content has enough faction/province/army variety to exercise the observer dashboard beyond the original MVP slice. ✓ Initial Phase 9B content pack implemented
 
 ### Phase 10 — Release hardening
 

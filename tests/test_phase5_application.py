@@ -51,11 +51,11 @@ def test_app_run_loads_config_seeds_sqlite_and_exports_workbook(tmp_path):
     assert app.game_state.current_day == 1
     assert app.game_state.current_turn == 1
     assert len(app.repos.kingdom.list_all()) == 1
-    assert len(app.repos.province.list_all()) == 4
-    assert len(app.repos.unit.list_all()) == 3
-    assert len(app.repos.commander.list_all()) == 3
-    assert len(app.repos.faction.list_all()) == 3
-    assert len(app.repos.relation.list_all()) == 3
+    assert len(app.repos.province.list_all()) == 6
+    assert len(app.repos.unit.list_all()) == 5
+    assert len(app.repos.commander.list_all()) == 5
+    assert len(app.repos.faction.list_all()) == 5
+    assert len(app.repos.relation.list_all()) == 7
     assert len(app.repos.resource.list_all()) == 4
 
 
@@ -123,10 +123,10 @@ def test_app_run_creates_expected_sqlite_schema(tmp_path):
         assert conn.execute("PRAGMA foreign_key_list(province)").fetchall()
         assert conn.execute("PRAGMA foreign_key_list(relation)").fetchall()
         assert conn.execute("SELECT COUNT(*) FROM kingdom").fetchone()[0] == 1
-        assert conn.execute("SELECT COUNT(*) FROM province").fetchone()[0] == 4
-        assert conn.execute("SELECT COUNT(*) FROM unit").fetchone()[0] == 3
-        assert conn.execute("SELECT COUNT(*) FROM commander").fetchone()[0] == 3
-        assert conn.execute("SELECT COUNT(*) FROM faction").fetchone()[0] == 3
-        assert conn.execute("SELECT COUNT(*) FROM relation").fetchone()[0] == 3
+        assert conn.execute("SELECT COUNT(*) FROM province").fetchone()[0] == 6
+        assert conn.execute("SELECT COUNT(*) FROM unit").fetchone()[0] == 5
+        assert conn.execute("SELECT COUNT(*) FROM commander").fetchone()[0] == 5
+        assert conn.execute("SELECT COUNT(*) FROM faction").fetchone()[0] == 5
+        assert conn.execute("SELECT COUNT(*) FROM relation").fetchone()[0] == 7
         assert conn.execute("SELECT COUNT(*) FROM resource").fetchone()[0] == 4
         assert conn.execute("SELECT COUNT(*) FROM event").fetchone()[0] == 0

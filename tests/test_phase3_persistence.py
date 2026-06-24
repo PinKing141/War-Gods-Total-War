@@ -42,26 +42,26 @@ def test_config_loading():
     
     print("Loading provinces config...")
     provinces_config = config_mgr.load_provinces_config()
-    assert len(provinces_config.provinces) == 4
+    assert len(provinces_config.provinces) == 6
     assert provinces_config.provinces[0].name == "Highreach (Capital)"
     print(f"[OK] Provinces loaded: {len(provinces_config.provinces)} provinces")
     
     print("Loading units config...")
     units_config = config_mgr.load_units_config()
-    assert len(units_config.units) == 3
+    assert len(units_config.units) == 5
     assert units_config.units[0].soldiers == 500
     print(f"[OK] Units loaded: {len(units_config.units)} units")
     
     print("Loading commanders config...")
     commanders_config = config_mgr.load_commanders_config()
-    assert len(commanders_config.commanders) == 3
+    assert len(commanders_config.commanders) == 5
     assert commanders_config.commanders[0].name == "General Marcus Thorn"
     print(f"[OK] Commanders loaded: {len(commanders_config.commanders)} commanders")
     
     print("Loading diplomacy config...")
     diplomacy_config = config_mgr.load_diplomacy_config()
-    assert len(diplomacy_config.factions) == 3
-    assert len(diplomacy_config.relations) == 3
+    assert len(diplomacy_config.factions) == 5
+    assert len(diplomacy_config.relations) == 7
     print(f"[OK] Diplomacy loaded: {len(diplomacy_config.factions)} factions, {len(diplomacy_config.relations)} relations")
     
     print("Loading resources config...")
@@ -151,19 +151,19 @@ def test_campaign_seeding():
         assert cursor.fetchone()[0] == 1
 
         cursor = db.execute("SELECT COUNT(*) FROM province")
-        assert cursor.fetchone()[0] == 4
+        assert cursor.fetchone()[0] == 6
 
         cursor = db.execute("SELECT COUNT(*) FROM unit")
-        assert cursor.fetchone()[0] == 3
+        assert cursor.fetchone()[0] == 5
 
         cursor = db.execute("SELECT COUNT(*) FROM commander")
-        assert cursor.fetchone()[0] == 3
+        assert cursor.fetchone()[0] == 5
 
         cursor = db.execute("SELECT COUNT(*) FROM faction")
-        assert cursor.fetchone()[0] == 3
+        assert cursor.fetchone()[0] == 5
 
         cursor = db.execute("SELECT COUNT(*) FROM relation")
-        assert cursor.fetchone()[0] == 3
+        assert cursor.fetchone()[0] == 7
 
         cursor = db.execute("SELECT COUNT(*) FROM resource")
         assert cursor.fetchone()[0] == 4
@@ -179,11 +179,11 @@ def test_campaign_seeding():
         repos = CampaignBootstrap.load_repositories(db)
         kingdom = repos.kingdom.get(kingdom_id)
         assert kingdom.name == "The Dominion of Auster"
-        assert len(repos.province.list_all()) == 4
-        assert len(repos.unit.list_all()) == 3
-        assert len(repos.commander.list_all()) == 3
-        assert len(repos.faction.list_all()) == 3
-        assert len(repos.relation.list_all()) == 3
+        assert len(repos.province.list_all()) == 6
+        assert len(repos.unit.list_all()) == 5
+        assert len(repos.commander.list_all()) == 5
+        assert len(repos.faction.list_all()) == 5
+        assert len(repos.relation.list_all()) == 7
         assert len(repos.resource.list_all()) == 4
         print("[OK] Repositories hydrated from SQLite")
 
@@ -217,8 +217,8 @@ def test_campaign_force_reseed_remaps_relation_ids_after_deleted_factions():
             for faction_id in row
         }
 
-        assert len(faction_ids) == 3
-        assert len(relation_faction_ids) == 3
+        assert len(faction_ids) == 5
+        assert len(relation_faction_ids) == 5
         assert relation_faction_ids == faction_ids
         print("[OK] Force reseed relations reference the newly inserted factions")
 
