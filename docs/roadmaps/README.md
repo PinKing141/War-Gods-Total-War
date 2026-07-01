@@ -2,40 +2,45 @@
 
 This folder is the single place to read and manage project roadmaps.
 
-## Read In This Order
+## Read This First (and mostly only this)
 
-1. `../RULES_FRAMEWORK.md`
-   Read first. This is the contract for how the observer simulation is allowed to work.
+**[`UNIFIED_ROADMAP.md`](UNIFIED_ROADMAP.md)** is now the **single canonical roadmap**.
+It merges the three former roadmaps into one ordered build plan, governed by the
+observer-simulation contract in [`../RULES_FRAMEWORK.md`](../RULES_FRAMEWORK.md), and is
+centered on the project's Prime Law — **conservation: nothing exists without the inputs
+that produce it** — and on characters who found kingdoms.
 
-2. `MODULARIZATION_ROADMAP.md`
-   Read second. This is the technical implementation roadmap and historical record of what foundation work already exists.
+If you read one document, read that one. Read `../RULES_FRAMEWORK.md` alongside it as the
+binding contract it obeys.
 
-3. `LIVING_CHRONICLE_ROADMAP.md`
-   Read third. This is the product roadmap for the autonomous observer-simulation direction.
+## Archived References (historical, superseded by the unified roadmap)
 
-4. `CONTENT_ROADMAP.md`
-   Read last. This is the future content-expansion backlog and should only drive work after the simulation loop is stable.
+These are kept for history and technical detail but no longer drive planning on their own.
+Where they disagree with each other or with reality, the unified roadmap wins.
 
-## How To Use These Roadmaps
+1. [`../RULES_FRAMEWORK.md`](../RULES_FRAMEWORK.md) — the observer-simulation contract. Still
+   binding; the unified roadmap is built to obey it.
+2. [`MODULARIZATION_ROADMAP.md`](MODULARIZATION_ROADMAP.md) — technical foundation and the
+   historical record of what already exists (domains, SQLite, calendar, pulses, logs).
+3. [`LIVING_CHRONICLE_ROADMAP.md`](LIVING_CHRONICLE_ROADMAP.md) — the former product roadmap;
+   its vision is folded into the unified roadmap.
+4. [`CONTENT_ROADMAP.md`](CONTENT_ROADMAP.md) — content-expansion backlog; now the final
+   stage of the unified roadmap.
 
-- Use `../RULES_FRAMEWORK.md` to reject ideas that break the observer-sim contract.
-- Use `MODULARIZATION_ROADMAP.md` to understand what the codebase already supports and what technical phases still need implementation.
-- Use `LIVING_CHRONICLE_ROADMAP.md` to decide the next major product milestone.
-- Use `CONTENT_ROADMAP.md` only after a system already exists and needs more factions, events, histories, or scenarios.
+## How To Use These
 
-## Linear Build Order
+- Use `UNIFIED_ROADMAP.md` to decide **what to build next** and in what order.
+- Use `../RULES_FRAMEWORK.md` to **reject ideas that break the observer-sim contract**.
+- Use `MODULARIZATION_ROADMAP.md` to understand **what the codebase already supports**.
+- Use `CONTENT_ROADMAP.md` only after the simulation loop and chronicle layers are solid
+  (this is the unified roadmap's Stage 11).
 
-1. Stabilize the current runtime foundation: persistence, UI shell, daily clock, export, and restart safety.
-2. Build the simulation loop: daily, weekly, monthly, seasonal, and yearly pulse ordering.
-3. Add autonomous faction intent and constraint resolution.
-4. Expand causality and explainability: audit logs, event logs, summaries, and chronicle generation.
-5. Deepen systemic simulation: logistics, movement, diplomacy pressure, collapse, succession, war, and recovery.
-6. Add content only after the above layers produce readable history on their own.
+## The One-Line Build Order
 
-## Current Practical Priority
+Direction lock → **material foundation → production/conservation engine → deterministic
+formulas + dice log** → closed faction decisions → **characters & kingdom founding** →
+province pressure & collapse → logistics/movement → emergent war → diplomacy/memory/historian
+→ chronicle & observatory → content → scale/balance/release.
 
-The practical execution path is:
-
-1. Finish the remaining Phase 8 observer-pivot work in `MODULARIZATION_ROADMAP.md`.
-2. Start the MVP simulation milestones in `LIVING_CHRONICLE_ROADMAP.md`.
-3. Keep `CONTENT_ROADMAP.md` as parked future work until the simulation loop and chronicle layers are trustworthy.
+See `UNIFIED_ROADMAP.md §9` for the full staged plan and each stage's conservation
+acceptance criteria.

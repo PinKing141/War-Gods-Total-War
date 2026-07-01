@@ -1,5 +1,9 @@
 # Content Roadmap
 
+> **Superseded — archived reference.** This backlog is now **Stage 11** of the single
+> canonical [`UNIFIED_ROADMAP.md`](UNIFIED_ROADMAP.md) and should only be drawn from once
+> the conserving simulation loop (Stages 1–10) is solid.
+
 This document is intentionally downstream of the simulation roadmaps.
 
 ## Purpose

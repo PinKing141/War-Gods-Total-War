@@ -1,5 +1,10 @@
 # Living Chronicle Simulator Roadmap
 
+> **Superseded — archived reference.** Its vision is folded into the single canonical
+> [`UNIFIED_ROADMAP.md`](UNIFIED_ROADMAP.md). Note: several phases below are marked
+> "✓ initial implementation" but are thin, uncoupled slices; the unified roadmap gives
+> the honest status and the real build order.
+
 **Document Version**: 1.0  
 **Last Updated**: 2026-06-23  
 **Strategic Direction**: Autonomous Historical Chronicle Simulator  

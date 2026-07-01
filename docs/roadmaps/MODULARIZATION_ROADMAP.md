@@ -1,5 +1,11 @@
 # Warfare Simulation Campaign Engine — Modularization Roadmap
 
+> **Superseded — archived reference.** Planning now lives in
+> [`UNIFIED_ROADMAP.md`](UNIFIED_ROADMAP.md), which merges this document with the
+> product and content roadmaps under the Prime Law of conservation. Keep this file for
+> its technical detail and record of the completed foundation; where it disagrees with
+> the unified roadmap, the unified roadmap wins.
+
 **Document Version**: 2.0  
 **Last Updated**: 2026-06-20  
 **Status**: Foundations Complete; Observer Simulation Pivot Approved; Phase 10 Started
