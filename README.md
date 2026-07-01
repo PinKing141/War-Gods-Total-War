@@ -281,6 +281,7 @@ flake8 src/
 
 ## Documentation
 
+- [docs/roadmaps/UNIFIED_ROADMAP.md](docs/roadmaps/UNIFIED_ROADMAP.md) — **Canonical roadmap.** Merges the technical, product, and content roadmaps under the Prime Law of conservation ("nothing appears without its inputs") and the character-founded-kingdoms vision
 - [docs/roadmaps/README.md](docs/roadmaps/README.md) — Linear roadmap reading order and execution priority
 - [docs/roadmaps/MODULARIZATION_ROADMAP.md](docs/roadmaps/MODULARIZATION_ROADMAP.md) — Detailed technical roadmap and implementation history
 - [docs/roadmaps/LIVING_CHRONICLE_ROADMAP.md](docs/roadmaps/LIVING_CHRONICLE_ROADMAP.md) — Product roadmap for the no-player-agency Living Chronicle Simulator direction
