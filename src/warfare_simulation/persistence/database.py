@@ -92,6 +92,266 @@ class DatabaseManager:
         existing_columns = {row[1] for row in cursor.fetchall()}
         if column_name not in existing_columns:
             self.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
+
+    def _initialize_lore_schema(self) -> None:
+        """Create CSV-backed lore reference and seed tables."""
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS species (
+                species_id TEXT PRIMARY KEY,
+                common_name TEXT NOT NULL,
+                self_name TEXT DEFAULT '',
+                avg_lifespan TEXT DEFAULT '',
+                fertility_rate TEXT DEFAULT '',
+                food_need TEXT DEFAULT '',
+                population_recovery TEXT DEFAULT '',
+                magic_tendency TEXT DEFAULT '',
+                strengths TEXT DEFAULT '',
+                weaknesses TEXT DEFAULT '',
+                political_pattern TEXT DEFAULT '',
+                legal_bias_notes TEXT DEFAULT '',
+                self_name_meaning TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS culture (
+                culture_id TEXT PRIMARY KEY,
+                self_name TEXT NOT NULL,
+                meaning TEXT DEFAULT '',
+                common_name TEXT NOT NULL,
+                old_imperial_name TEXT DEFAULT '',
+                enemy_insults TEXT DEFAULT '',
+                dominant_species TEXT DEFAULT '',
+                location TEXT DEFAULT '',
+                values_text TEXT DEFAULT '',
+                military_style TEXT DEFAULT '',
+                government TEXT DEFAULT '',
+                contradiction TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS culture_modifier (
+                culture_id TEXT PRIMARY KEY,
+                modifiers_json TEXT NOT NULL DEFAULT '{}',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(culture_id) REFERENCES culture(culture_id)
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS religion (
+                religion_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                type TEXT DEFAULT '',
+                core_claim TEXT DEFAULT '',
+                sacred TEXT DEFAULT '',
+                sinful TEXT DEFAULT '',
+                war_stance TEXT DEFAULT '',
+                mage_stance TEXT DEFAULT '',
+                holy_war_triggers TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS religion_modifier (
+                religion_id TEXT PRIMARY KEY,
+                modifiers_json TEXT NOT NULL DEFAULT '{}',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(religion_id) REFERENCES religion(religion_id)
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS region (
+                region_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                climate TEXT DEFAULT '',
+                terrain TEXT DEFAULT '',
+                primary_resources TEXT DEFAULT '',
+                danger TEXT DEFAULT '',
+                dominant_cultures TEXT DEFAULT '',
+                common_war_type TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS lore_resource (
+                resource_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                category TEXT DEFAULT '',
+                why_it_matters TEXT DEFAULT '',
+                scarcity_effect TEXT DEFAULT '',
+                war_relevance TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS naming_style (
+                style_id TEXT PRIMARY KEY,
+                culture_id TEXT NOT NULL,
+                sound TEXT DEFAULT '',
+                examples TEXT DEFAULT '',
+                place_suffixes TEXT DEFAULT '',
+                avoid TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(culture_id) REFERENCES culture(culture_id)
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS ai_weight (
+                ai_weight_id TEXT PRIMARY KEY,
+                applies_to TEXT NOT NULL,
+                weight INTEGER NOT NULL,
+                drives TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS mechanic_hook (
+                hook_id TEXT PRIMARY KEY,
+                input_text TEXT DEFAULT '',
+                output_text TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS seed_region (
+                seed_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                tests TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS seed_faction (
+                faction_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                identity TEXT DEFAULT '',
+                dominant_culture TEXT DEFAULT '',
+                dominant_species TEXT DEFAULT '',
+                religion_id TEXT DEFAULT '',
+                government TEXT DEFAULT '',
+                conflict_pressure TEXT DEFAULT '',
+                primary_goal TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS seed_province (
+                province_id TEXT PRIMARY KEY,
+                local_name TEXT NOT NULL,
+                common_name TEXT DEFAULT '',
+                old_imperial_name TEXT DEFAULT '',
+                religious_name TEXT DEFAULT '',
+                enemy_name TEXT DEFAULT '',
+                region_id TEXT NOT NULL,
+                controller TEXT NOT NULL,
+                terrain TEXT DEFAULT '',
+                primary_resource TEXT DEFAULT '',
+                road_level INTEGER NOT NULL,
+                port_level INTEGER NOT NULL,
+                fort_level INTEGER NOT NULL,
+                mana_site_level INTEGER NOT NULL,
+                strategic_value INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(region_id) REFERENCES region(region_id),
+                FOREIGN KEY(controller) REFERENCES seed_faction(faction_id)
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS seed_relation (
+                relation_id TEXT PRIMARY KEY,
+                faction_a TEXT NOT NULL,
+                faction_b TEXT NOT NULL,
+                score INTEGER NOT NULL,
+                main_tension TEXT DEFAULT '',
+                war_risk INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(faction_a) REFERENCES seed_faction(faction_id),
+                FOREIGN KEY(faction_b) REFERENCES seed_faction(faction_id)
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS seed_character (
+                character_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                species_id TEXT NOT NULL,
+                culture_id TEXT NOT NULL,
+                faction_id TEXT NOT NULL,
+                role TEXT DEFAULT '',
+                age INTEGER NOT NULL,
+                core_pressure TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(species_id) REFERENCES species(species_id),
+                FOREIGN KEY(culture_id) REFERENCES culture(culture_id),
+                FOREIGN KEY(faction_id) REFERENCES seed_faction(faction_id)
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS claim (
+                claim_id TEXT PRIMARY KEY,
+                claimant TEXT NOT NULL,
+                target TEXT NOT NULL,
+                claim_type TEXT NOT NULL,
+                source TEXT DEFAULT '',
+                strength INTEGER NOT NULL,
+                decay_rate INTEGER DEFAULT 0,
+                myth_status TEXT DEFAULT '',
+                recognized_by TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS mage (
+                mage_id TEXT PRIMARY KEY,
+                character_id TEXT NOT NULL,
+                species_id TEXT NOT NULL,
+                capacity INTEGER NOT NULL,
+                control INTEGER NOT NULL,
+                recovery INTEGER NOT NULL,
+                strain_tolerance INTEGER NOT NULL,
+                specialization TEXT DEFAULT '',
+                legal_status TEXT DEFAULT '',
+                patron_faction TEXT DEFAULT '',
+                risk_score INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(character_id) REFERENCES seed_character(character_id),
+                FOREIGN KEY(species_id) REFERENCES species(species_id)
+            )
+        """)
     
     def initialize_schema(self) -> None:
         """
@@ -332,6 +592,8 @@ class DatabaseManager:
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+            self._initialize_lore_schema()
 
             self.execute("""
                 CREATE TABLE IF NOT EXISTS migration (

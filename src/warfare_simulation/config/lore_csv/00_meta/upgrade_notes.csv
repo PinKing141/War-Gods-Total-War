@@ -1,0 +1,6 @@
+upgrade_id,area,old_issue,upgrade,why_it_fits
+UPG_001,World identity,Generic fantasy labels and placeholder names.,"Added layered naming, local/common/imperial/religious/enemy/scholar name logic.",Stops names sounding plastic and gives chronicles multiple perspectives.
+UPG_002,Magic,Magic risked becoming flavour or a shortcut.,Converted mana into capacity/control/recovery/strain/legal status with costs and limits.,"Lets magic affect history without deleting logistics, disease, debt or food."
+UPG_003,Species,Fantasy species can become stereotypes or factions.,"Separated species, culture, state and religion into different CSV concepts.","Allows orcs, elves, dwarves and humans to exist across cultures, classes and states."
+UPG_004,Simulation readiness,Lore text was not directly usable by the engine.,"Added mechanic hooks, AI weights, schemas, modifiers and seed-region data.",Turns the lore bible into data the simulator can consume.
+UPG_005,Scope control,The whole world was too broad to test at once.,Added focused Rov Basin north-east frontier seed.,"Tests roads, grain, raids, mage law, species law, debt, claims and religion in one pressure zone."

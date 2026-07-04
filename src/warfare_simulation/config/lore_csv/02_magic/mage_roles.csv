@@ -1,0 +1,7 @@
+role_id,name,useful_for,limit,battlefield_scale
+MAGE_SIEGE_HAND,Siege hand,"Gate stress, tunnel detection, fire suppression, breach preparation.","Needs time, engineers, catalysts and protection.",specialist
+MAGE_BATTLEFIELD_SPARK,Battlefield spark,"Smoke, horse panic, shield flare, fire control, morale shock.",Exhausts quickly and may hit allies if control fails.,specialist
+MAGE_WOUND_BINDER,Wound binder,"Saving officers, elite troops and plague-important personnel.",Cannot mass-heal armies.,support
+MAGE_WEATHER_READER,Weather reader,"Forecasts, wind reading and small weather nudges.",Cannot control climate; failure can be catastrophic.,support
+MAGE_OATH_WITNESS,Oath witness,"Treaties, vassal oaths, surrender terms, royal marriages.",Power depends on public belief in ritual validity.,political
+MAGE_COUNTER,Counter-mage,"Detecting hostile casting, disrupting rituals, protecting commanders.","Rare, expensive and often mistrusted by allies.",specialist

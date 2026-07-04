@@ -1,0 +1,7 @@
+capability_id,category,can_do,limits
+MAGIC_TACTICAL_WAR,war,"Create short tactical advantages: smoke, fire control, gate weakening, bridge stress, horse panic, signal bursts, temporary shielding.","Short duration, preparation, exhaustion and collateral risk."
+MAGIC_MEDICINE,medicine,"Stop bleeding, slow infection, stabilize nobles, commanders and skilled soldiers.",Cannot mass-heal armies or resurrect the dead.
+MAGIC_SIEGECRAFT,siege,"Detect tunnels, weaken mortar, harden timber, spoil fires, support engineers or breach gates at high cost.","Requires time, engineers, catalysts and protection."
+MAGIC_INTELLIGENCE,intelligence,"Pattern reading, truth pressure, dream interpretation, signal detection, imperfect divination and counter-spy ritual.",Uncertain results and political distrust.
+MAGIC_DIPLOMACY,diplomacy,"Oath-binding, witness rituals, legitimacy ceremonies, treaty seals and succession rites.",Only matters if people believe the ritual is valid.
+MAGIC_CRAFT,craft,"Improve alloys, preserve food, treat shipwood, fireproof materials, surgical tools, lenses and rare engineering work.","Specialist labour, catalysts and institutional control."

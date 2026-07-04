@@ -1,0 +1,9 @@
+character_id,name,species_id,culture_id,faction_id,role,age,core_pressure
+CHAR_ROV_001,Maro Sevrin,human,CULT_ROVANT,FAC_ROV_HALEN,canal_king,51,must prove old imperial legitimacy through road control
+CHAR_KAERN_001,Brakka Cairn,human,CULT_KAERN,FAC_KAERN_RED_BOG,hearth_speaker,44,must keep clans united against canal taxation
+CHAR_GHARU_001,Dava Redhand,orc,CULT_GHARU,FAC_GHARU_OPEN_GATE,protector_captain,38,must win recognition without becoming a hired weapon again
+CHAR_KAVARI_001,Bressa Deepmark,dwarf,CULT_KAVARI,FAC_KAVARI_WEST_GEAR,vault_councilor,97,must keep the pass profitable and independent
+CHAR_NALARI_001,Saela of the Third Charter,elf,CULT_NALARI,FAC_NALARI_THIRD_CHARTER,oath_witness,184,must enforce old contracts without provoking expulsion
+CHAR_MAREN_001,Tessel of Blue Chain,human,CULT_MAREN,FAC_MAREN_BLUE_CHAIN,counting_house_admiral,46,must turn war loans into river access
+CHAR_TALUUN_001,Kessa Nine-Reed,human,CULT_TALUUN,FAC_TALUUN_WHITE_MARE,ring_speaker,35,must secure pasture without losing riders in sieges
+CHAR_BANNER_001,Oru of Open Gate,orc,CULT_GHARU,FAC_NINE_BANNERS_HALLOW,banner_priest,59,must control oath legitimacy and mage legality disputes

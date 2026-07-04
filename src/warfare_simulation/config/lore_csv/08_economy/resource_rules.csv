@@ -1,0 +1,5 @@
+rule_id,rule,mechanic
+RESRULE_001,Do not let mana become a normal resource like gold.,"Mana materials should be scarce, legally controlled and politically sensitive."
+RESRULE_002,"Mana-related materials support specialists, rituals and infrastructure, not mass industry.","No magic factories unless their ecological, labour and political costs are fully simulated."
+RESRULE_003,Food legitimacy matters.,Rulers who cannot feed cities and armies should suffer legitimacy collapse.
+RESRULE_004,Debt is a strategic resource pressure.,Cities and lenders can shape wars without directly conquering territory.

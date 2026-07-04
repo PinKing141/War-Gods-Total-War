@@ -1,0 +1,10 @@
+ingredient_id,ingredient,mechanic
+LEG_BLOODLINE,Bloodline and adoption law.,succession_legitimacy
+LEG_PROTECTION,Military protection.,defense_success_legitimacy
+LEG_CONTROL,"Control of capital, road, sacred site or old imperial seal.",symbolic_control_mod
+LEG_FOOD,Ability to feed people.,food_security_legitimacy
+LEG_RECOGNITION,"Recognition from priests, cities, clans, compacts or charter houses.",recognition_sources
+LEG_COMMUNITY_LAW,Correct species/community law in multi-species regions.,minority_law_acceptance
+LEG_MAGE,Mage legality and registry control.,mage_policy_legitimacy
+LEG_MARRIAGE_HOSTAGE,Marriage alliances and hostage safety.,alliance_legitimacy
+LEG_VICTORY,"Victory, if not cursed, unlawful or dishonourable.",victory_legitimacy_with_religious_filter

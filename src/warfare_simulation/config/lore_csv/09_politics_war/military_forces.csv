@@ -1,0 +1,9 @@
+force_id,force_name,strength,weakness,preferred_terrain
+MIL_ROVANT,Rovant infantry and engineers,"Discipline, sieges, river logistics, records.","Slow politics, factional courts, dependence on grain routes.","riverlands,cities,roads"
+MIL_KAERN,Kaern shieldhosts,"Winter warfare, holds, infantry toughness.",Food shortage and clan disputes.,"cold_hills,bogs,forests"
+MIL_TALUUN,Taluun riders,"Mobility, raids, scouting, horse archery.","Sieges, settled administration, drought.","steppe,open_plains"
+MIL_MAREN,Maren fleets,"Blockades, transport, ports, mercenaries.",Weak inland depth and debt politics.,"sea,ports,rivers"
+MIL_KAVARI,Kavari pass militias,"Fortification, engineering, defensive warfare.",Low population replacement and food imports.,"mountain_passes,forts,tunnels"
+MIL_NALARI,Nalari house guards,"Professionalism, intelligence, precision, counter-magic.",Low numbers and political caution.,"cities,enclaves,prepared_positions"
+MIL_GHARU,Gharu freehold companies,"Shock, endurance, morale, rearguards.",High food needs and external suspicion.,"frontier_farms,roads,defensive_lines"
+MIL_OSTREN,Ostren cavalry banners,"Heavy cavalry, prestige, decisive charges.",Inheritance feuds and seasonal campaign limits.,"open_fields,grain_plains"

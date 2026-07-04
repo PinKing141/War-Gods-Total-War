@@ -1,0 +1,50 @@
+file,rows,description
+00_meta/upgrade_notes.csv,5,Summary of design upgrades made while converting the lore into data.
+01_world_rules/core_identity.csv,1,Core identity of the world and the prime simulation rule.
+01_world_rules/design_pillars.csv,6,World design pillars converted into simulation-facing rules.
+01_world_rules/world_feel_references.csv,5,Reference feel guide for tone and feature direction.
+01_world_rules/do_not_include.csv,14,"Hard guardrails for tone, worldbuilding and mechanics."
+02_magic/mana_concepts.csv,7,Core mana concepts and suggested engine fields.
+02_magic/mana_sources.csv,4,Sources of mana and their mechanical implications.
+02_magic/magic_capabilities.csv,6,What magic can do in the setting.
+02_magic/magic_limits.csv,9,Hard limits on magic for simulation balance.
+02_magic/magic_costs.csv,6,Magic backlash and cost categories.
+02_magic/mage_rarity_by_species.csv,4,Baseline magical talent and institutional patterns by species.
+02_magic/mage_institutions.csv,8,Mage institutions and state control models.
+02_magic/mage_roles.csv,6,Military and diplomatic mage role definitions.
+02_magic/magic_history_hooks.csv,5,Magic events that create long-term history rather than shortcuts.
+03_species/species.csv,4,"Species data separated from culture, state and religion."
+03_species/inter_species_politics.csv,5,Rules for mixed-species politics and law.
+04_geography/geography_features.csv,10,Major named map features and their simulation meaning.
+04_geography/regions.csv,8,"Major regions with climate, terrain, resources and conflict types."
+04_geography/strategic_geography_rules.csv,6,Mechanics that ensure geography matters.
+05_cultures/cultures.csv,9,"Major cultures with names, values, military style and contradictions."
+05_cultures/culture_modifiers.csv,9,Suggested simulation modifiers and AI priorities by culture.
+06_religion/religions.csv,7,"Major religions, sacred concepts, sins and war stances."
+06_religion/religion_modifiers.csv,7,Unique mechanical effects by religion.
+07_old_empire/old_empire_identity.csv,8,Layered names for the Sarovan Mandate by culture.
+07_old_empire/old_empire_elements.csv,7,Institutions and infrastructure of the old empire.
+07_old_empire/old_empire_collapse_causes.csv,8,Collapse causes and their long-term mechanical legacy.
+07_old_empire/old_empire_restoration.csv,1,Rules for restoring the old empire.
+08_economy/resources.csv,10,Strategic resources and their simulation effects.
+08_economy/resource_rules.csv,4,Economic rules and anti-shortcut constraints.
+09_politics_war/political_rules.csv,7,Core political rules.
+09_politics_war/legitimacy_ingredients.csv,9,Sources of legitimacy that factions should calculate.
+09_politics_war/military_forces.csv,8,Military identities by culture.
+09_politics_war/military_rules.csv,10,Grounded war rules and mage campaign constraints.
+09_politics_war/long_term_systems.csv,10,Long-term systems needed for 1000-year simulation.
+10_naming_data/naming_layers.csv,6,"Name layers for places, peoples and chronicles."
+10_naming_data/naming_styles.csv,9,Naming styles by culture.
+10_naming_data/naming_examples.csv,4,Layered naming examples ready for province/faction names.
+10_naming_data/name_generation_morphemes.csv,19,Safe name-generation roots and suffixes to avoid plastic fantasy names.
+11_simulation_schemas/recommended_csv_schemas.csv,8,Recommended future CSV schemas derived from the lore.
+11_simulation_schemas/mechanic_hooks.csv,9,Lore-to-mechanics hooks for the simulation engine.
+11_simulation_schemas/ai_weights.csv,9,Suggested AI strategic priorities by culture/faction type.
+11_simulation_schemas/event_template_starters.csv,6,Starter event templates derived from the lore.
+12_seed_frontier/seed_region.csv,1,Recommended first observable seed region.
+12_seed_frontier/seed_factions.csv,8,Focused seed factions for the first pressure region.
+12_seed_frontier/seed_provinces.csv,9,Layered seed provinces for the frontier.
+12_seed_frontier/seed_relations.csv,10,Starting faction relations for the frontier.
+12_seed_frontier/seed_characters.csv,8,Starter political characters for the frontier seed.
+12_seed_frontier/seed_mages.csv,3,Starter rare mages with costed fields.
+12_seed_frontier/seed_claims.csv,5,Starter claims to make early wars understandable.

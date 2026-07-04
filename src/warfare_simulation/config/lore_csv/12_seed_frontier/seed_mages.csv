@@ -1,0 +1,4 @@
+mage_id,character_id,species_id,capacity,control,recovery,strain_tolerance,specialization,legal_status,patron_faction,risk_score
+MAGE_001,CHAR_NALARI_001,elf,42,88,50,35,oath_witness,charter_protected,FAC_NALARI_THIRD_CHARTER,35
+MAGE_002,CHAR_GHARU_001,orc,55,41,48,82,battlefield_ritual,freehold_protected_unregistered,FAC_GHARU_OPEN_GATE,70
+MAGE_003,CHAR_KAVARI_001,dwarf,38,71,63,68,ward_engineering,compact_sanctioned,FAC_KAVARI_WEST_GEAR,40

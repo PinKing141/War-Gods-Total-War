@@ -1,0 +1,7 @@
+cost_id,cost_type,examples,engine_fields
+COST_PHYSICAL,physical,"Fever, tremors, bleeding eyes, nerve pain, organ strain, infertility, shortened lifespan.","injury_risk,health_damage,fertility_mod,lifespan_mod"
+COST_MENTAL,mental,"Memory loss, obsession, paranoia, sensory distortion, ritual dependency.","sanity_risk,trait_gain,control_loss"
+COST_MATERIAL,material,"Catalysts, trained assistants, rest houses, rare minerals, prepared spaces.","resource_cost,staff_required,site_required"
+COST_POLITICAL,political,"Peasant fear, noble suspicion, temple interference, anti-mage laws, rival coalitions.","legitimacy_mod,unrest_mod,diplomatic_threat"
+COST_MILITARY,military,"Mage exhaustion, bodyguard burden, assassination risk, slow marching, supply needs.","fatigue_mod,bodyguard_required,supply_cost,capture_risk"
+COST_RELIGIOUS,religious,"Accusations of blasphemy, saint-making, cult formation, heresy trials.","heresy_risk,saint_event_chance,pogrom_risk"

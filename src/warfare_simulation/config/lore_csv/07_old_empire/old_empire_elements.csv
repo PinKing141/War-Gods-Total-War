@@ -1,0 +1,8 @@
+element_id,name,historical_function,survives_as
+EMP_STONE_ROADS,Stone Roads,"Army movement, tax reach, trade, message speed, legitimacy routes.","road_network,claims,fast_movement"
+EMP_HOSTAGE_SCHOOLS,Hostage Schools,Educated conquered elites while controlling their families.,"noble_memory,resentment,court_culture"
+EMP_SERVICE_COLONIES,Service Colonies,"Settled soldiers, including many Gharu communities, on strategic land.","gharu_freeholds,service_yoke_claims"
+EMP_BRIDGE_COURTS,Bridge Courts,"Resolved toll, crossing, trade and military passage disputes.","road_law,toll_disputes"
+EMP_MAGE_REGISTRY,Mage Registry,"First continent-wide attempt to classify, license and exploit magic-users.","mage_law,registry_revolts"
+EMP_CHARTER_DISTRICTS,Charter Districts,"Protected Nalari, Kavari and merchant communities in exchange for services.","charter_enclaves,ancient_contracts"
+EMP_GRANARY_FORTS,Granary Forts,Kept cities and armies alive while making rebellion easier to starve.,"famine_legitimacy,fort_granary_targets"

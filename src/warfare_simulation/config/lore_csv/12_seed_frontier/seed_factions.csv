@@ -1,0 +1,9 @@
+faction_id,name,identity,dominant_culture,dominant_species,religion_id,government,conflict_pressure,primary_goal
+FAC_ROV_HALEN,Crown of Rov Halem,Rovant canal kingdom,CULT_ROVANT,human,REL_MEASURE_ROADS,canal_monarchy,Claims old imperial legitimacy and wants road control.,restore_road_order
+FAC_KAERN_RED_BOG,Red Bog Hearth League,Kaern hearthhold league,CULT_KAERN,human_orc_mixed,REL_HEARTH_BELOW,oath_council,Controls iron and resists canal taxation.,defend_hearth_and_iron
+FAC_GHARU_OPEN_GATE,Open Gate Freehold,Gharu freehold republic,CULT_GHARU,orc,REL_NINE_BANNERS,freehold_republic,"Wants recognition, land security and an end to service-yoke claims.",legal_recognition
+FAC_KAVARI_WEST_GEAR,West Gear Compact,Kavari pass compact,CULT_KAVARI,dwarf,REL_INNER_STONE,pass_compact,Controls iron passes and sells engineering to rivals.,protect_pass_tolls
+FAC_NALARI_THIRD_CHARTER,Third Charter House,Nalari charter enclave,CULT_NALARI,elf,REL_LONG_ACCOUNT,charter_court,Holds ancient contracts everyone disputes.,enforce_charters
+FAC_MAREN_BLUE_CHAIN,Blue Chain Counting House,Maren trade league outpost,CULT_MAREN,mixed,REL_BELL_RETURN,merchant_board,"Funds wars, manipulates debt and wants river access.",secure_river_credit
+FAC_TALUUN_WHITE_MARE,White Mare Ring,Taluun horse ring,CULT_TALUUN,human_orc_mixed,REL_NINE_BANNERS,seasonal_khan_ring,"Raids, trades horses and pressures settled states.",pasture_and_tribute
+FAC_NINE_BANNERS_HALLOW,Hallow of the Ninth Banner,Nine Banners temple order,multi_culture,mixed,REL_NINE_BANNERS,temple_order,Controls a sacred battlefield and mage legality disputes.,control_oath_war_legitimacy

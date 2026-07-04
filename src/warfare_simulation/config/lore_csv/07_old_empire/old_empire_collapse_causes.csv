@@ -1,0 +1,9 @@
+cause_id,cause,mechanical_legacy
+COLLAPSE_SUCCESSION,Three heirs were crowned in rival road capitals.,"imperial_claim_splits,pretender_wars"
+COLLAPSE_MAGE_REGISTRY_REVOLT,Mage registry revolt after royal families attempted hereditary mage confiscation.,"anti_registry_sentiment,mage_rights_conflict"
+COLLAPSE_ROAD_PLAGUE,Road plague spread faster because logistics moved infected armies and grain clerks.,"road_plague_risk,quarantine_laws"
+COLLAPSE_PORT_DEBT,Maren leagues refused to finance another eastern campaign.,"port_debt_power,war_finance_constraints"
+COLLAPSE_KAVARI_PASSES,Kavari compacts sealed key passes and cut imperial access to iron.,"pass_control_strategic,iron_dependency"
+COLLAPSE_GHARU_SERVICE,Gharu service colonies rebelled against hereditary military obligations.,"service_yoke_claims,freehold_recognition_wars"
+COLLAPSE_NALARI_RECOGNITION,Nalari charter houses withdrew recognition from imperial succession records.,"legal_memory_wars,ancient_contract_disputes"
+COLLAPSE_TALUUN_BORDER,Taluun Horse Rings broke eastern forts and made the border impossible to tax.,"steppe_raids,tribute_frontiers"

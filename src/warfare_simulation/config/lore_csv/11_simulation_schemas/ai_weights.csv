@@ -1,0 +1,10 @@
+ai_weight_id,applies_to,weight,drives
+AI_ROAD_CONTROL,"Rovant,Measure of Roads,imperial_claimants",95,"secure roads, bridges, canals and census nodes"
+AI_FOOD_SECURITY,all_factions,100,"avoid famine, secure grain, limit over-campaigning"
+AI_SERVICE_RECOGNITION,Gharu Free Oaths,90,"resist service-yoke claims, seek legal recognition"
+AI_PASS_TOLLS,Kavari Deep Compacts,90,control mountain passes and engineering chokepoints
+AI_TREATY_MEMORY,Nalari Charter Houses,95,"enforce old charters, avoid wasteful attrition"
+AI_HORSE_PASTURE,Taluun Horse Rings,90,"secure pasture, raid, demand tribute"
+AI_DEBT_ACCESS,Maren Bell Leagues,85,"fund wars, protect ports and gain river access"
+AI_WATER_LAW,Qeresh Well Courts,95,protect wells and punish broken contracts
+AI_HONOUR_INHERITANCE,Ostren Bannerfields,80,"inheritance wars, marriage alliances, prestige campaigns"

@@ -1,0 +1,5 @@
+source_id,name,description,risk,strategic_use
+SOURCE_INTERNAL,Internal mana,"The caster's own reserve, similar to stamina, breath capacity and nerve pressure combined.",body_strain,portable but limited casting
+SOURCE_AMBIENT,Ambient mana,"Unstable environmental energy near faults, springs, old forests, volcanic stone, battlefields and underground systems.",site_instability,turns specific places into sacred or military assets
+SOURCE_STORED,Stored mana,"Held inside rare mineral lenses, treated bone, ritual metals, old engines, sealed vessels or living groves.",theft_and_regulation,controlled specialist support
+SOURCE_BORROWED,Borrowed mana,"Group rituals, blood rites, oath circles, temple choirs, battlefield chants or emergency casting.",social_religious_backlash,high-risk crisis response

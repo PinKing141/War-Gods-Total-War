@@ -1,0 +1,10 @@
+hook_id,input,output
+HOOK_GRAIN_SECURITY,"grain_stockpile,food_output,population,army_size","legitimacy,unrest,famine_event,army_attrition"
+HOOK_ROAD_CONTROL,"road_level,controller,old_imperial_claims,rebel_activity","movement_speed,tax_reach,imperial_legitimacy,rebel_sabotage"
+HOOK_MAGE_CASTING,"capacity,control,recovery,strain_tolerance,catalysts,legal_status","effect_success,injury,political_backlash,religious_reaction"
+HOOK_SPECIES_LAW,"species_population,legal_status,culture,religion,recent_conflict","minority_unrest,assimilation,expulsion,revolt"
+HOOK_ANCIENT_CONTRACT,"nalari_contract,claim_age,recognition_sources","legal_crisis,war_delay,ancient_claim_revived"
+HOOK_SERVICE_YOKE,"gharu_freehold_status,old_imperial_claims,recognition","freehold_revolt,recognition_war,mercenary_bargain"
+HOOK_PORT_DEBT,"loan_amount,war_duration,port_league_interest,default_risk","debt_dependency,proxy_war,mercenary_desertion"
+HOOK_PASS_CONTROL,"mountain_pass,fort_level,kavari_compact,toll_income","iron_access,trade_chokepoint,pass_war"
+HOOK_HISTORIAN_DISAGREEMENT,"event_truth,participants,public_logs,religious_bias,magic_involvement","multiple_accounts,confidence_scores,chronicle_variants"

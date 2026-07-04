@@ -1,0 +1,11 @@
+resource_id,name,category,why_it_matters,scarcity_effect,war_relevance
+GRAIN,Grain,food,"Feeds cities, armies, horses and labourers; central to legitimacy.","famine,unrest,army_attrition,legitimacy_loss",high
+IRON,Iron,strategic_material,"Weapons, tools, armour, nails, bridges, wagons and siege equipment.","unit_quality_drop,construction_delay,trade_dependency",high
+HORSES,Horses,military_transport,"Cavalry, courier networks, prestige, raids, transport.","cavalry_limit,scouting_penalty,courier_delay",high
+TIMBER,Timber,construction,"Ships, siege engines, roofs, winter fuel, wagons, mine supports.","ship_delay,siege_penalty,winter_unrest",medium_high
+SALT,Salt,preservation_trade,"Food preservation, army supply, trade, taxation, desert politics.","supply_spoilage,price_shock,contract_war",medium_high
+STONE,Stone,construction,"Fortification, bridges, prestige buildings, roads and canals.","fort_delay,road_decay,prestige_project_failure",medium
+SILVER_COIN_METALS,Silver/Coin metals,currency,"Mercenaries, diplomacy, debt, city power and royal solvency.","debt_crisis,mercenary_desertion,diplomatic_failure",high
+MANA_LENSES,Mana lenses,rare_magic_catalyst,"Rare storage/catalyst materials for safe casting, not generic mana crystals.","mage_risk,caster_limit,political_smuggling",specialist
+MEDICINAL_HERBS,Medicinal herbs,medicine,"Hospitals, plague response, wound care, elite survival.","mortality_increase,plague_spread,commander_death",medium
+SHIP_PITCH_TREATED_WOOD,Ship pitch and treated wood,naval_material,Naval construction and port power.,"naval_build_delay,port_decline",naval_high

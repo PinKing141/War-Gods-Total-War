@@ -1,0 +1,9 @@
+csv_name,recommended_columns,purpose
+species.csv,"species_id,common_name,self_name,avg_lifespan,fertility_rate,food_need,magic_tendency,legal_bias_notes",Separate species biology from culture and faction.
+mages.csv,"mage_id,character_id,species_id,capacity,control,recovery,strain_tolerance,specialization,legal_status,patron_faction,current_injury,risk_score",Track rare specialists as assets and liabilities.
+cultures.csv,"culture_id,self_name,common_name,old_imperial_name,dominant_species,region_origin,values,military_style,government_style,naming_style,internal_contradiction",Give culture mechanical identity.
+religions.csv,"religion_id,name,type,war_stance,mage_stance,sacred_sites,heresy_risk,syncretism_risk,holy_war_triggers,legitimacy_effects",Make belief affect war and politics.
+provinces.csv,"province_id,local_name,common_name,old_imperial_name,region_id,terrain,climate,dominant_culture,dominant_species,dominant_religion,primary_resource,road_level,port_level,fort_level,mana_site_level,unrest_risk,strategic_value",Make places strategic and historically layered.
+species_communities.csv,"community_id,province_id,species_id,culture_id,legal_status,population_share,grievance,assimilation_pressure,protection_faction",Support mixed provinces and legal differences.
+claims.csv,"claim_id,claimant_id,target_id,claim_type,source,created_year,strength,decay_rate,myth_status,recognized_by",Make wars understandable.
+historian_accounts.csv,"account_id,event_id,source_faction,religion,culture,bias,confidence,claimed_cause,public_text",Support conflicting chronicles.

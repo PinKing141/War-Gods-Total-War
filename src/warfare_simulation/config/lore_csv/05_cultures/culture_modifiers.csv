@@ -1,0 +1,10 @@
+culture_id,tax_reach_mod,siege_engineering_mod,legal_claim_weight,noble_forgery_risk,road_control_priority,preferred_war_goals,winter_attrition_resist_mod,infantry_morale_mod,clan_feud_risk,food_shortage_sensitivity,cavalry_speed_mod,raid_income_mod,siege_penalty,drought_sensitivity,heat_attrition_resist_mod,contract_memory_years,water_unrest_sensitivity,trade_toll_mod,naval_power_mod,debt_diplomacy_mod,inland_depth_penalty,plague_import_risk,fort_defense_mod,engineering_mod,population_recovery_penalty,food_import_need,treaty_memory_years,counter_mage_mod,levy_size_penalty,intrigue_network_mod,shock_infantry_mod,food_need_mod,oath_morale_mod,external_suspicion_mod,heavy_cavalry_mod,inheritance_feud_risk,seasonal_campaign_limit,prestige_land_weight
+CULT_ROVANT,15,10,20,12,95,"restore_order,claim_city,secure_canal",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CULT_KAERN,,,,,45,"revenge,defend_hearth,iron_control",15,10,18,12,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+CULT_TALUUN,,,,,25,"raid,tribute,horse_pasture",,,,,20,15,-20,15,,,,,,,,,,,,,,,,,,,,,,,,
+CULT_QERESH,,,,,60,"well_control,contract_punishment,caravan_security",,,,,,,,,15,180,25,10,,,,,,,,,,,,,,,,,,,,
+CULT_MAREN,,,,,70,"blockade,port_access,debt_enforcement",,,,,,,,,,,,,20,20,-10,12,,,,,,,,,,,,,,,,
+CULT_KAVARI,,,,,85,"pass_control,compact_enforcement,mine_defense",,,,,,,,,,,,,,,,,20,20,-15,15,,,,,,,,,,,,
+CULT_NALARI,,,,,55,"charter_enforcement,hostage_recovery,ancient_claim",,,,,,,,,,,,,,,,,,,,,300,15,-20,15,,,,,,,,
+CULT_GHARU,,,,,50,"recognition,land_security,service_yoke_resistance",,,,,,,,,,,,,,,,,,,,,,,,,20,20,15,15,,,,
+CULT_OSTREN,,,,,60,"succession,estate_claim,saintly_reputation",,,,,,,,,,,,,,,,,,,,,,,,,,,,,20,18,15,20

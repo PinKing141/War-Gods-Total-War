@@ -1,0 +1,8 @@
+concept_id,name,simulation_meaning,suggested_field
+MANA_CAPACITY,Capacity,How much mana a body can hold or channel before strain begins.,capacity
+MANA_CONTROL,Control,How precisely the mage can shape effects without waste or backlash.,control
+MANA_RECOVERY,Recovery,How quickly the mage returns to safe condition after casting.,recovery
+MANA_STRAIN,Strain tolerance,"How much pain, fever, nerve pressure or organ stress the body can survive.",strain_tolerance
+MANA_DISCIPLINE,Discipline,"Training, ritual procedure, battlefield composure and safety habits.",discipline
+MANA_SPECIALIZATION,Specialization,"Siege, healing, weather, craft, oath, scouting, counter-magic, signal or ritual.",specialization
+MANA_LEGAL_STATUS,Legal status,"Registered, temple-bound, military-owned, noble-retained, guild-sanctioned, outlaw, enslaved or hidden.",legal_status

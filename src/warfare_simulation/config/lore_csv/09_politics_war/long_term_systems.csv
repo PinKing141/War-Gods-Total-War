@@ -1,0 +1,11 @@
+system_id,system,required_data
+LTS_CULTURE_MERGE,"Cultures can merge, split, revive, assimilate or become court cultures.","culture_id,parent_culture,influence,province_mix"
+LTS_SPECIES_COMMUNITIES,"Species communities can migrate, be granted charters, be expelled, be enslaved, be liberated or found states.","species_population,legal_status,migration_pressure"
+LTS_RELIGION_EVOLUTION,"Religions can split, reform, syncretize or radicalize.","heresy_risk,syncretism_risk,holy_site_control"
+LTS_MAGE_INSTITUTIONS,"Mage institutions can grow, collapse, become corrupt, be outlawed or take political power.","mage_policy,institution_legitimacy,corruption"
+LTS_LANGUAGE_NAMES,Languages and place names can change over centuries.,"naming_style_id,controller_history,culture_shift"
+LTS_CLAIMS,"Old claims can expire, become myths or be revived by ambitious rulers.","claim_age,claim_strength,myth_status"
+LTS_DYNASTIES,"Dynasties can die out, continue through adoption, return from exile or be forged.","dynasty_id,heirs,adoption_law,exile_status"
+LTS_CITIES,"Cities can grow, burn, decline, become capitals, plague graves or sacred sites.","population,wealth,devastation,holy_status"
+LTS_TRADE,"Trade routes can shift because of war, ports, road decay, piracy, climate, plague or technology.","route_value,risk,road_level,port_level"
+LTS_HISTORIANS,"Historians can disagree about whether magic, betrayal, disease, logistics or divine judgment caused an event.","event_truth,public_accounts,bias,confidence"

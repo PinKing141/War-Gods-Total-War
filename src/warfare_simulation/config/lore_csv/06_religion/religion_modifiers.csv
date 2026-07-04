@@ -1,0 +1,8 @@
+religion_id,morale_oath_war_mod,false_surrender_penalty,envoy_killing_penalty,mage_legality,claim_decay_mod,treaty_memory_years,road_legitimacy_mod,lawful_claim_weight,grain_theft_unrest_mod,homeland_defense_morale_mod,grave_desecration_revolt_risk,ancestral_land_sale_unrest,contract_breaking_penalty,water_theft_war_trigger,trade_trust_mod,naval_morale_mod,anti_piracy_cb_weight,port_trust_mod,ancient_obligation_weight,treaty_betrayal_memory,fort_defense_legitimacy,compact_betrayal_penalty,engineering_trust_mod
+REL_NINE_BANNERS,15,30,25,sanctified_if_oath_bound,0,120,,,,,,,,,,,,,,,,,
+REL_MEASURE_ROADS,,,,registry_required,-5,160,20,20,25,,,,,,,,,,,,,,
+REL_HEARTH_BELOW,,,,household_ritual_only,-10,140,,,,15,30,20,,,,,,,,,,,
+REL_SALT_WITNESS,,,,contract_bound,0,220,,,,,,,25,35,15,,,,,,,,
+REL_BELL_RETURN,,,,harbour_licensed,0,150,,,,,,,,,,10,25,15,,,,,
+REL_LONG_ACCOUNT,,,,oath_witness_elite,-25,300,,,,,,,,,,,,,30,300,,,
+REL_INNER_STONE,,,,ward_engineering_approved,-5,240,,,,,,,,,,,,,,,15,35,20

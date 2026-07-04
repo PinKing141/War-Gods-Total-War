@@ -1,0 +1,6 @@
+rule_id,rule,mechanic
+SPOL_001,"Species prejudice exists but varies by region, class and history.","prejudice_mod should depend on culture, law, religion and recent conflict."
+SPOL_002,"Mixed cities are common around ports, roads, mines and capitals.","provinces should support species composition, not one-species absolutes."
+SPOL_003,"Intermarriage may be rare or legally contested; adoption, fosterage and hostage upbringing matter regardless.",dynastic systems should support adoption/fosterage and legal kinship.
+SPOL_004,Legal status can matter more than species.,rank/class/law should modify social power independently of species.
+SPOL_005,Assimilation is possible but slow.,culture_shift should occur over generations and may preserve species-community law.

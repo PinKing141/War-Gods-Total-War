@@ -1,0 +1,6 @@
+claim_id,claimant,target,claim_type,source,strength,decay_rate,myth_status,recognized_by
+CLAIM_ROV_OPEN_GATE,FAC_ROV_HALEN,PROV_OPEN_GATE,old_service_colony,Sarovan service-yoke record,72,-1,contested_record,REL_MEASURE_ROADS
+CLAIM_GHARU_RECOGNITION,FAC_GHARU_OPEN_GATE,PROV_OPEN_GATE,freehold_self_rule,public oath and settled farming rights,85,0,living_memory,REL_NINE_BANNERS
+CLAIM_NALARI_CHARTER_ROV,FAC_NALARI_THIRD_CHARTER,PROV_THIRD_CHARTER,ancient_charter,Pale Witness Ward Three charter,90,-2,documented,REL_LONG_ACCOUNT
+CLAIM_KAERN_IRON_TAX,FAC_KAERN_RED_BOG,PROV_RED_BOG,hearth_right,ancestor cairn and winter defense,80,0,sacred_memory,REL_HEARTH_BELOW
+CLAIM_KAVARI_PASS_CHARTER,FAC_KAVARI_WEST_GEAR,PROV_WEST_GEAR,compact_pass_charter,Broken Charter Period compact,88,-1,vault_record,REL_INNER_STONE

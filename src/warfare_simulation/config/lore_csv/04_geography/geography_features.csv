@@ -1,0 +1,11 @@
+feature_id,name,feature_type,scholar_name,common_alias,old_imperial_name,strategic_meaning
+GEO_CONTINENT,Orran,continent,Orran,The Bowl Lands,The Four Marches,Main known world for the historical simulation.
+GEO_LANTER_SEA,Lanter Sea,inland_sea,,,,"Trade, naval war, plague travel, port leagues, grain shipping, mercenary transport."
+GEO_STONE_ROADS,Stone Roads,old_imperial_road_network,,,,"Fast army movement, tax reach, imperial legitimacy, rebel targets."
+GEO_GREYHOOK_SPINE,Greyhook Spine,mountain_spine,,,,"Iron, silver, pass tolls, fortress politics, dwarf/human/orc border compacts."
+GEO_ROV_BASIN,Rov Basin,great_river_system,,,,"Grain, census law, dense cities, dynastic claims, canal politics."
+GEO_CAIRN_MARCH,Cairn March,northern_zone,,,,"Cold iron country of human holds, Gharu freeholds and mixed frontier forts."
+GEO_TALUUN_STEPPE,Taluun Steppe,eastern_steppe,,,,"Horses, mobility, raiding pressure, confederations, migration events."
+GEO_QERESH_WELLS,Qeresh Wells,southern_drylands,,,,"Salt, contracts, water law, caravan routes, heat attrition."
+GEO_BANNERFIELDS,Bannerfields,western_grain_country,,,,"Rich cavalry estates, abbey lands and inheritance wars."
+GEO_FENWARD,Fenward,forest_marsh_frontier,,,,"Timber, disease, rebel refuge, poor roads, ambush warfare."

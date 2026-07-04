@@ -1,0 +1,6 @@
+hook_id,trigger,possible_outputs
+MHOOK_001,siege_mage_breaches_gate_and_dies,"city_falls, mage_martyr_cult, historian_disagreement_magic_vs_betrayal"
+MHOOK_002,healer_saves_heir_with_fertility_cost,"succession_crisis_decades_later, temple_debate, dynasty_adoption"
+MHOOK_003,kavari_ward_engine_keeps_pass_open_in_winter,"passhold_becomes_strategic_asset, toll_wars, engineering_monopoly"
+MHOOK_004,gharu_ritual_company_survives_rearguard,"sacred_military_order, freehold_prestige, oath_cult"
+MHOOK_005,nalari_oath_witness_rejects_treaty_clause,"legal_crisis, ancient_contract_revived, war_delayed_or_started"

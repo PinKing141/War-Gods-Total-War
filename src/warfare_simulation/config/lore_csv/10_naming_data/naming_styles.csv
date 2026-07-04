@@ -1,0 +1,10 @@
+style_id,culture_id,sound,examples,place_suffixes,avoid
+NSTYLE_ROVANT,CULT_ROVANT,formal_legal_river_road_based,Maro Sevrin; Elan Torrel; Sava Meron,"halem,tor,meron,rov,measure,bridge",overly_dark_or_barbarian_names
+NSTYLE_KAERN,CULT_KAERN,hard_hearth_oath_place_names,Brakka Cairn; Orven of Red Bog; Hest Stonewake,"cairn,bog,hearth,wake,hold,red",soft_elven_sounding_names
+NSTYLE_TALUUN,CULT_TALUUN,camp_herd_river_bend_achievement_names,Tulan Aru; Kessa Nine-Reed; Boru of the White Mare,"aru,reed,mare,bend,ring,ordu",castle-heavy feudal names
+NSTYLE_QERESH,CULT_QERESH,well_contract_salt_road_names,Qaran Sel; Iresh Voda; Nema of Third Well,"sel,voda,well,salt,qer,third",random desert apostrophes
+NSTYLE_MAREN,CULT_MAREN,ship_bell_port_guild_names,Loran Bell; Mava Quay; Tessel of Blue Chain,"bell,quay,chain,harbour,lanter,blue",pirate caricature names
+NSTYLE_KAVARI,CULT_KAVARI,compact_craft_vault_pass_names,Kavor Den; Bressa Deepmark; Orik of West Gear,"den,deep,mark,gear,vault,pass",comedy dwarf names
+NSTYLE_NALARI,CULT_NALARI,house_witness_memory_names,Nalen Sera; Ivaresh; Leth Namar; Saela of the Third Charter,"sera,namar,charter,witness,iva,leth",perfect forest angel names
+NSTYLE_GHARU,CULT_GHARU,oath_burden_land_service_names,Garom Hearth; Dava Redhand; Oru of Open Gate,"gate,oath,hearth,burden,redhand,open",monster-only names
+NSTYLE_OSTREN,CULT_OSTREN,field_banner_horse_saint_names,Alren Wold; Katta Banner; Marden of Eastfield,"field,banner,wold,saint,horse,east",generic kingdom of light names

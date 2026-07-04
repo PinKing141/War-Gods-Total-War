@@ -1,0 +1,5 @@
+entity_type,local_name,common_name,old_imperial_name,religious_name,enemy_name,dominant_culture,dominant_species
+province,Rov Halem,Halem Bridge,Measure Fort Seven,Saint Halem's Crossing,Tax-Leech Ford,CULT_ROVANT,human_majority
+mountain_pass,Khev Dorun,Greyhook Pass,Ferrum Gate Thirty,Inner Stone West Door,Ratback Cut,CULT_KAVARI,dwarf_majority
+freehold,Oru-Gate,Open Gate Freehold,Service Colony Nineteen,Burden Hearth,Grain-Eater Gate,CULT_GHARU,orc_majority
+oasis,Iresh Voda,Third Well,Dry Toll Station Four,Witness Well,Cup King's Hole,CULT_QERESH,human_majority

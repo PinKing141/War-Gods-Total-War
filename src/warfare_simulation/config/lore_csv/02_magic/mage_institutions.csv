@@ -1,0 +1,9 @@
+institution_id,name,function,risk,control_style
+MAGE_REGISTRY_ROYAL,Royal registry,"Tracks births, suspected talent and licensed practitioners.",forced_registration_revolt,state
+MAGE_TEMPLE,Temple claim,Claims magical talent as divine loan or sacred danger.,heresy_trials_and_priestly_capture,religious
+MAGE_GUILD,Guild sanction,"Trains craft-mages, healers and engineers for money.",class_capture_and_city_monopoly,guild
+MAGE_ARMY,Military office,"Conscripts siege-mages, signal-mages and counter-mages under guard.",assassination_bodyguard_burden_mage_exhaustion,military
+MAGE_NOBLE_HOUSE,Noble retainer system,Arranges mage marriages and keeps house mages as prestige assets.,bloodline_abuse_and_succession_conflict,noble
+MAGE_CITY_TAX,City taxable profession,Treats mages as regulated taxable assets.,economic_exploitation_and_spy_use,civic
+MAGE_FRONTIER_HIDDEN,Hidden frontier practice,Hides unregistered mages to resist central control.,outlaw_events_and_state_crackdowns,informal
+MAGE_COERCIVE,Coercive mage policy,"Sterilizes, exiles, enslaves or tattoos mages out of fear.",revolt_pogrom_international_condemnation,repressive

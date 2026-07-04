@@ -1,0 +1,10 @@
+limit_id,cannot_do,reason
+LIMIT_NO_TELEPORT_ARMIES,Teleport armies.,"Would delete roads, geography and logistics."
+LIMIT_NO_RESURRECTION,Resurrect the dead.,"Would delete mortality, succession and historical consequence."
+LIMIT_NO_FOOD_CONJURATION,Mass food conjuration that solves famine.,"Would delete grain, taxation and legitimacy."
+LIMIT_NO_CITY_HEALING,Instant city-wide healing.,Would delete disease and medicine.
+LIMIT_NO_EASY_MIND_CONTROL,Easy mind control of rulers or populations.,Would delete diplomacy and uncertainty.
+LIMIT_NO_MAGE_ARMIES,Magic schools producing thousands of battlefield mages.,Would delete rarity and institutional control.
+LIMIT_NO_FIREBALL_ARTILLERY,Fireball artillery as a normal army branch.,Would make magic too routine.
+LIMIT_NO_CLEAN_PROPHECY,Clean prophecy that removes uncertainty.,Would delete historian disagreement and decision risk.
+LIMIT_NO_REGULAR_DRAGONS,Dragons or flying monsters as regular strategic assets unless added with full ecological costs.,Would distort the warfare model unless fully simulated.

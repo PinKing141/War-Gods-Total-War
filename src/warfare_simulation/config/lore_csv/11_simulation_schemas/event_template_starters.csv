@@ -1,0 +1,7 @@
+template_id,category,trigger,text_template,truth_inputs_required
+EVT_FAMINE_LEGITIMACY,economy,grain_shortage,{ruler} lost legitimacy in {province} after granaries failed to feed the city.,"ruler,province,grain_shortage"
+EVT_MAGE_BACKLASH,magic,casting_backlash,"{mage} changed the battle at {place}, but the strain left {effect}.","mage,place,effect"
+EVT_ROAD_SABOTAGE,war,road_sabotaged,"Rebels broke the Stone Road near {place}, slowing {faction}'s response.","place,faction,route_id"
+EVT_CONTRACT_DISPUTE,diplomacy,ancient_contract_revived,"{claimant} revived an old charter against {target}, forcing the courts to choose between law and peace.","claimant,target,contract_id"
+EVT_SERVICE_YOKE_REBELLION,rebellion,service_yoke_claim_enforced,{freehold} rose against the old service claim of {overlord}.,"freehold,overlord,claim_id"
+EVT_PASS_CLOSED,economy_war,kavari_pass_closure,"{compact} sealed {pass_name}, cutting iron and toll revenue from {affected_faction}.","compact,pass_name,affected_faction"

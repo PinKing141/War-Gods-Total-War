@@ -1,0 +1,6 @@
+reference_id,inspiration,use_for,do_not_copy
+REF_TOTAL_WAR,Total War,"campaigns, sieges, roads, chokepoints, ports, supply and attrition",Do not make it direct-player-command focused if the sim is observer-first.
+REF_CRUSADER_KINGS,Crusader Kings,"inheritance, marriage politics, legitimacy and dynastic survival",Do not let dynastic drama override material logistics.
+REF_DWARF_FORTRESS,Dwarf Fortress Legends,"generated history, strange deaths, forgotten ruins and historian disagreement",Do not drown the player in unreadable noise.
+REF_MOUNT_BLADE,Mount & Blade,"frontier powers, mercenary captains, warlords and unstable borders",Do not make everything about individual hero combat.
+REF_GROUNDED_HIGH_FANTASY,Grounded high fantasy,"non-human peoples, rare mana and mythic cultures without abandoning realism",No high-magic convenience or chosen-one engine.

@@ -1,0 +1,8 @@
+rule_id,rule,mechanic
+POL_001,"Kings need recognition from nobles, temples, cities, military elites and sometimes mage registries.",legitimacy should be multi-source not one stat only
+POL_002,"City-states survive by debt, navies, information and playing larger powers against one another.",small factions can survive through finance and diplomacy
+POL_003,Dwarf passholds survive by controlling infrastructure larger kingdoms cannot replace.,strategic_chokepoint_value protects small polities
+POL_004,Elven charter houses survive by making themselves legally and diplomatically indispensable.,contract_network and memory should create non-military power
+POL_005,"Orc freeholds survive by food security, military bargaining and oath solidarity.",recognition and service-yoke pressure drive Gharu politics
+POL_006,"Nomad rings survive by mobility, tribute extraction and refusal to be fixed into tax maps.",nomad polities should not behave like static provinces
+POL_007,"Religious authorities can crown, shame, validate, excommunicate, protect mages or declare rituals illegal.","religion modifies legitimacy, mage law and war justification"

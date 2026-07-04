@@ -6,14 +6,21 @@ from warfare_simulation.config.config import ConfigManager
 from warfare_simulation.orchestration import CampaignOrchestrator, GameState
 from warfare_simulation.persistence.campaign_bootstrap import CampaignBootstrap
 from warfare_simulation.persistence.database import DatabaseManager
+from warfare_simulation.persistence.lore_bootstrap import LoreBootstrap
 
 
 class WarfareSimulationApp:
     """Load JSON config, seed SQLite runtime state, and export a workbook."""
 
-    def __init__(self, config_path: str | Path | None = None, db_path: str | Path = "war_sim.db"):
+    def __init__(
+        self,
+        config_path: str | Path | None = None,
+        db_path: str | Path = "war_sim.db",
+        lore_path: str | Path | None = None,
+    ):
         self.config_mgr = ConfigManager(str(config_path) if config_path is not None else None)
         self.db_mgr = DatabaseManager(str(db_path))
+        LoreBootstrap.seed_lore(self.db_mgr, lore_path)
         self.repos = CampaignBootstrap.initialize(self.config_mgr, self.db_mgr)
         self.game_state = GameState()
         self.campaign = CampaignOrchestrator(

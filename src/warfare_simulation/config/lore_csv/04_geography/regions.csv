@@ -1,0 +1,9 @@
+region_id,name,climate,terrain,primary_resources,danger,dominant_cultures,common_war_type
+REG_ROV_BASIN,Rov Basin,temperate_river,riverlands_canals_cities,"grain,stone,river_trade,records","dynastic_claims,canal_politics,plague_travel","Rovant,Nalari,Kavari,Gharu minorities","claim_war,canal_siege,road_control"
+REG_GREYHOOK,Greyhook Spine,cold_mountain,mountains_passes_mines,"iron,silver,stone,pass_tolls","winter_attrition,pass_blockade,compact_law","Kavari,Kaern,Gharu","pass_war,mine_dispute,fortress_siege"
+REG_CAIRN_MARCH,Cairn March,cold_bog_forest,iron_hills_bogs_cold_forests,"iron,timber,fur,hardy_infantry","food_shortage,clan_feud,winter","Kaern,Gharu,Kavari","revenge_war,winter_raid,fort_defense"
+REG_TALUUN_STEPPE,Taluun Steppe,continental_steppe,grassland_rivers_camps,"horses,livestock,tribute","drought,raids,migration_pressure","Taluun,Gharu,caravan_minorities","raid,confederation_war,tribute_war"
+REG_QERESH_WELLS,Qeresh Wells,hot_dry_oasis,oasis_salt_road_hot_stone_towns,"salt,water,caravan_trade","water_scarcity,heat_attrition,debt_conflict","Qeresh,Kavari,Nalari,Gharu guards","well_war,contract_war,caravan_war"
+REG_MAREN_COAST,Maren Coast and Lanter Ports,maritime,ports_islands_river_mouths,"trade,ships,coin,information","debt_politics,piracy,plague","Maren,Nalari,Kavari,Gharu marines","blockade,naval_war,debt_proxy_war"
+REG_FENWARD,Fenward,wet_forest_marsh,woodland_marsh_poor_roads,"timber,herbs,rebel_refuge","disease,ambush,low_tax_control",mixed_frontier,"suppression_campaign,ambush_war,rebel_war"
+REG_BANNERFIELDS,Bannerfields,temperate_grain_plain,grain_plains_estates_abbeys,"grain,horses,prestige_land","inheritance_feud,seasonal_campaign_limits","Ostren,human_nobles,Gharu guards,Nalari tutors","succession_war,cavalry_campaign,abbey_land_dispute"

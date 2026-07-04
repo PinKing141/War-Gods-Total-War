@@ -1,0 +1,7 @@
+layer_id,layer,purpose
+NAME_SELF,Self-name,What the people call themselves.
+NAME_COMMON,Common name,What traders and neighbouring states usually say.
+NAME_IMPERIAL,Old imperial name,"Name preserved in records, maps, laws and claims."
+NAME_RELIGIOUS,Religious name,"Used by priests, pilgrims and holy-war chronicles."
+NAME_ENEMY,Enemy insult,"Used in propaganda, war songs and hostile chronicles."
+NAME_SCHOLAR,Scholar label,Used by later historians and database summaries.

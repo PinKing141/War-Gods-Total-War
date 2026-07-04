@@ -1,0 +1,11 @@
+rule_id,rule,mechanic
+WAR_001,War remains grounded.,mages matter but supply decides campaigns
+WAR_002,Roads decide response time.,"road_level affects army speed, tax, news and reinforcement"
+WAR_003,Disease can defeat armies.,army_health and province_plague_risk matter
+WAR_004,Winter can kill horses.,winter_attrition should affect cavalry and supply
+WAR_005,Commanders can defect.,loyalty and legitimacy can change army ownership
+WAR_006,Mercenaries can betray.,debt and pay delays affect mercenary loyalty
+WAR_007,"A battle is casualties, legitimacy, morale, debt and memory.",battle_result should update more than soldier counts
+WAR_008,"Campaigns may include one or two mages attached to headquarters, not hundreds.",mage_slots and specialist assignments
+WAR_009,Killing or capturing a mage can change a war more than destroying a small unit.,mage_capture_event with diplomacy and morale effects
+WAR_010,"Forbidden magic can trigger revolt, sanctions or pogroms.",forbidden_magic_event outputs religious and diplomatic consequences

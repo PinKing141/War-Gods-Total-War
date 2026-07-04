@@ -1,0 +1,7 @@
+rule_id,map_feature,mechanical_effects
+GEORULE_001,mountain_pass,"movement_cost,customs_revenue,fort_value,winter_attrition,trade_chokepoint"
+GEORULE_002,port,"imports,plague_risk,naval_hiring,diplomatic_contact,blockade_target"
+GEORULE_003,river,"food_output,travel_speed,tax_reach,siege_supply,trade_value"
+GEORULE_004,forest,"timber_output,ambush_bonus,disease_risk,state_control_penalty"
+GEORULE_005,stone_road,"army_speed,tax_reach,imperial_legitimacy,rebel_sabotage_target"
+GEORULE_006,oasis,"water_law,caravan_toll,heat_attrition_reduction,contract_war_trigger"

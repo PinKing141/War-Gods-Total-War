@@ -1,0 +1,10 @@
+province_id,local_name,common_name,old_imperial_name,religious_name,enemy_name,region_id,controller,terrain,primary_resource,road_level,port_level,fort_level,mana_site_level,strategic_value
+PROV_ROV_HALEM,Rov Halem,Halem Bridge,Measure Fort Seven,Saint Halem's Crossing,Tax-Leech Ford,REG_ROV_BASIN,FAC_ROV_HALEN,river_city,GRAIN,5,2,3,1,95
+PROV_SEVRIN_CANAL,Sevrin Tor,Sevrin Canal,Canal Office Twelve,Measure Shrine of Sevrin,Ink Gate,REG_ROV_BASIN,FAC_ROV_HALEN,canal_farmland,GRAIN,4,1,2,0,80
+PROV_RED_BOG,Red Bog Cairn,Red Bog,Chain Tax Post Nine,Hearth of Red Graves,Bog King Mire,REG_CAIRN_MARCH,FAC_KAERN_RED_BOG,bog_forest,IRON,2,0,3,0,75
+PROV_OPEN_GATE,Oru-Gate,Open Gate Freehold,Service Colony Nineteen,Burden Hearth,Grain-Eater Gate,REG_CAIRN_MARCH,FAC_GHARU_OPEN_GATE,frontier_farms,GRAIN,3,0,2,1,85
+PROV_WEST_GEAR,Kavor Den,West Gear Pass,Ferrum Gate Thirty,Inner Stone West Door,Ratback Cut,REG_GREYHOOK,FAC_KAVARI_WEST_GEAR,mountain_pass,IRON,4,0,5,2,100
+PROV_THIRD_CHARTER,Leth Namar,Third Charter District,Pale Witness Ward Three,House of the Long Account,Treaty Ghost Ward,REG_ROV_BASIN,FAC_NALARI_THIRD_CHARTER,charter_city,SILVER_COIN_METALS,4,1,2,1,90
+PROV_BLUE_CHAIN,Mava Quay,Blue Chain House,River Toll Ledger Four,Bell of River Return,Coin Gull Nest,REG_MAREN_COAST,FAC_MAREN_BLUE_CHAIN,river_port,SILVER_COIN_METALS,3,4,2,0,88
+PROV_WHITE_MARE,Boru Aru,White Mare Camp,Eastern Pasture Toll Two,Ninth Banner Field,Saddle Ghost Camp,REG_TALUUN_STEPPE,FAC_TALUUN_WHITE_MARE,steppe_market,HORSES,1,0,1,0,78
+PROV_NINTH_BANNER,Garom Hallow,Ninth Banner Field,Battle Record Plain,Hallow of the Ninth Banner,Priest's Killing Ground,REG_ROV_BASIN,FAC_NINE_BANNERS_HALLOW,sacred_battlefield,INFLUENCE,3,0,2,2,92
