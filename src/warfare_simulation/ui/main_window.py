@@ -37,7 +37,6 @@ from warfare_simulation.ui.models.observer_summary_model import ObserverSummaryT
 from warfare_simulation.ui.models.province_model import ProvinceTableModel
 from warfare_simulation.ui.models.resource_model import ResourceTableModel
 from warfare_simulation.ui.models.timeline_model import TimelineTableModel
-from warfare_simulation.ui.widgets.kingdom_panel import KingdomPanel
 from warfare_simulation.ui.widgets.table_view import SortableTableView
 
 
@@ -144,14 +143,6 @@ class MainWindow(QMainWindow):
         root_layout = QHBoxLayout(root)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
-
-        self._kingdom_panel = KingdomPanel()
-        root_layout.addWidget(self._kingdom_panel)
-
-        separator = QWidget()
-        separator.setFixedWidth(1)
-        separator.setStyleSheet("background-color: #2e3347;")
-        root_layout.addWidget(separator)
 
         content = QWidget()
         content_layout = QVBoxLayout(content)
@@ -384,14 +375,12 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
     def refresh(self) -> None:
-        summary = self._service.get_kingdom_summary()
         sim = self._service.get_simulation_status()
         overview = self._service.get_world_overview()
 
         if sim.simulation_speed in self._SPEED_STEPS:
             self._selected_speed = sim.simulation_speed
 
-        self._kingdom_panel.refresh(summary)
         self._province_model.refresh(self._service.get_provinces())
         self._resource_model.refresh(self._service.get_resources())
         self._event_model.refresh(self._service.get_events())
@@ -417,11 +406,7 @@ class MainWindow(QMainWindow):
         self._pause_btn.setText("▶ Play" if sim.is_paused else "⏸ Pause")
         self._speed_label.setText(f"Speed: {self._selected_speed}")
 
-        if summary is not None:
-            self._status.showMessage(
-                f"{summary.name}  —  Treasury: {summary.treasury:,} ◆  "
-                f"  Net: {summary.net_income:+,} / month  ·  Date: {sim.formatted_date}"
-            )
+        self._status.showMessage(f"Observing the living world  ·  Date: {sim.formatted_date}")
 
         self._apply_timer_state(sim.is_paused)
 

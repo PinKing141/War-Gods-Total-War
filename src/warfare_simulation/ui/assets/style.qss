@@ -11,28 +11,6 @@ QMainWindow, QWidget, QDialog {
     font-size: 13px;
 }
 
-/* ── Kingdom sidebar panel ───────────────────────────────────────── */
-#kingdomPanel {
-    background-color: #090d16;
-    border-right: 1px solid #2e3347;
-}
-
-#kingdomName {
-    color: #f1d58a;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-#rulerLabel {
-    color: #8a9bb5;
-    font-size: 12px;
-}
-
-#dateLabel {
-    color: #6a7489;
-    font-size: 11px;
-}
-
 /* ── Command center panels ───────────────────────────────────────── */
 #commandCenter {
     background-color: #0d111c;
@@ -79,36 +57,10 @@ QMainWindow, QWidget, QDialog {
     font-weight: bold;
 }
 
-/* ── Section headers (small-caps labels above stat groups) ────────── */
-#sectionHeader {
-    color: #c9a84c;
-    font-size: 10px;
-    font-weight: bold;
-    letter-spacing: 2px;
-}
-
-/* ── Stat labels / values ─────────────────────────────────────────── */
+/* ── Stat labels (toolbar date / speed readouts) ──────────────────── */
 #statLabel {
     color: #7d89a0;
     font-size: 12px;
-}
-
-#statValue {
-    color: #d4c49a;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-#statValuePositive {
-    color: #5dbd7a;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-#statValueNegative {
-    color: #c45f5f;
-    font-size: 13px;
-    font-weight: bold;
 }
 
 /* ── Horizontal divider ───────────────────────────────────────────── */
