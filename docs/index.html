@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>War Gods — The Frontier Chronicle</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 44'%3E%3Cpath d='M4 4 h32 v18 c0 10 -8 16 -16 19 c-8 -3 -16 -9 -16 -19 z' fill='%23c9a84c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand"><b>WAR GODS</b><span>The Frontier Chronicle — an unruled world</span></div>
+  <div id="shield-strip"></div>
+  <div class="clock">
+    <div id="date">—</div>
+    <div class="speed-controls">
+      <button id="btn-pause" class="play" title="Play / pause">▶</button>
+      <button id="btn-slower" title="Slower">−</button>
+      <span class="speed-pips" id="speed-pips"><i></i><i></i><i></i><i></i></span>
+      <button id="btn-faster" title="Faster">+</button>
+    </div>
+  </div>
+</header>
+
+<div id="stage">
+  <div id="map-wrap">
+    <canvas id="map"></canvas>
+    <div id="overlay"></div>
+  </div>
+
+  <aside id="inspector" class="panel hidden"></aside>
+
+  <aside id="chronicle" class="panel">
+    <div id="chronicle-tabs">
+      <div data-tab="chronicle" class="active">Chronicle</div>
+      <div data-tab="wars">Wars</div>
+    </div>
+    <div id="events-list"></div>
+  </aside>
+
+  <div id="hint">drag to pan · scroll to zoom · click provinces, shields and names to read the world</div>
+</div>
+
+<div id="tooltip" class="hidden"></div>
+<div id="toasts"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/rng.js"></script>
+<script src="assets/heraldry.js"></script>
+<script src="assets/map.js"></script>
+<script src="assets/sim.js"></script>
+<script src="assets/ui.js"></script>
+<script src="assets/main.js"></script>
+</body>
+</html>
