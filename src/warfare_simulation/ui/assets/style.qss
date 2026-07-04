@@ -1,25 +1,25 @@
 /* =================================================================
-   War Gods Total War — Strategy Dark Theme
-   All visual styling lives here; widgets contain zero colour literals.
+   War Gods Total War — Living Chronicle Command Center Theme
+   All visual styling lives here; widgets contain almost no colour literals.
    ================================================================= */
 
 /* ── Global ─────────────────────────────────────────────────────── */
 QMainWindow, QWidget, QDialog {
-    background-color: #0f1117;
-    color: #c8bfa8;
+    background-color: #080b12;
+    color: #d3c6a3;
     font-family: "Segoe UI", Arial, sans-serif;
     font-size: 13px;
 }
 
 /* ── Kingdom sidebar panel ───────────────────────────────────────── */
 #kingdomPanel {
-    background-color: #0b0e18;
+    background-color: #090d16;
     border-right: 1px solid #2e3347;
 }
 
 #kingdomName {
-    color: #e8d5a3;
-    font-size: 17px;
+    color: #f1d58a;
+    font-size: 18px;
     font-weight: bold;
 }
 
@@ -33,6 +33,52 @@ QMainWindow, QWidget, QDialog {
     font-size: 11px;
 }
 
+/* ── Command center panels ───────────────────────────────────────── */
+#commandCenter {
+    background-color: #0d111c;
+}
+
+#heroPanel {
+    background-color: #111827;
+    border: 1px solid #28324a;
+    border-radius: 8px;
+}
+
+#heroTitle {
+    color: #f1d58a;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+#heroBody {
+    color: #aab3c4;
+    font-size: 13px;
+}
+
+#overviewCard {
+    background-color: #111827;
+    border: 1px solid #28324a;
+    border-radius: 7px;
+}
+
+#overviewCard:hover {
+    border-color: #c9a84c;
+    background-color: #151d2d;
+}
+
+#overviewLabel {
+    color: #71809a;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+}
+
+#overviewValue {
+    color: #f1d58a;
+    font-size: 24px;
+    font-weight: bold;
+}
+
 /* ── Section headers (small-caps labels above stat groups) ────────── */
 #sectionHeader {
     color: #c9a84c;
@@ -43,7 +89,7 @@ QMainWindow, QWidget, QDialog {
 
 /* ── Stat labels / values ─────────────────────────────────────────── */
 #statLabel {
-    color: #6a7489;
+    color: #7d89a0;
     font-size: 12px;
 }
 
@@ -74,29 +120,29 @@ QFrame[frameShape="4"] {
 
 /* ── Tables ───────────────────────────────────────────────────────── */
 QTableView {
-    background-color: #13172200;
-    alternate-background-color: #1c2133;
-    color: #c8bfa8;
+    background-color: #0d111c;
+    alternate-background-color: #131b2a;
+    color: #d3c6a3;
     gridline-color: #222840;
     border: none;
-    selection-background-color: #2e3a5c;
-    selection-color: #e8d5a3;
+    selection-background-color: #2f3f65;
+    selection-color: #f1d58a;
     outline: 0;
 }
 
 QTableView::item {
-    padding: 4px 8px;
+    padding: 5px 9px;
     border: none;
 }
 
 QHeaderView {
-    background-color: #0f1117;
+    background-color: #0b0f18;
 }
 
 QHeaderView::section {
-    background-color: #131827;
+    background-color: #111827;
     color: #c9a84c;
-    padding: 6px 10px;
+    padding: 7px 10px;
     border: none;
     border-right: 1px solid #222840;
     border-bottom: 2px solid #2e3347;
@@ -112,60 +158,73 @@ QHeaderView::section:first {
 /* ── Tabs ─────────────────────────────────────────────────────────── */
 QTabWidget::pane {
     border: none;
-    background-color: #0f1117;
+    background-color: #0d111c;
 }
 
 QTabBar {
-    background-color: #0f1117;
+    background-color: #0b0f18;
 }
 
 QTabBar::tab {
-    background-color: #0f1117;
-    color: #6a7489;
-    padding: 9px 22px;
+    background-color: #0b0f18;
+    color: #71809a;
+    padding: 10px 20px;
     border-bottom: 2px solid transparent;
     font-size: 12px;
     margin-right: 2px;
 }
 
 QTabBar::tab:selected {
-    color: #e8d5a3;
+    color: #f1d58a;
+    background-color: #0d111c;
     border-bottom: 2px solid #c9a84c;
 }
 
 QTabBar::tab:hover:!selected {
-    color: #c8bfa8;
-    background-color: #151b2a;
+    color: #d3c6a3;
+    background-color: #151d2d;
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────────── */
-QToolBar {
-    background-color: #0b0e18;
+QToolBar, #commandToolbar {
+    background-color: #090d16;
     border-bottom: 1px solid #2e3347;
-    padding: 6px 10px;
-    spacing: 6px;
+    padding: 7px 12px;
+    spacing: 7px;
 }
 
 QToolBar QLabel {
-    color: #6a7489;
+    color: #7d89a0;
     font-size: 12px;
+}
+
+#toolbarTitle {
+    color: #f1d58a;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+}
+
+#toolbarSubtitle {
+    color: #66748c;
+    font-size: 10px;
 }
 
 /* ── Buttons ─────────────────────────────────────────────────────── */
 QPushButton {
-    background-color: #181c27;
-    color: #c8bfa8;
+    background-color: #151b2a;
+    color: #d3c6a3;
     border: 1px solid #2e3347;
-    border-radius: 3px;
-    padding: 6px 18px;
+    border-radius: 4px;
+    padding: 7px 18px;
     font-size: 12px;
     font-weight: bold;
 }
 
 QPushButton:hover {
-    background-color: #1e253a;
+    background-color: #1e2740;
     border-color: #c9a84c;
-    color: #e8d5a3;
+    color: #f1d58a;
 }
 
 QPushButton:pressed {
@@ -178,19 +237,19 @@ QPushButton:disabled {
     background-color: #0f1117;
 }
 
-#advanceTurnBtn {
-    background-color: #1e2d48;
-    color: #e8d5a3;
+#primaryButton, #advanceTurnBtn {
+    background-color: #223455;
+    color: #f1d58a;
     border: 1px solid #c9a84c;
-    padding: 7px 22px;
+    padding: 8px 22px;
     font-size: 13px;
 }
 
-#advanceTurnBtn:hover {
-    background-color: #28406a;
+#primaryButton:hover, #advanceTurnBtn:hover {
+    background-color: #2f4978;
 }
 
-#advanceTurnBtn:disabled {
+#primaryButton:disabled, #advanceTurnBtn:disabled {
     color: #4a5060;
     border-color: #2e3347;
     background-color: #0f1117;
@@ -198,8 +257,8 @@ QPushButton:disabled {
 
 /* ── Status bar ───────────────────────────────────────────────────── */
 QStatusBar {
-    background-color: #080b12;
-    color: #505870;
+    background-color: #060910;
+    color: #64718a;
     border-top: 1px solid #1e253a;
     font-size: 11px;
     padding: 2px 8px;
@@ -207,7 +266,7 @@ QStatusBar {
 
 /* ── Scrollbars ───────────────────────────────────────────────────── */
 QScrollBar:vertical {
-    background-color: #0f1117;
+    background-color: #0d111c;
     width: 9px;
     border: none;
 }
@@ -228,7 +287,7 @@ QScrollBar::sub-line:vertical {
 }
 
 QScrollBar:horizontal {
-    background-color: #0f1117;
+    background-color: #0d111c;
     height: 9px;
     border: none;
 }

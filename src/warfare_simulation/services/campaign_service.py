@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from warfare_simulation.app import WarfareSimulationApp
 from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
@@ -46,6 +46,29 @@ class SimulationStatus:
     formatted_date: str
     simulation_speed: str
     is_paused: bool
+
+
+@dataclass
+class WorldOverview:
+    active_factions: int
+    active_provinces: int
+    active_armies: int
+    active_resources: int
+    timeline_entries: int
+    events: int
+    observer_logs: int
+    seed_factions: int
+    seed_provinces: int
+    seed_relations: int
+    seed_characters: int
+    claims: int
+    mages: int
+    cultures: int
+    religions: int
+    species: int
+    regions: int
+    ai_weights: int
+    mechanic_hooks: int
 
 
 @dataclass
@@ -159,8 +182,58 @@ class CampaignService:
         self._balance_analyzer = BalanceAnalyzer()
 
     # ------------------------------------------------------------------
+    # Low-level read helpers for UI-shaped lore tables
+    # ------------------------------------------------------------------
+
+    def _count_table(self, table_name: str) -> int:
+        cursor = self._engine.db_mgr.execute(f"SELECT COUNT(*) FROM {table_name}")
+        return int(cursor.fetchone()[0])
+
+    def _query_rows(
+        self,
+        table_name: str,
+        columns: list[str],
+        *,
+        order_by: str | None = None,
+        limit: int | None = None,
+    ) -> list[Dict[str, Any]]:
+        selected = ", ".join(columns)
+        query = f"SELECT {selected} FROM {table_name}"
+        if order_by:
+            query += f" ORDER BY {order_by}"
+        if limit is not None:
+            query += f" LIMIT {int(limit)}"
+
+        cursor = self._engine.db_mgr.execute(query)
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    # ------------------------------------------------------------------
     # Read models
     # ------------------------------------------------------------------
+
+    def get_world_overview(self) -> WorldOverview:
+        """Return counts for the command-center overview cards."""
+        return WorldOverview(
+            active_factions=len(self._engine.repos.faction.list_all()),
+            active_provinces=len(self._engine.repos.province.list_all()),
+            active_armies=len(self._engine.repos.unit.list_all()),
+            active_resources=len(self._engine.repos.resource.list_all()),
+            timeline_entries=len(self.get_timeline(limit=None)),
+            events=len(self._engine.repos.event.list_all()),
+            observer_logs=len(self._engine.repos.observer_log.list_all()),
+            seed_factions=self._count_table("seed_faction"),
+            seed_provinces=self._count_table("seed_province"),
+            seed_relations=self._count_table("seed_relation"),
+            seed_characters=self._count_table("seed_character"),
+            claims=self._count_table("claim"),
+            mages=self._count_table("mage"),
+            cultures=self._count_table("culture"),
+            religions=self._count_table("religion"),
+            species=self._count_table("species"),
+            regions=self._count_table("region"),
+            ai_weights=self._count_table("ai_weight"),
+            mechanic_hooks=self._count_table("mechanic_hook"),
+        )
 
     def get_kingdom_summary(self) -> Optional[KingdomSummary]:
         k = self._engine.repos.kingdom.get_current_kingdom()
@@ -406,6 +479,87 @@ class CampaignService:
             )
             for r in self._engine.repos.relation.list_all()
         ]
+
+    # ------------------------------------------------------------------
+    # Lore / seed command-center tables
+    # ------------------------------------------------------------------
+
+    def get_seed_factions(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "seed_faction",
+            ["faction_id", "name", "identity", "dominant_culture", "dominant_species", "religion_id", "government", "primary_goal"],
+            order_by="name",
+        )
+
+    def get_seed_provinces(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "seed_province",
+            ["province_id", "common_name", "old_imperial_name", "controller", "terrain", "primary_resource", "road_level", "fort_level", "strategic_value"],
+            order_by="strategic_value DESC, common_name",
+        )
+
+    def get_seed_relations(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "seed_relation",
+            ["relation_id", "faction_a", "faction_b", "score", "war_risk", "main_tension"],
+            order_by="war_risk DESC, score ASC",
+        )
+
+    def get_seed_characters(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "seed_character",
+            ["character_id", "name", "species_id", "culture_id", "faction_id", "role", "age", "core_pressure"],
+            order_by="faction_id, role, name",
+        )
+
+    def get_claims(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "claim",
+            ["claim_id", "claimant", "target", "claim_type", "strength", "decay_rate", "myth_status", "recognized_by", "source"],
+            order_by="strength DESC, claimant",
+        )
+
+    def get_mages(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "mage",
+            ["mage_id", "character_id", "species_id", "capacity", "control", "recovery", "strain_tolerance", "specialization", "legal_status", "patron_faction", "risk_score"],
+            order_by="risk_score DESC, mage_id",
+        )
+
+    def get_cultures(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "culture",
+            ["culture_id", "self_name", "common_name", "old_imperial_name", "dominant_species", "location", "military_style", "contradiction"],
+            order_by="common_name",
+        )
+
+    def get_religions(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "religion",
+            ["religion_id", "name", "type", "war_stance", "mage_stance", "holy_war_triggers", "core_claim"],
+            order_by="name",
+        )
+
+    def get_species(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "species",
+            ["species_id", "common_name", "self_name", "avg_lifespan", "fertility_rate", "food_need", "magic_tendency", "political_pattern"],
+            order_by="common_name",
+        )
+
+    def get_ai_weights(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "ai_weight",
+            ["ai_weight_id", "applies_to", "weight", "drives"],
+            order_by="weight DESC, ai_weight_id",
+        )
+
+    def get_mechanic_hooks(self) -> list[Dict[str, Any]]:
+        return self._query_rows(
+            "mechanic_hook",
+            ["hook_id", "input_text", "output_text"],
+            order_by="hook_id",
+        )
 
     # ------------------------------------------------------------------
     # Commands
