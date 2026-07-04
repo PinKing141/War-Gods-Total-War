@@ -8,6 +8,7 @@ from .database import DatabaseManager
 from .lore_bootstrap import LoreBootstrap
 from .migrations import Migration, MigrationManager
 from .repository import Repository, InMemoryRepository
+from .seed_frontier_activation import SeedFrontierActivation, SeedFrontierActivationResult
 
 __all__ = [
     "DatabaseManager",
@@ -16,4 +17,6 @@ __all__ = [
     "MigrationManager",
     "Repository",
     "InMemoryRepository",
+    "SeedFrontierActivation",
+    "SeedFrontierActivationResult",
 ]

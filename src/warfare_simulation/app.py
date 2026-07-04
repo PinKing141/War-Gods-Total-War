@@ -7,6 +7,10 @@ from warfare_simulation.orchestration import CampaignOrchestrator, GameState
 from warfare_simulation.persistence.campaign_bootstrap import CampaignBootstrap
 from warfare_simulation.persistence.database import DatabaseManager
 from warfare_simulation.persistence.lore_bootstrap import LoreBootstrap
+from warfare_simulation.persistence.seed_frontier_activation import (
+    DEFAULT_SEED_FRONTIER_ID,
+    SeedFrontierActivation,
+)
 
 
 class WarfareSimulationApp:
@@ -17,11 +21,16 @@ class WarfareSimulationApp:
         config_path: str | Path | None = None,
         db_path: str | Path = "war_sim.db",
         lore_path: str | Path | None = None,
+        activate_seed_frontier: bool = False,
+        seed_frontier_id: str = DEFAULT_SEED_FRONTIER_ID,
     ):
         self.config_mgr = ConfigManager(str(config_path) if config_path is not None else None)
         self.db_mgr = DatabaseManager(str(db_path))
         LoreBootstrap.seed_lore(self.db_mgr, lore_path)
         self.repos = CampaignBootstrap.initialize(self.config_mgr, self.db_mgr)
+        if activate_seed_frontier:
+            SeedFrontierActivation.activate(self.db_mgr, seed_id=seed_frontier_id)
+            self.repos = CampaignBootstrap.load_repositories(self.db_mgr)
         self.game_state = GameState()
         self.campaign = CampaignOrchestrator(
             {

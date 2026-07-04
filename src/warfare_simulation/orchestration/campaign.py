@@ -3,9 +3,16 @@
 from pathlib import Path
 from typing import Any, Mapping
 
-from warfare_simulation.core.constants import EventCategory
+from warfare_simulation.core.constants import EventCategory, FactionStatus
+from warfare_simulation.domain.ai import (
+    ActionResolver,
+    HistoricalIntentEngine,
+    IntentValidator,
+    PressureEngine,
+)
+from warfare_simulation.domain.chronicle import ChronicleReasonFormatter
 from warfare_simulation.domain.events.models import AuditLog, Event, ObserverLog, TurnSummary
-from warfare_simulation.domain.diplomacy.intent import FactionIntentEngine
+from warfare_simulation.domain.diplomacy.intent import FactionClaimSignal, FactionIntentEngine
 from warfare_simulation.domain.diplomacy.politics import InternalPoliticsEngine
 from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
 from warfare_simulation.export.workbook_factory import WorkbookFactory
@@ -22,6 +29,11 @@ class CampaignOrchestrator:
         self.pulse_scheduler = PulseScheduler()
         self.summary_generator = ObserverSummaryGenerator()
         self.faction_intent_engine = FactionIntentEngine()
+        self.pressure_engine = PressureEngine()
+        self.historical_intent_engine = HistoricalIntentEngine()
+        self.intent_validator = IntentValidator()
+        self.action_resolver = ActionResolver()
+        self.reason_formatter = ChronicleReasonFormatter()
         self.internal_politics_engine = InternalPoliticsEngine()
         self.last_pulse_report: PulseReport | None = None
         self._register_pulse_hooks()
@@ -33,6 +45,7 @@ class CampaignOrchestrator:
         self.pulse_scheduler.register("daily", self._sync_daily_calendar_to_kingdoms)
         self.pulse_scheduler.register("monthly", self._resolve_monthly_economy_and_logistics)
         self.pulse_scheduler.register("monthly", self._resolve_monthly_faction_intents)
+        self.pulse_scheduler.register("monthly", self._resolve_monthly_historical_loop)
         self.pulse_scheduler.register("monthly", self._resolve_monthly_internal_politics)
         self.pulse_scheduler.register("monthly", self._write_monthly_turn_summary)
         self.pulse_scheduler.register_scheduled_event_hook(
@@ -274,7 +287,8 @@ class CampaignOrchestrator:
 
         factions = faction_repo.list_all()
         relations = relation_repo.list_all() if relation_repo is not None and hasattr(relation_repo, "list_all") else []
-        intents = self.faction_intent_engine.generate_intents(factions, relations)
+        claim_signals = self._load_active_claim_signals()
+        intents = self.faction_intent_engine.generate_intents(factions, relations, claim_signals)
         event_repo = self.repos.get("event")
         audit_repo = self.repos.get("audit_log")
 
@@ -294,6 +308,9 @@ class CampaignOrchestrator:
                 "pressure": intent.pressure.as_dict(),
                 "personality_traits": list(intent.personality_traits),
                 "weighted_scores": intent.weighted_scores or {},
+                "claim_signal": (
+                    intent.claim_signal.as_dict() if intent.claim_signal is not None else None
+                ),
             }
             if audit_repo is not None:
                 audit_repo.create(
@@ -348,6 +365,183 @@ class CampaignOrchestrator:
                         ),
                     )
                 )
+
+    def _load_active_claim_signals(self) -> list[FactionClaimSignal]:
+        """Load activated lore claims for the monthly faction intent engine."""
+        faction_repo = self.repos.get("faction")
+        db = getattr(faction_repo, "db_manager", None)
+        if db is None or not getattr(db, "conn", None):
+            return []
+
+        if not db.table_exists("claim"):
+            return []
+
+        cursor = db.execute(
+            """
+            SELECT
+                c.active_claimant_faction_id,
+                c.claim_id,
+                COALESCE(p.name, c.target) AS target_name,
+                c.claim_type,
+                c.strength,
+                c.source,
+                c.recognized_by,
+                COALESCE(p.strategic_value, 0) AS strategic_value
+            FROM claim c
+            LEFT JOIN province p ON p.id = c.active_target_province_id
+            WHERE c.active_claimant_faction_id IS NOT NULL
+            """
+        )
+        return [
+            FactionClaimSignal(
+                faction_id=row[0],
+                claim_id=row[1],
+                target_name=row[2],
+                claim_type=row[3],
+                strength=row[4],
+                source=row[5] or "",
+                recognized_by=row[6] or "",
+                strategic_value=row[7] or 0,
+            )
+            for row in cursor.fetchall()
+        ]
+
+
+    def _resolve_monthly_historical_loop(self, _date: Any) -> None:
+        """Run pressure -> intent -> validation -> action for activated frontier lore."""
+        db = self._runtime_db()
+        if db is None or not db.table_exists("seed_frontier_runtime_map"):
+            return
+
+        pressures = self.pressure_engine.evaluate(db)
+        if not pressures:
+            return
+
+        intents = self.historical_intent_engine.generate_intents(pressures)
+        for intent in intents:
+            validated = self.intent_validator.validate(db, intent)
+            result = self.action_resolver.resolve(db, validated)
+            db.commit()
+            self._sync_historical_action_to_repositories(result)
+            chronicle_text = self.reason_formatter.format_action(result)
+            self._record_historical_loop_result(result, chronicle_text)
+
+    def _record_historical_loop_result(self, result: Any, chronicle_text: str) -> None:
+        """Persist audit, observer, and event rows for a historical-loop result."""
+        validated = result.validated_intent
+        intent = validated.intent
+        actor = f"faction:{intent.faction_id}"
+        target = (
+            f"province:{intent.province_id}"
+            if intent.province_id is not None
+            else f"faction:{intent.target_faction_id}"
+        )
+        details = {
+            "pressure": intent.pressure.as_dict(),
+            "intent": intent.as_dict(),
+            "validation": validated.as_dict(),
+            "action": result.as_dict(),
+            "chronicle": chronicle_text,
+        }
+        action_name = (
+            f"resolve_{result.action_type}"
+            if result.accepted
+            else f"reject_{result.action_type}"
+        )
+        audit_repo = self.repos.get("audit_log")
+        if audit_repo is not None:
+            audit_repo.create(
+                AuditLog(
+                    turn=self.game_state.current_turn,
+                    month=self.game_state.current_month,
+                    year=self.game_state.current_year,
+                    actor=actor,
+                    target=target,
+                    system="HistoricalLoop",
+                    action=action_name,
+                    previous_value=None,
+                    new_value=details,
+                    reason=validated.reason,
+                )
+            )
+        self._write_observer_log(
+            stream="diplomacy",
+            turn=self.game_state.current_turn,
+            day=self.game_state.current_day,
+            month=self.game_state.current_month,
+            year=self.game_state.current_year,
+            actor=actor,
+            target=target,
+            source_system="HistoricalLoop",
+            summary=chronicle_text,
+            details=details,
+        )
+        event_repo = self.repos.get("event")
+        if event_repo is not None:
+            event_repo.create(
+                Event(
+                    turn=self.game_state.current_turn,
+                    category=EventCategory.DIPLOMACY if result.accepted else EventCategory.POLITICS,
+                    description=chronicle_text,
+                    impact=result.effect_summary,
+                    affected_entities=[
+                        value
+                        for value in (
+                            intent.faction_id,
+                            intent.target_faction_id,
+                            intent.province_id,
+                        )
+                        if value is not None
+                    ],
+                    day=self.game_state.current_day,
+                    month=self.game_state.current_month,
+                    year=self.game_state.current_year,
+                    actor=actor,
+                    target=target,
+                    source_system="HistoricalLoop",
+                    cause_chain=result.cause_chain,
+                    effect_summary=result.effect_summary,
+                )
+            )
+
+    def _sync_historical_action_to_repositories(self, result: Any) -> None:
+        """Keep hydrated repositories aligned with direct SQL action mutation."""
+        relation_change = result.state_changes.get("relation", {})
+        relation_repo = self.repos.get("relation")
+        if relation_change and relation_repo is not None and hasattr(relation_repo, "get"):
+            relation = relation_repo.get(relation_change["id"])
+            if relation is not None:
+                relation.opinion = relation_change["new"]["opinion"]
+                relation.trust = relation_change["new"]["trust"]
+                relation.status = self._relation_status(relation_change["new"]["status"])
+                relation_repo.update(relation)
+
+        province_change = result.state_changes.get("province", {})
+        province_repo = self.repos.get("province")
+        if province_change and province_repo is not None and hasattr(province_repo, "get"):
+            province = province_repo.get(province_change["id"])
+            if province is not None:
+                province.loyalty = province_change["new"]["loyalty"]
+                province_repo.update(province)
+
+    def _runtime_db(self) -> Any:
+        """Return the shared SQLite manager from hydrated repositories if present."""
+        for key in ("faction", "province", "relation", "event"):
+            repo = self.repos.get(key)
+            db = getattr(repo, "db_manager", None)
+            if db is not None and getattr(db, "conn", None):
+                return db
+        return None
+
+    @staticmethod
+    def _relation_status(raw: str) -> FactionStatus:
+        try:
+            return FactionStatus[raw]
+        except KeyError:
+            for status in FactionStatus:
+                if status.value == raw:
+                    return status
+        return FactionStatus.NEUTRAL
 
 
     def _resolve_monthly_internal_politics(self, _date: Any) -> None:
@@ -687,6 +881,7 @@ class CampaignOrchestrator:
             self.game_state.advance_turn()
 
         self._resolve_monthly_faction_intents(None)
+        self._resolve_monthly_historical_loop(None)
         self._resolve_monthly_internal_politics(None)
         self._write_turn_summary()
         return self.game_state

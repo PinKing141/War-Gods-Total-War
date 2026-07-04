@@ -48,6 +48,38 @@ class FactionPressure:
 
 
 @dataclass(frozen=True)
+class FactionClaimSignal:
+    """Active claim pressure that can push a faction toward concrete action."""
+
+    faction_id: int
+    claim_id: str
+    target_name: str
+    claim_type: str
+    strength: int
+    source: str
+    recognized_by: str
+    strategic_value: int = 0
+
+    @property
+    def pressure_score(self) -> int:
+        """Return claim urgency weighted by target strategic value."""
+        return min(100, self.strength + self.strategic_value // 5)
+
+    def as_dict(self) -> dict[str, int | str]:
+        return {
+            "faction_id": self.faction_id,
+            "claim_id": self.claim_id,
+            "target_name": self.target_name,
+            "claim_type": self.claim_type,
+            "strength": self.strength,
+            "source": self.source,
+            "recognized_by": self.recognized_by,
+            "strategic_value": self.strategic_value,
+            "pressure_score": self.pressure_score,
+        }
+
+
+@dataclass(frozen=True)
 class FactionIntent:
     """A validated strategic choice produced by an autonomous faction."""
 
@@ -60,18 +92,28 @@ class FactionIntent:
     failure_reason: str = ""
     personality_traits: tuple[str, ...] = ()
     weighted_scores: dict[str, int] | None = None
+    claim_signal: FactionClaimSignal | None = None
 
     @property
     def cause_chain(self) -> list[str]:
         """Explain the choice in compact, log-friendly terms."""
-        return [
+        chain = [
             "monthly_pulse",
             "evaluate_faction_pressure",
             f"dominant_pressure:{self.pressure.dominant}",
-            f"intent:{self.intent_type}",
-            f"personality:{','.join(self.personality_traits) or 'balanced'}",
-            "validate_intent" if self.valid else "reject_intent",
         ]
+        if self.claim_signal is not None:
+            chain.append(
+                f"claim_pressure:{self.claim_signal.claim_id}:{self.claim_signal.pressure_score}"
+            )
+        chain.extend(
+            [
+                f"intent:{self.intent_type}",
+                f"personality:{','.join(self.personality_traits) or 'balanced'}",
+                "validate_intent" if self.valid else "reject_intent",
+            ]
+        )
+        return chain
 
 
 class FactionIntentEngine:
@@ -131,7 +173,10 @@ class FactionIntentEngine:
         )
 
     def choose_intent(
-        self, pressure: FactionPressure, personality_traits: Iterable[str] = ()
+        self,
+        pressure: FactionPressure,
+        personality_traits: Iterable[str] = (),
+        claim_signal: FactionClaimSignal | None = None,
     ) -> FactionIntent:
         """Choose one strategic intent using pressure plus ruler personality weights."""
         intent_map = {
@@ -151,14 +196,28 @@ class FactionIntentEngine:
                 "watch_rivals",
                 "monitor rivals and avoid diplomatic surprise",
             ),
+            "claim": (
+                "press_claim",
+                "prepare diplomatic, legal, or military pressure around an active claim",
+            ),
         }
         traits = tuple(personality_traits)
         weighted_scores = self.score_intent_axes(pressure, traits)
+        if claim_signal is not None:
+            weighted_scores["claim"] = claim_signal.pressure_score
         selected_axis = max(
-            self._AXES,
-            key=lambda axis: (weighted_scores[axis], -self._AXES.index(axis)),
+            tuple(weighted_scores.keys()),
+            key=lambda axis: (
+                weighted_scores[axis],
+                1 if axis == "claim" else -self._AXES.index(axis),
+            ),
         )
         intent_type, description = intent_map[selected_axis]
+        if selected_axis == "claim" and claim_signal is not None:
+            description = (
+                f"press {claim_signal.claim_type} on {claim_signal.target_name} "
+                f"from {claim_signal.source}"
+            )
         return self.validate_intent(
             FactionIntent(
                 faction_id=pressure.faction_id,
@@ -168,6 +227,7 @@ class FactionIntentEngine:
                 pressure=pressure,
                 personality_traits=traits,
                 weighted_scores=weighted_scores,
+                claim_signal=claim_signal,
             )
         )
 
@@ -188,6 +248,7 @@ class FactionIntentEngine:
                 valid=False,
                 personality_traits=intent.personality_traits,
                 weighted_scores=intent.weighted_scores,
+                claim_signal=intent.claim_signal,
                 failure_reason="Faction intent requires a persisted faction id.",
             )
         return intent
@@ -196,13 +257,20 @@ class FactionIntentEngine:
         self,
         factions: Iterable[Faction],
         relations: Iterable[Relation],
+        claim_signals: Iterable[FactionClaimSignal] = (),
     ) -> list[FactionIntent]:
         """Evaluate every faction and return deterministic monthly intents."""
         relation_list = list(relations)
+        strongest_claim_by_faction: dict[int, FactionClaimSignal] = {}
+        for signal in claim_signals:
+            current = strongest_claim_by_faction.get(signal.faction_id)
+            if current is None or signal.pressure_score > current.pressure_score:
+                strongest_claim_by_faction[signal.faction_id] = signal
         return [
             self.choose_intent(
                 self.evaluate_pressure(faction, relation_list),
                 self.normalize_personality_traits(faction),
+                strongest_claim_by_faction.get(faction.id),
             )
             for faction in sorted(factions, key=lambda item: item.id)
         ]

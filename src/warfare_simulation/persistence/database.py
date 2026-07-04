@@ -352,6 +352,71 @@ class DatabaseManager:
                 FOREIGN KEY(species_id) REFERENCES species(species_id)
             )
         """)
+
+    def _initialize_seed_frontier_runtime_schema(self) -> None:
+        """Add runtime columns used when CSV seed rows become active entities."""
+        for column_name, definition in (
+            ("seed_faction_id", "TEXT"),
+            ("dominant_culture", "TEXT DEFAULT ''"),
+            ("dominant_species", "TEXT DEFAULT ''"),
+            ("religion_id", "TEXT DEFAULT ''"),
+            ("primary_goal", "TEXT DEFAULT ''"),
+            ("conflict_pressure", "TEXT DEFAULT ''"),
+        ):
+            self._ensure_column("faction", column_name, definition)
+
+        for column_name, definition in (
+            ("seed_relation_id", "TEXT"),
+            ("main_tension", "TEXT DEFAULT ''"),
+            ("war_risk", "INTEGER DEFAULT 0"),
+        ):
+            self._ensure_column("relation", column_name, definition)
+
+        for column_name, definition in (
+            ("seed_province_id", "TEXT"),
+            ("controller_faction_id", "INTEGER"),
+            ("region_id", "TEXT DEFAULT ''"),
+            ("terrain", "TEXT DEFAULT ''"),
+            ("primary_resource", "TEXT DEFAULT ''"),
+            ("road_level", "INTEGER DEFAULT 0"),
+            ("port_level", "INTEGER DEFAULT 0"),
+            ("mana_site_level", "INTEGER DEFAULT 0"),
+            ("strategic_value", "INTEGER DEFAULT 0"),
+        ):
+            self._ensure_column("province", column_name, definition)
+
+        for column_name, definition in (
+            ("seed_character_id", "TEXT"),
+            ("species_id", "TEXT DEFAULT ''"),
+            ("culture_id", "TEXT DEFAULT ''"),
+            ("source_faction_id", "TEXT DEFAULT ''"),
+            ("active_faction_id", "INTEGER"),
+            ("core_pressure", "TEXT DEFAULT ''"),
+        ):
+            self._ensure_column("commander", column_name, definition)
+
+        for column_name, definition in (
+            ("active_claimant_faction_id", "INTEGER"),
+            ("active_target_province_id", "INTEGER"),
+        ):
+            self._ensure_column("claim", column_name, definition)
+
+        for column_name, definition in (
+            ("active_character_commander_id", "INTEGER"),
+            ("active_patron_faction_id", "INTEGER"),
+        ):
+            self._ensure_column("mage", column_name, definition)
+
+        self.execute("""
+            CREATE TABLE IF NOT EXISTS seed_frontier_runtime_map (
+                seed_id TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                runtime_table TEXT NOT NULL,
+                runtime_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY(seed_id, entity_type)
+            )
+        """)
     
     def initialize_schema(self) -> None:
         """
@@ -594,6 +659,7 @@ class DatabaseManager:
             """)
 
             self._initialize_lore_schema()
+            self._initialize_seed_frontier_runtime_schema()
 
             self.execute("""
                 CREATE TABLE IF NOT EXISTS migration (
