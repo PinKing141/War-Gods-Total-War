@@ -22,7 +22,7 @@ The original modularization goal has been achieved well enough to support the pi
 - SQLite runtime state exists.
 - JSON seed configuration exists.
 - Workbook export exists.
-- A PySide6 dashboard shell exists.
+- A static web observer shell exists under `docs/`.
 - Deterministic monthly advancement for the active kingdom and resources exists.
 
 The new target is a **synthetic-history simulation engine** that:
@@ -303,7 +303,7 @@ The sections below define the forward plan from the current foundation to a full
 
 ### Product Goal
 
-Build a living world that advances automatically on a simulated `DD/MM/YYYY` calendar, resolves autonomous faction behavior through deterministic and stochastic systems, and surfaces its history through workbook exports, logs, and the PySide6 observatory UI.
+Build a living world that advances automatically on a simulated `DD/MM/YYYY` calendar, resolves autonomous faction behavior through deterministic and stochastic systems, and surfaces its history through workbook exports, logs, and the static web observatory UI.
 
 ### Delivery Horizon
 

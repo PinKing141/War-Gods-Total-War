@@ -24,10 +24,6 @@ pip install -r requirements.txt
 python src/warfare_simulation/main.py
 ```
 
-### Run Desktop Observatory
-```bash
-python scripts/run_ui.py
-```
 
 ### Web Observer — The Frontier Chronicle (GitHub Pages)
 
@@ -36,10 +32,10 @@ political map of the Rov Basin frontier where the eight seed factions wage
 wars, besiege fortresses, sign peaces, die, and crown heirs entirely on their
 own. There is no player — you can only watch, pan, zoom, and read.
 
-Run it locally (no build step, no server needed):
+Run it locally (no build step needed):
 ```bash
 # either open docs/index.html directly in a browser, or:
-python -m http.server -d docs 8000   # then visit http://localhost:8000
+python -m http.server 8000   # then visit http://localhost:8000 or /docs/
 ```
 
 Publish it with GitHub Pages:
@@ -323,7 +319,6 @@ flake8 src/
 - [docs/roadmaps/MODULARIZATION_ROADMAP.md](docs/roadmaps/MODULARIZATION_ROADMAP.md) — Complete technical modularization roadmap with code examples
 - [docs/roadmaps/LIVING_CHRONICLE_ROADMAP.md](docs/roadmaps/LIVING_CHRONICLE_ROADMAP.md) — Full product roadmap for the autonomous historical chronicle simulator
 - [docs/RULES_FRAMEWORK.md](docs/RULES_FRAMEWORK.md) — Enforceable campaign rules framework
-- [scripts/run_ui.py](scripts/run_ui.py) — Preferred desktop observatory launcher
 - [scripts/run_export.py](scripts/run_export.py) — Preferred export launcher
 - [src/warfare_simulation/core/base.py](src/warfare_simulation/core/base.py) — Abstract base classes
 - [src/warfare_simulation/core/constants.py](src/warfare_simulation/core/constants.py) — Enums and constants

@@ -347,6 +347,6 @@ The roadmap that follows elsewhere in the repo should obey these rules:
 
 ## 18. Current Implementation Status
 
-The codebase already supports the modular foundation required for this pivot: separate domain packages, JSON configuration, SQLite persistence, workbook export, a PySide6 dashboard shell, an application entry point, and deterministic monthly advancement for the kingdom economy and resources.
+The codebase already supports the modular foundation required for this pivot: separate domain packages, JSON configuration, SQLite persistence, workbook export, a static web observer, an application entry point, and deterministic monthly advancement for the kingdom economy and resources.
 
 The major remaining gap is not architecture. The major remaining gap is behavioral depth: a real calendar model, autonomous faction loops, pulse-based progression, historical memory, richer logs, and observer-grade summaries that explain world motion over time.

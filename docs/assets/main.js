@@ -1,6 +1,6 @@
 /* Bootstrap: wire the map, the simulation and the UI together and run the
    observer clock. There is deliberately no other input into the world. */
-(function () {
+(async function () {
   "use strict";
 
   const SPEEDS = [
@@ -12,7 +12,8 @@
 
   const seed = window.WG_SEED;
   const canvas = document.getElementById("map");
-  const map = new WG.WorldMap(canvas, seed);
+  const map = new (WG.LayeredWorldMap || WG.WorldMap)(canvas, seed);
+  if (map.ready) await map.ready;
   // every visit births a different history; pin ?seed=N to replay one
   const pinned = new URLSearchParams(location.search).get("seed");
   const rngSeed = pinned ? Number(pinned) : (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;

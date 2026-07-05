@@ -263,7 +263,7 @@ brinkmanship.
 **Solid foundation (real and preserved):**
 
 - Domain-driven package structure; JSON seed config; SQLite runtime state; repository
-  pattern; workbook export; PySide6 dashboard shell.
+  pattern; workbook export; static web observer shell.
 - Canonical `SimDate` calendar; pause/speed controls; checkpoint round-trip.
 - Deterministic pulse scheduler (daily/weekly/monthly/seasonal/yearly) with
   duplicate-run prevention and a persisted scheduled-event queue.
