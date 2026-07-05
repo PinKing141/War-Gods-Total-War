@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>River Workbench - War Gods Total War</title>
+<link rel="stylesheet" href="river_workbench.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <b>River Workbench</b>
+      <span>War Gods Total War private map tool</span>
+    </div>
+    <div class="status" id="status">Loading assets...</div>
+    <div class="top-actions">
+      <button id="btn-save-project">Save Project</button>
+      <button id="btn-load-project">Load Project</button>
+      <input id="project-file" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <main class="workbench">
+    <aside class="panel tools-panel">
+      <section>
+        <h2>Layers</h2>
+        <label><input type="radio" name="base-layer" value="terrain" checked> Terrain</label>
+        <label><input type="radio" name="base-layer" value="heightmap"> Heightmap</label>
+        <label><input type="radio" name="base-layer" value="province"> Province RGB</label>
+        <div class="toggles">
+          <label><input type="checkbox" data-mask-layer="water"> Water</label>
+          <label><input type="checkbox" data-mask-layer="land"> Land</label>
+          <label><input type="checkbox" data-mask-layer="mountain"> Mountain</label>
+          <label><input type="checkbox" data-mask-layer="lowland"> Lowland</label>
+          <label><input type="checkbox" data-mask-layer="marsh"> Marsh</label>
+          <label><input type="checkbox" data-mask-layer="farmland"> Farmland</label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Tools</h2>
+        <div class="tool-grid" id="tool-buttons">
+          <button data-tool="select" class="active">Select</button>
+          <button data-tool="add-point">Add Point</button>
+          <button data-tool="delete-point">Delete Point</button>
+        </div>
+        <div class="button-stack">
+          <button id="btn-new-river">New River</button>
+          <button id="btn-delete-river">Delete River</button>
+          <button id="btn-reverse-river">Reverse Direction</button>
+          <button id="btn-load-existing">Load Existing Rivers</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Simulator</h2>
+        <label>Min Flow
+          <input id="sim-min-flow" type="number" min="8" max="300" step="1" value="32">
+        </label>
+        <label>Max Rivers
+          <input id="sim-max-rivers" type="number" min="1" max="80" step="1" value="18">
+        </label>
+        <label>Grid Step
+          <input id="sim-grid-step" type="number" min="8" max="32" step="4" value="16">
+        </label>
+        <label>Smoothing
+          <input id="sim-smoothing" type="number" min="0" max="3" step="1" value="1">
+        </label>
+        <label class="check"><input id="sim-replace" type="checkbox" checked> Replace current rivers</label>
+        <div class="button-stack">
+          <button id="btn-run-simulator">Run River Simulator</button>
+          <button id="btn-clear-simulation">Clear Simulated Drafts</button>
+        </div>
+        <div id="sim-report" class="sim-report">Simulator idle.</div>
+      </section>
+
+      <section>
+        <h2>Exports</h2>
+        <div class="button-stack">
+          <button id="btn-export-paths">river_paths.json</button>
+          <button id="btn-export-csv">waterways.csv</button>
+          <button id="btn-export-masks">Export Masks</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="viewport-shell">
+      <canvas id="river-canvas"></canvas>
+      <div class="viewport-hud">
+        <span id="cursor-readout">x 0, y 0</span>
+        <span id="selection-readout">No river selected</span>
+      </div>
+    </section>
+
+    <aside class="panel inspector-panel">
+      <section>
+        <h2>River</h2>
+        <form id="river-form" autocomplete="off">
+          <label>ID<input name="id" data-field="id"></label>
+          <label>Name<input name="name" data-field="name"></label>
+          <label>Type
+            <select name="type" data-field="type">
+              <option value="major_river">major_river</option>
+              <option value="tributary">tributary</option>
+              <option value="canal">canal</option>
+              <option value="marsh_channel">marsh_channel</option>
+              <option value="oasis_wadi">oasis_wadi</option>
+              <option value="delta">delta</option>
+              <option value="lake_outlet">lake_outlet</option>
+              <option value="endorheic_stream">endorheic_stream</option>
+            </select>
+          </label>
+          <label>Width Class
+            <select name="width_class" data-field="width_class">
+              <option value="1">1 stream</option>
+              <option value="2">2 tributary</option>
+              <option value="3">3 medium</option>
+              <option value="4">4 major</option>
+              <option value="5">5 huge</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" name="navigable" data-field="navigable"> Navigable</label>
+          <label>Source Province<input name="source_province" data-field="source_province"></label>
+          <label>Mouth<input name="mouth" data-field="mouth"></label>
+          <label>Connected Provinces<textarea name="connected_provinces" data-field="connected_provinces" rows="3"></textarea></label>
+          <label>Crossings<textarea name="crossings" data-field="crossings" rows="2"></textarea></label>
+          <label>Notes<textarea name="notes" data-field="notes" rows="3"></textarea></label>
+        </form>
+      </section>
+
+      <section>
+        <h2>Validation</h2>
+        <div id="validation-list" class="validation-list"></div>
+      </section>
+
+      <section>
+        <h2>Measurements</h2>
+        <div id="river-metrics" class="metrics-list"></div>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="river_workbench.js"></script>
+</body>
+</html>
