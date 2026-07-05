@@ -29,6 +29,32 @@ python src/warfare_simulation/main.py
 python scripts/run_ui.py
 ```
 
+### Web Observer — The Frontier Chronicle (GitHub Pages)
+
+A fully static, CK-style observer world lives in [`docs/`](docs/): a painted
+political map of the Rov Basin frontier where the eight seed factions wage
+wars, besiege fortresses, sign peaces, die, and crown heirs entirely on their
+own. There is no player — you can only watch, pan, zoom, and read.
+
+Run it locally (no build step, no server needed):
+```bash
+# either open docs/index.html directly in a browser, or:
+python -m http.server -d docs 8000   # then visit http://localhost:8000
+```
+
+Publish it with GitHub Pages:
+1. Push this repository to GitHub (the app is already in `docs/`).
+2. On GitHub: **Settings → Pages → Build and deployment**.
+3. Set **Source** to *Deploy from a branch*, pick your branch, and select
+   the **`/docs`** folder. Save.
+4. Your world goes live at `https://<user>.github.io/<repo>/` a minute later.
+
+The world is seeded from the lore CSVs. After editing them, regenerate the
+web seed with:
+```bash
+python scripts/export_web_seed.py
+```
+
 ### Export Workbook Directly
 ```bash
 python scripts/run_export.py

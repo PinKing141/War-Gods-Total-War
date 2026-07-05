@@ -4,7 +4,6 @@ from .campaign_service import (
     CampaignService,
     EventRow,
     FactionRow,
-    KingdomSummary,
     ProvinceRow,
     RelationRow,
     ResourceRow,
@@ -13,7 +12,6 @@ from .campaign_service import (
 
 __all__ = [
     "CampaignService",
-    "KingdomSummary",
     "ProvinceRow",
     "ResourceRow",
     "EventRow",

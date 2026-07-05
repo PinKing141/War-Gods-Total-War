@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from warfare_simulation.app import WarfareSimulationApp
 from warfare_simulation.domain.events.summary import ObserverSummaryGenerator
@@ -18,23 +18,6 @@ from warfare_simulation.services.balance import BalanceAnalyzer, BalanceHealthRe
 # ---------------------------------------------------------------------------
 # Read models — plain dataclasses, no domain objects exposed to UI
 # ---------------------------------------------------------------------------
-
-
-@dataclass
-class KingdomSummary:
-    name: str
-    ruler: str
-    treasury: int
-    monthly_income: int
-    monthly_expenses: int
-    net_income: int
-    morale: int
-    loyalty: int
-    grain_stores: int
-    current_day: int
-    current_turn: int
-    current_month: int
-    current_year: int
 
 
 @dataclass
@@ -233,27 +216,6 @@ class CampaignService:
             regions=self._count_table("region"),
             ai_weights=self._count_table("ai_weight"),
             mechanic_hooks=self._count_table("mechanic_hook"),
-        )
-
-    def get_kingdom_summary(self) -> Optional[KingdomSummary]:
-        k = self._engine.repos.kingdom.get_current_kingdom()
-        if k is None:
-            return None
-        state = self._engine.game_state
-        return KingdomSummary(
-            name=k.name,
-            ruler=k.ruler_name,
-            treasury=k.treasury_silver,
-            monthly_income=k.monthly_income,
-            monthly_expenses=k.monthly_expenses,
-            net_income=k.monthly_income - k.monthly_expenses,
-            morale=k.morale,
-            loyalty=k.loyalty,
-            grain_stores=k.grain_stores,
-            current_day=state.current_day,
-            current_turn=state.current_turn,
-            current_month=state.current_month,
-            current_year=state.current_year,
         )
 
     def get_simulation_status(self) -> SimulationStatus:
