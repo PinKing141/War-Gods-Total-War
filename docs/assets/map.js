@@ -24,6 +24,7 @@
       this.noise = WG.makeNoise(1337);
       this.provinces = seed.provinces;
       this.cellOwner = new Int16Array(GRID_W * GRID_H).fill(SEA);
+      this.coastDistance = new Uint16Array(GRID_W * GRID_H);
       this.adjacency = {};
       this.view = { x: this.W / 2, y: this.H / 2, zoom: 0.9 };
       this.mapMode = "political";  // political | culture | religion | terrain | devastation
@@ -31,6 +32,7 @@
       this._image = null;          // offscreen canvas with the painted map
       this._dirty = true;
       this._computeOwnership();
+      this._computeCoastDistance();
       this._computeAdjacency();
       this._computeDecorations();
     }
@@ -79,6 +81,46 @@
       }
     }
 
+    _computeCoastDistance() {
+      // Multi-source distance field from the land/sea edge.  The renderer uses
+      // it for continental shelves and coastal foam instead of a one-cell
+      // neighbour check, so the ocean reads as a gradual bathymetry layer.
+      const max = 65535;
+      this.coastDistance.fill(max);
+      const queue = new Int32Array(GRID_W * GRID_H);
+      let head = 0, tail = 0;
+      for (let gy = 0; gy < GRID_H; gy++) {
+        for (let gx = 0; gx < GRID_W; gx++) {
+          const i = gy * GRID_W + gx;
+          const o = this.cellOwner[i];
+          for (let d = 0; d < 4; d++) {
+            const nx = gx + [1, -1, 0, 0][d], ny = gy + [0, 0, 1, -1][d];
+            if (nx < 0 || ny < 0 || nx >= GRID_W || ny >= GRID_H) continue;
+            const n = this.cellOwner[ny * GRID_W + nx];
+            if ((o === SEA && n !== SEA) || (o !== SEA && n === SEA)) {
+              this.coastDistance[i] = 0;
+              queue[tail++] = i;
+              break;
+            }
+          }
+        }
+      }
+      while (head < tail) {
+        const i = queue[head++];
+        const gx = i % GRID_W, gy = Math.floor(i / GRID_W);
+        const next = this.coastDistance[i] + 1;
+        for (let d = 0; d < 4; d++) {
+          const nx = gx + [1, -1, 0, 0][d], ny = gy + [0, 0, 1, -1][d];
+          if (nx < 0 || ny < 0 || nx >= GRID_W || ny >= GRID_H) continue;
+          const ni = ny * GRID_W + nx;
+          if (next < this.coastDistance[ni]) {
+            this.coastDistance[ni] = next;
+            queue[tail++] = ni;
+          }
+        }
+      }
+    }
+
     _computeAdjacency() {
       const adj = {};
       this.provinces.forEach((p) => { adj[p.id] = new Set(); });
@@ -116,7 +158,9 @@
       const sx = this.W / GRID_W, sy = this.H / GRID_H;
       this.borderSegs = {};
       this.glyphPoints = {};
+      const glyphCandidates = {};
       this.provinces.forEach((p) => { this.borderSegs[p.id] = []; this.glyphPoints[p.id] = []; });
+      this.provinces.forEach((p) => { glyphCandidates[p.id] = []; });
 
       for (let gy = 0; gy < GRID_H; gy++) {
         for (let gx = 0; gx < GRID_W; gx++) {
@@ -133,16 +177,37 @@
             this.borderSegs[id].push([gx * sx, (gy + 1) * sy, (gx + 1) * sx, (gy + 1) * sy]);
             if (down >= 0) this.borderSegs[this.provinces[down].id].push([gx * sx, (gy + 1) * sy, (gx + 1) * sx, (gy + 1) * sy]);
           }
-          // sparse interior glyph anchors, away from the label line
-          if (gx % 34 === 8 && gy % 30 === 6) {
+          // Organic glyph candidates: jittered, deterministic samples rather
+          // than a visible modulo grid.  A small Poisson-style filter below
+          // keeps the chosen marks from clumping too tightly.
+          if (gx % 10 === 5 && gy % 10 === 5 && this.coastDistance[gy * GRID_W + gx] > 2) {
             const wx = gx * sx, wy = gy * sy;
             const prov = this.provinces[o];
             if (Math.abs(wy - prov.y) > 46 || Math.abs(wx - prov.x) > 120) {
-              this.glyphPoints[id].push([wx, wy]);
+              const h = this._hash2(gx + o * 97, gy - o * 131);
+              if (h > 0.78) {
+                const jx = (this._hash2(gx, gy) - 0.5) * 34 * sx;
+                const jy = (this._hash2(gx + 19, gy - 23) - 0.5) * 30 * sy;
+                glyphCandidates[id].push([wx + jx, wy + jy, h]);
+              }
             }
           }
         }
       }
+      for (const p of this.provinces) {
+        const minDist = p.terrain === "mountain_pass" ? 70 : 58;
+        for (const cand of glyphCandidates[p.id].sort((a, b) => b[2] - a[2])) {
+          if (this.glyphPoints[p.id].every(([x, y]) => {
+            const dx = x - cand[0], dy = y - cand[1];
+            return dx * dx + dy * dy >= minDist * minDist;
+          })) this.glyphPoints[p.id].push([cand[0], cand[1], cand[2]]);
+        }
+      }
+    }
+
+    _hash2(x, y) {
+      const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+      return s - Math.floor(s);
     }
 
     provinceAt(worldX, worldY) {
@@ -173,7 +238,8 @@
       const img = ictx.createImageData(GRID_W, GRID_H);
       const data = img.data;
 
-      const seaDeep = this._hex("#2c4257"), seaShallow = this._hex("#3d5c74");
+      const seaDeep = this._hex("#27384b"), seaMid = this._hex("#314d66"),
+            seaShallow = this._hex("#547f91"), foamRGB = this._hex("#9fc2c1");
       const factionRGB = {}, cultureRGB = {}, religionRGB = {};
       for (const f of this.seed.factions) {
         factionRGB[f.id] = this._hex(f.color);
@@ -193,15 +259,28 @@
           const wx = gx / GRID_W * this.W, wy = gy / GRID_H * this.H;
           const tex = this.noise.fbm(wx * 0.02, wy * 0.02, 3) - 0.5; // paper grain
           if (o === SEA) {
-            // near-coast shading
-            let coastal = false;
-            for (let d = 0; d < 4 && !coastal; d++) {
-              const nx = gx + [1, -1, 0, 0][d], ny = gy + [0, 0, 1, -1][d];
-              if (nx >= 0 && ny >= 0 && nx < GRID_W && ny < GRID_H &&
-                  this.cellOwner[ny * GRID_W + nx] !== SEA) coastal = true;
+            const dist = Math.min(1, this.coastDistance[i] / 18);
+            const shelf = Math.max(0, 1 - dist);
+            const band = (Math.sin(this.coastDistance[i] * 0.9 + tex * 5) + 1) * 0.5;
+            const midMix = Math.max(0, 1 - Math.abs(dist - 0.45) * 2.2);
+            let base = [
+              seaDeep[0] * dist + seaShallow[0] * shelf,
+              seaDeep[1] * dist + seaShallow[1] * shelf,
+              seaDeep[2] * dist + seaShallow[2] * shelf,
+            ];
+            base = [
+              base[0] * (1 - midMix * 0.35) + seaMid[0] * midMix * 0.35,
+              base[1] * (1 - midMix * 0.35) + seaMid[1] * midMix * 0.35,
+              base[2] * (1 - midMix * 0.35) + seaMid[2] * midMix * 0.35,
+            ];
+            if (this.coastDistance[i] <= 2 && band > 0.42) {
+              base = [
+                base[0] * 0.62 + foamRGB[0] * 0.38,
+                base[1] * 0.62 + foamRGB[1] * 0.38,
+                base[2] * 0.62 + foamRGB[2] * 0.38,
+              ];
             }
-            const base = coastal ? seaShallow : seaDeep;
-            const wave = tex * 18;
+            const wave = tex * 16 + band * shelf * 10;
             data[off] = base[0] + wave; data[off + 1] = base[1] + wave;
             data[off + 2] = base[2] + wave; data[off + 3] = 255;
             continue;
