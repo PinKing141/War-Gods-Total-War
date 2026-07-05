@@ -11,6 +11,7 @@
   const DEFINITIONS_URL = "assets/provinces/world_province_definitions.csv";
   const ADJACENCY_URL = "assets/provinces/world_province_adjacency.csv";
   const RIVER_PATHS_URL = "assets/rivers/river_paths.json";
+  const PROVINCE_RIVER_FEATURES_URL = "assets/rivers/province_river_features.csv";
   const MASK_BASE_URL = "assets/terrain_masks/masks_3072x2048/";
 
   const TERRAIN_MASKS = [
@@ -130,6 +131,7 @@
       this.provinceAdjacency = {};
       this.realmLabelPoints = [];
       this.riverPaths = [];
+      this.riverFeatureByProvince = new Map();
       this.selectedRealm = null;
       this.selectedRealmProvinceIds = [];
       this.showRealmSelectionAnchors = false;
@@ -173,7 +175,10 @@
     }
 
     async _loadLayers() {
-      const [heightImg, provinceImg, definitionsText, adjacencyText, riverPaths, maskImages] = await Promise.all([
+      const [
+        heightImg, provinceImg, definitionsText, adjacencyText,
+        riverPaths, riverFeaturesText, maskImages,
+      ] = await Promise.all([
         this._loadImage(HEIGHTMAP_URL),
         this._loadImage(PROVINCE_MAP_URL),
         fetch(DEFINITIONS_URL).then((r) => {
@@ -185,12 +190,14 @@
           return r.text();
         }),
         this._loadOptionalJson(RIVER_PATHS_URL),
+        this._loadOptionalText(PROVINCE_RIVER_FEATURES_URL),
         this._loadTerrainMasks(),
       ]);
 
       this._adjacencyText = adjacencyText;
       this._parseRiverPaths(riverPaths);
       this._parseDefinitions(definitionsText);
+      this._parseRiverFeatures(riverFeaturesText);
       this.provinceMapWidth = provinceImg.naturalWidth;
       this.provinceMapHeight = provinceImg.naturalHeight;
       this.heightMapWidth = heightImg.naturalWidth;
@@ -232,6 +239,16 @@
       }
     }
 
+    async _loadOptionalText(src) {
+      try {
+        const r = await fetch(src);
+        if (!r.ok) return null;
+        return await r.text();
+      } catch (_) {
+        return null;
+      }
+    }
+
     async _loadTerrainMasks() {
       const entries = await Promise.all(TERRAIN_MASKS.map(async (name) => [
         name,
@@ -262,10 +279,42 @@
         return;
       }
       const raw = Array.isArray(data) ? data : (data.rivers || data.paths || []);
-      this.riverPaths = raw.map((river) => {
-        if (Array.isArray(river)) return river;
-        return river.points || river.path || [];
-      }).filter((river) => river.length >= 2);
+      this.riverPaths = raw.map((river, index) => {
+        const source = Array.isArray(river) ? { points: river } : (river || {});
+        const points = (source.points || source.path || [])
+          .map((pt) => Array.isArray(pt)
+            ? { x: Number(pt[0]), y: Number(pt[1]) }
+            : { x: Number(pt.x), y: Number(pt.y) })
+          .filter((pt) => Number.isFinite(pt.x) && Number.isFinite(pt.y));
+        return {
+          ...source,
+          id: source.id || `RIVER_${String(index + 1).padStart(3, "0")}`,
+          name: source.name || "",
+          type: source.type || "tributary",
+          width_class: this._riverWidthClass(source),
+          navigable: this._truthy(source.navigable),
+          connected_provinces: Array.isArray(source.connected_provinces) ? source.connected_provinces : [],
+          crossings: Array.isArray(source.crossings) ? source.crossings : [],
+          metrics: source.metrics || {},
+          points,
+        };
+      });
+    }
+
+    _truthy(value) {
+      return value === true || value === 1 || value === "1" || String(value).toLowerCase() === "true";
+    }
+
+    _riverWidthClass(river) {
+      const explicit = Number(river.width_class || river.widthClass || river.class);
+      if (Number.isFinite(explicit) && explicit > 0) return Math.max(1, Math.min(5, Math.round(explicit)));
+      const width = Number(river.width);
+      if (!Number.isFinite(width) || width <= 0) return 2;
+      if (width >= 22) return 5;
+      if (width >= 15) return 4;
+      if (width >= 9) return 3;
+      if (width >= 5) return 2;
+      return 1;
     }
 
     _parseCsv(text) {
@@ -335,6 +384,87 @@
         this.rgbToProvinceIndex.set(this._rgbKey(def.red, def.green, def.blue), this.mapProvinces.length);
         this.mapProvinces.push(def);
       }
+    }
+
+    _parseRiverFeatures(text) {
+      this.riverFeatureByProvince = new Map();
+      if (text) {
+        const rows = this._parseCsv(text);
+        const header = rows.shift().map((h) => h.replace(/^\ufeff/, ""));
+        const idx = Object.fromEntries(header.map((h, i) => [h, i]));
+        for (const row of rows) {
+          const id = row[idx.province_id];
+          if (!id) continue;
+          this.riverFeatureByProvince.set(id, {
+            provinceId: id,
+            riverIds: this._listField(row[idx.river_ids]),
+            riverNames: this._listField(row[idx.river_names]),
+            primaryRiverId: row[idx.primary_river_id] || "",
+            primaryRiverName: row[idx.primary_river_name] || "",
+            riverTypes: this._listField(row[idx.river_types]),
+            maxWidthClass: Number(row[idx.max_width_class] || 0),
+            hasMajorRiver: this._truthy(row[idx.has_major_river]),
+            hasTributary: this._truthy(row[idx.has_tributary]),
+            hasCanal: this._truthy(row[idx.has_canal]),
+            hasDelta: this._truthy(row[idx.has_delta]),
+            hasMarshChannel: this._truthy(row[idx.has_marsh_channel]),
+            hasWadi: this._truthy(row[idx.has_wadi]),
+            hasFloodplain: this._truthy(row[idx.has_floodplain]),
+            hasCrossing: this._truthy(row[idx.has_crossing]),
+            riverCrossingType: row[idx.river_crossing_type] || "none",
+            crossingIds: this._listField(row[idx.crossing_ids]),
+            navigableRiver: this._truthy(row[idx.navigable_river]),
+            riverTradeValue: Number(row[idx.river_trade_value] || 0),
+            riverDefenseBonus: Number(row[idx.river_defense_bonus] || 0),
+            riverMovementPenalty: Number(row[idx.river_movement_penalty] || 0),
+            supplyBonus: Number(row[idx.supply_bonus] || 0),
+            farmlandBonus: Number(row[idx.farmland_bonus] || 0),
+          });
+        }
+      }
+
+      for (const p of this.mapProvinces) {
+        const feature = this.riverFeatureByProvince.get(p.id) || this._emptyRiverFeature(p.id);
+        feature.hasRiver = feature.riverIds.length > 0;
+        this.riverFeatureByProvince.set(p.id, feature);
+        p.riverFeatures = feature;
+      }
+    }
+
+    _emptyRiverFeature(provinceId) {
+      return {
+        provinceId,
+        riverIds: [],
+        riverNames: [],
+        primaryRiverId: "",
+        primaryRiverName: "",
+        riverTypes: [],
+        maxWidthClass: 0,
+        hasMajorRiver: false,
+        hasTributary: false,
+        hasCanal: false,
+        hasDelta: false,
+        hasMarshChannel: false,
+        hasWadi: false,
+        hasFloodplain: false,
+        hasCrossing: false,
+        riverCrossingType: "none",
+        crossingIds: [],
+        navigableRiver: false,
+        riverTradeValue: 0,
+        riverDefenseBonus: 0,
+        riverMovementPenalty: 0,
+        supplyBonus: 0,
+        farmlandBonus: 0,
+        hasRiver: false,
+      };
+    }
+
+    _listField(value) {
+      return String(value || "")
+        .split(";")
+        .map((v) => v.trim())
+        .filter(Boolean);
     }
 
     _rgbKey(r, g, b) {
@@ -688,6 +818,25 @@
       return rgb.map((v) => v + elevationLift);
     }
 
+    _riverInfluenceTint(prov, rgb) {
+      if (!prov) return rgb;
+      const feature = this.riverFeatures(prov.id);
+      if (!feature.hasRiver) return rgb;
+      let out = rgb;
+      if (feature.hasFloodplain) {
+        const amount = 0.035 + Math.min(0.055, feature.farmlandBonus * 0.008);
+        out = this._mixRgb(out, [111, 130, 86], amount);
+      }
+      if (feature.hasMajorRiver || feature.navigableRiver || feature.hasCanal) {
+        const amount = 0.025 + Math.min(0.035, feature.maxWidthClass * 0.006);
+        out = this._mixRgb(out, [65, 96, 91], amount);
+      }
+      if (feature.hasDelta || feature.hasMarshChannel) {
+        out = this._mixRgb(out, [57, 103, 88], 0.045);
+      }
+      return out;
+    }
+
     _hash2(x, y) {
       const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
       return s - Math.floor(s);
@@ -712,6 +861,10 @@
 
     province(id) {
       return this.provinceById.get(id) || this.seedProvinceById.get(id) || null;
+    }
+
+    riverFeatures(id) {
+      return this.riverFeatureByProvince.get(id) || this._emptyRiverFeature(id);
     }
 
     faction(id) {
@@ -811,6 +964,7 @@
       const py = Math.floor(worldY / this.H * this.provinceMapHeight);
       const id = this.provinceIdAtPixel(px, py);
       const p = id ? this.provinceById.get(id) : null;
+      const river = p ? this.riverFeatures(p.id) : null;
       const rgb = this.rgbAtPixel(px, py);
       return {
         province_id: id || "water",
@@ -820,6 +974,7 @@
         terrain: p ? p.terrain : "water",
         region: p ? p.region : "water",
         controller: p ? p.controller : "none",
+        river: river && river.hasRiver ? river.primaryRiverId || river.riverIds.join(";") : "none",
       };
     }
 
@@ -901,6 +1056,7 @@
             rgb = this._maskedTerrainColor(prov, i, h, slope, grain);
             const shade = this._renderShade[i] + grain / 255;
             rgb = [rgb[0] * shade, rgb[1] * shade, rgb[2] * shade];
+            rgb = this._riverInfluenceTint(prov, rgb);
 
             let tint = factionRGB[controller] || this._hex(this.faction(controller).color);
             let mix = this.mapMode === "neutral" ? 0 : 0.26;
@@ -1085,29 +1241,10 @@
     }
 
     _drawRiverPaths(ctx, z) {
-      if (!this.riverPaths.length) return;
-      ctx.save();
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      for (const river of this.riverPaths) {
-        const pts = river
-          .map((pt) => Array.isArray(pt) ? { x: Number(pt[0]), y: Number(pt[1]) } : { x: Number(pt.x), y: Number(pt.y) })
-          .filter((pt) => Number.isFinite(pt.x) && Number.isFinite(pt.y));
-        if (pts.length < 2) continue;
-        ctx.beginPath();
-        pts.forEach((p, i) => {
-          const pt = this.worldToScreen(p.x, p.y);
-          if (i === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        });
-        ctx.strokeStyle = "rgba(54, 93, 125, 0.58)";
-        ctx.lineWidth = Math.max(1.2, 2.2 * z);
-        ctx.stroke();
-        ctx.strokeStyle = "rgba(132, 178, 185, 0.35)";
-        ctx.lineWidth = Math.max(0.7, 0.9 * z);
-        ctx.stroke();
-      }
-      ctx.restore();
+      // River paths remain loaded as source data, but visible river art is disabled
+      // until the CK-style renderer is good enough to turn back on.
+      void ctx;
+      void z;
     }
 
     _drawMaskDebugOverlay(ctx, z) {

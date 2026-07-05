@@ -79,6 +79,24 @@ export class RiverEditor {
     this._emit();
   }
 
+  addMorePointsToSelectedRiver() {
+    const river = this.selectedRiver();
+    if (!river || !river.points || river.points.length < 2) return 0;
+    const next = [river.points[0]];
+    let added = 0;
+    for (let i = 1; i < river.points.length; i++) {
+      const a = river.points[i - 1];
+      const b = river.points[i];
+      next.push(this._clampPoint([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]));
+      next.push(b);
+      added++;
+    }
+    river.points = next;
+    this.selectedPointIndex = null;
+    this._emit();
+    return added;
+  }
+
   addPoint(point) {
     let river = this.selectedRiver();
     if (!river) river = this.createRiver();

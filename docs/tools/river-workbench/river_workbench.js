@@ -4,6 +4,17 @@ import { HydrologySimulator } from "./hydrology_simulator.js";
 import { RiverValidator } from "./river_validator.js";
 
 const MAP_SIZE = { width: 3072, height: 2048 };
+const PREVIEW_SCALE = 2;
+const SIMULATOR_DEFAULTS = {
+  minFlow: 18,
+  maxRivers: 40,
+  gridStep: 16,
+  smoothing: 1,
+  minLength: 140,
+  sourceSpacing: 90,
+  pointDensity: 1,
+  seed: 1,
+};
 const ASSETS = {
   terrain: "../../assets/terrain_masks/previews/terrain_masks_combined_preview_3072x2048.png",
   heightmap: "../../assets/heightmaps/world_heightmap_3072x2048_16bit.png",
@@ -56,6 +67,8 @@ class RiverWorkbench {
     this.images = {};
     this.maskData = {};
     this.maskOverlays = {};
+    this.overlayLayers = new Set();
+    this.overlayCanvases = {};
     this.heightData = null;
     this.provinceRgba = null;
     this.provinceColorToId = new Map();
@@ -115,6 +128,13 @@ class RiverWorkbench {
         this.requestRender();
       });
     });
+    document.querySelectorAll("[data-overlay-layer]").forEach((input) => {
+      input.addEventListener("change", () => {
+        if (input.checked) this.overlayLayers.add(input.dataset.overlayLayer);
+        else this.overlayLayers.delete(input.dataset.overlayLayer);
+        this.requestRender();
+      });
+    });
     document.getElementById("tool-buttons").addEventListener("click", (event) => {
       const button = event.target.closest("[data-tool]");
       if (!button) return;
@@ -124,8 +144,11 @@ class RiverWorkbench {
     document.getElementById("btn-new-river").addEventListener("click", () => this.editor.createRiver());
     document.getElementById("btn-delete-river").addEventListener("click", () => this.editor.deleteSelectedRiver());
     document.getElementById("btn-reverse-river").addEventListener("click", () => this.editor.reverseSelectedRiver());
+    document.getElementById("btn-add-river-points").addEventListener("click", () => this.addMorePointsToSelectedRiver());
     document.getElementById("btn-load-existing").addEventListener("click", () => this.loadExistingRivers());
     document.getElementById("btn-run-simulator").addEventListener("click", () => this.runSimulator());
+    document.getElementById("btn-randomize-simulator").addEventListener("click", () => this.randomizeSimulator());
+    document.getElementById("btn-reset-simulator").addEventListener("click", () => this.resetSimulatorSettings());
     document.getElementById("btn-clear-simulation").addEventListener("click", () => this.clearSimulation());
     document.getElementById("btn-save-project").addEventListener("click", () => this.exporter.exportProject(this.editor));
     document.getElementById("btn-load-project").addEventListener("click", () => document.getElementById("project-file").click());
@@ -167,6 +190,8 @@ class RiverWorkbench {
       this.images[name] = image;
       this.maskData[name] = this.grayscaleDataFromImage(image);
     }
+    this.images["height-relief"] = this.buildHeightReliefCanvas();
+    this.overlayCanvases["height-contours"] = this.buildHeightContourOverlay();
   }
 
   loadImage(src) {
@@ -207,6 +232,105 @@ class RiverWorkbench {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.drawImage(image, 0, 0, MAP_SIZE.width, MAP_SIZE.height);
     return ctx.getImageData(0, 0, MAP_SIZE.width, MAP_SIZE.height).data;
+  }
+
+  buildHeightReliefCanvas() {
+    const canvas = document.createElement("canvas");
+    const width = Math.floor(MAP_SIZE.width / PREVIEW_SCALE);
+    const height = Math.floor(MAP_SIZE.height / PREVIEW_SCALE);
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    const image = ctx.createImageData(width, height);
+    const water = this.maskData.water;
+    const land = this.maskData.land;
+
+    for (let y = 0; y < height; y++) {
+      const sy = Math.min(MAP_SIZE.height - 1, y * PREVIEW_SCALE);
+      const row = sy * MAP_SIZE.width;
+      const rowUp = Math.max(0, sy - PREVIEW_SCALE) * MAP_SIZE.width;
+      const rowDown = Math.min(MAP_SIZE.height - 1, sy + PREVIEW_SCALE) * MAP_SIZE.width;
+      for (let x = 0; x < width; x++) {
+        const sx = Math.min(MAP_SIZE.width - 1, x * PREVIEW_SCALE);
+        const sourceIndex = row + sx;
+        const left = this.heightData[row + Math.max(0, sx - PREVIEW_SCALE)] / 255;
+        const right = this.heightData[row + Math.min(MAP_SIZE.width - 1, sx + PREVIEW_SCALE)] / 255;
+        const up = this.heightData[rowUp + sx] / 255;
+        const down = this.heightData[rowDown + sx] / 255;
+        const heightValue = this.heightData[sourceIndex] / 255;
+        const shade = this.clamp(0.72 + (left - right) * 2.4 + (up - down) * 1.9, 0.38, 1.22);
+        const waterValue = water ? water[sourceIndex] / 255 : 0;
+        const landValue = land ? land[sourceIndex] / 255 : 1;
+        const color = waterValue > 0.36 || landValue < 0.30
+          ? this.heightWaterColor(heightValue, waterValue)
+          : this.heightLandColor(heightValue);
+        const off = (y * width + x) * 4;
+        image.data[off] = this.clamp(Math.round(color[0] * shade), 0, 255);
+        image.data[off + 1] = this.clamp(Math.round(color[1] * shade), 0, 255);
+        image.data[off + 2] = this.clamp(Math.round(color[2] * shade), 0, 255);
+        image.data[off + 3] = 255;
+      }
+    }
+
+    ctx.putImageData(image, 0, 0);
+    return canvas;
+  }
+
+  buildHeightContourOverlay() {
+    const canvas = document.createElement("canvas");
+    const width = Math.floor(MAP_SIZE.width / PREVIEW_SCALE);
+    const height = Math.floor(MAP_SIZE.height / PREVIEW_SCALE);
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    const image = ctx.createImageData(width, height);
+    const interval = 12;
+    const water = this.maskData.water;
+
+    for (let y = 0; y < height - 1; y++) {
+      const sy = Math.min(MAP_SIZE.height - 1, y * PREVIEW_SCALE);
+      const row = sy * MAP_SIZE.width;
+      for (let x = 0; x < width - 1; x++) {
+        const sx = Math.min(MAP_SIZE.width - 1, x * PREVIEW_SCALE);
+        const sourceIndex = row + sx;
+        if (water && water[sourceIndex] > 96) continue;
+        const heightValue = this.heightData[sourceIndex];
+        const contour = Math.floor(heightValue / interval);
+        const east = row + Math.min(MAP_SIZE.width - 1, sx + PREVIEW_SCALE);
+        const south = Math.min(MAP_SIZE.height - 1, sy + PREVIEW_SCALE) * MAP_SIZE.width + sx;
+        if (contour === Math.floor(this.heightData[east] / interval) && contour === Math.floor(this.heightData[south] / interval)) continue;
+        const major = contour % 4 === 0;
+        const off = (y * width + x) * 4;
+        image.data[off] = major ? 255 : 230;
+        image.data[off + 1] = major ? 218 : 185;
+        image.data[off + 2] = major ? 124 : 100;
+        image.data[off + 3] = major ? 118 : 72;
+      }
+    }
+
+    ctx.putImageData(image, 0, 0);
+    return canvas;
+  }
+
+  heightLandColor(height) {
+    if (height < 0.24) return this.lerpColor([69, 95, 58], [109, 132, 72], height / 0.24);
+    if (height < 0.48) return this.lerpColor([109, 132, 72], [139, 123, 80], (height - 0.24) / 0.24);
+    if (height < 0.70) return this.lerpColor([139, 123, 80], [154, 149, 132], (height - 0.48) / 0.22);
+    if (height < 0.86) return this.lerpColor([154, 149, 132], [197, 196, 184], (height - 0.70) / 0.16);
+    return this.lerpColor([197, 196, 184], [244, 244, 235], (height - 0.86) / 0.14);
+  }
+
+  heightWaterColor(height, waterValue) {
+    return this.lerpColor([17, 44, 74], [52, 103, 135], this.clamp(height * 0.9 + waterValue * 0.18, 0, 1));
+  }
+
+  lerpColor(a, b, t) {
+    const f = this.clamp(t, 0, 1);
+    return [
+      a[0] + (b[0] - a[0]) * f,
+      a[1] + (b[1] - a[1]) * f,
+      a[2] + (b[2] - a[2]) * f,
+    ];
   }
 
   buildProvinceLookup(definitionsText, provinceImage) {
@@ -282,6 +406,7 @@ class RiverWorkbench {
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.drawBaseLayer(ctx);
     this.drawMaskLayers(ctx);
+    this.drawOverlayLayers(ctx);
     this.drawRivers(ctx);
   }
 
@@ -299,6 +424,15 @@ class RiverWorkbench {
       const overlay = this.maskOverlays[name] || this.buildMaskOverlay(name);
       if (!overlay) continue;
       this.maskOverlays[name] = overlay;
+      const a = this.worldToScreen(0, 0);
+      ctx.drawImage(overlay, a.x, a.y, MAP_SIZE.width * this.view.scale, MAP_SIZE.height * this.view.scale);
+    }
+  }
+
+  drawOverlayLayers(ctx) {
+    for (const name of this.overlayLayers) {
+      const overlay = this.overlayCanvases[name];
+      if (!overlay) continue;
       const a = this.worldToScreen(0, 0);
       ctx.drawImage(overlay, a.x, a.y, MAP_SIZE.width * this.view.scale, MAP_SIZE.height * this.view.scale);
     }
@@ -403,7 +537,9 @@ class RiverWorkbench {
 
   onPointerMove(event) {
     const world = this.eventToWorld(event);
-    this.cursorEl.textContent = `x ${Math.round(world.x)}, y ${Math.round(world.y)}`;
+    const elevation = this.heightAt(world.x, world.y);
+    const water = this.maskAt("water", world.x, world.y);
+    this.cursorEl.textContent = `x ${Math.round(world.x)}, y ${Math.round(world.y)}, h ${elevation.toFixed(3)}${water > 0.32 ? ", water" : ""}`;
     if (!this.drag) return;
     if (this.drag.type === "point") {
       this.editor.selectedRiverId = this.drag.riverId;
@@ -586,6 +722,16 @@ class RiverWorkbench {
     this.setStatus("Loaded existing river_paths.json.");
   }
 
+  addMorePointsToSelectedRiver() {
+    const added = this.editor.addMorePointsToSelectedRiver();
+    if (!added) {
+      this.setStatus("Select a river with at least two points first.");
+      return;
+    }
+    const river = this.editor.selectedRiver();
+    this.setStatus(`Added ${added} intermediate point${added === 1 ? "" : "s"} to ${river.id}.`);
+  }
+
   async runSimulator() {
     if (!this.simulator) {
       this.setStatus("Simulator is not ready yet.");
@@ -593,13 +739,90 @@ class RiverWorkbench {
     }
     const options = this.simulatorOptions();
     const replace = document.getElementById("sim-replace").checked;
+    const runButton = document.getElementById("btn-run-simulator");
+    runButton.disabled = true;
     this.setStatus("Running deterministic hydrology simulator...");
+    this.simReportEl.textContent = "Calculating flow accumulation and tracing rivers...";
     await new Promise((resolve) => requestAnimationFrame(resolve));
-    const result = this.simulator.run(options);
-    this.lastSimulation = result;
-    this.editor.importGeneratedRivers(result.rivers, { replace });
-    this.renderSimulationReport(result);
-    this.setStatus(`Simulator generated ${result.rivers.length} editable draft river${result.rivers.length === 1 ? "" : "s"}.`);
+    try {
+      let result = this.simulator.run(options);
+      let usedOptions = options;
+      if (result.rivers.length === 0) {
+        const fallback = this.relaxedSimulatorOptions(options);
+        const fallbackResult = this.simulator.run(fallback);
+        if (fallbackResult.rivers.length > 0) {
+          result = fallbackResult;
+          usedOptions = fallback;
+          this.applySimulatorOptions(fallback);
+          result.diagnostics.auto_relaxed = true;
+        }
+      }
+      this.lastSimulation = result;
+      this.editor.importGeneratedRivers(result.rivers, { replace });
+      this.renderSimulationReport(result);
+      if (result.rivers.length === 0) {
+        this.setStatus("Simulator found 0 rivers. Lower Min Flow, Min Length, or Source Spacing.");
+      } else {
+        const relaxed = result.diagnostics && result.diagnostics.auto_relaxed ? " after relaxing strict settings" : "";
+        this.setStatus(`Simulator generated ${result.rivers.length} editable draft river${result.rivers.length === 1 ? "" : "s"} with seed ${usedOptions.seed}${relaxed}.`);
+      }
+    } catch (error) {
+      console.error(error);
+      this.lastSimulation = null;
+      this.simReportEl.textContent = error.message || "Simulator failed.";
+      this.setStatus(`Simulator failed: ${error.message || "unknown error"}`);
+    } finally {
+      runButton.disabled = false;
+    }
+  }
+
+  randomizeSimulator() {
+    const input = document.getElementById("sim-seed");
+    const next = this.randomSeed();
+    input.value = String(next);
+    this.runSimulator();
+  }
+
+  resetSimulatorSettings() {
+    this.applySimulatorOptions(SIMULATOR_DEFAULTS);
+    this.simReportEl.textContent = "Simulator settings reset.";
+    this.setStatus("Simulator settings reset to fuller-network defaults.");
+  }
+
+  applySimulatorOptions(options) {
+    const fields = {
+      "sim-min-flow": options.minFlow,
+      "sim-max-rivers": options.maxRivers,
+      "sim-grid-step": options.gridStep,
+      "sim-smoothing": options.smoothing,
+      "sim-min-length": options.minLength,
+      "sim-source-spacing": options.sourceSpacing,
+      "sim-point-density": options.pointDensity,
+      "sim-seed": options.seed,
+    };
+    for (const [id, value] of Object.entries(fields)) {
+      const input = document.getElementById(id);
+      if (input && value !== undefined) input.value = String(value);
+    }
+  }
+
+  relaxedSimulatorOptions(options) {
+    return {
+      ...options,
+      minFlow: Math.min(Number(options.minFlow) || SIMULATOR_DEFAULTS.minFlow, SIMULATOR_DEFAULTS.minFlow),
+      maxRivers: Math.max(Number(options.maxRivers) || SIMULATOR_DEFAULTS.maxRivers, SIMULATOR_DEFAULTS.maxRivers),
+      minLength: Math.min(Number(options.minLength) || SIMULATOR_DEFAULTS.minLength, SIMULATOR_DEFAULTS.minLength),
+      sourceSpacing: Math.min(Number(options.sourceSpacing) || SIMULATOR_DEFAULTS.sourceSpacing, SIMULATOR_DEFAULTS.sourceSpacing),
+    };
+  }
+
+  randomSeed() {
+    if (window.crypto && window.crypto.getRandomValues) {
+      const data = new Uint32Array(1);
+      window.crypto.getRandomValues(data);
+      return data[0] % 999999 + 1;
+    }
+    return Date.now() % 999999 + 1;
   }
 
   clearSimulation() {
@@ -615,6 +838,10 @@ class RiverWorkbench {
       maxRivers: Number(document.getElementById("sim-max-rivers").value),
       gridStep: Number(document.getElementById("sim-grid-step").value),
       smoothing: Number(document.getElementById("sim-smoothing").value),
+      minLength: Number(document.getElementById("sim-min-length").value),
+      sourceSpacing: Number(document.getElementById("sim-source-spacing").value),
+      pointDensity: Number(document.getElementById("sim-point-density").value),
+      seed: Number(document.getElementById("sim-seed").value),
     };
   }
 
@@ -622,12 +849,19 @@ class RiverWorkbench {
     const d = result.diagnostics || {};
     this.simReportEl.innerHTML = [
       `rivers: ${result.rivers.length}`,
+      `requested: ${d.requested_rivers || result.settings.maxRivers || "?"}`,
       `grid: ${(d.grid_size || []).join(" x ")}`,
       `cell: ${d.sampled_cell_size || "?"}px`,
+      `min length: ${d.min_length_px || "?"}px`,
+      `source gap: ${d.source_spacing_px || "?"}px`,
       `max flow: ${d.max_flow_accumulation || 0}`,
       `sources: ${d.candidate_sources || 0}`,
       `basins: ${d.drainage_basins || 0}`,
-    ].map((line) => `<div>${this.escapeHtml(line)}</div>`).join("");
+      `point density: ${d.point_density || 1}`,
+      `avg points: ${d.average_points_per_river || 0}`,
+      `seed: ${d.variant_seed || 1}`,
+      d.auto_relaxed ? "auto relaxed: yes" : "",
+    ].filter(Boolean).map((line) => `<div>${this.escapeHtml(line)}</div>`).join("");
   }
 
   renderMetrics() {
@@ -700,6 +934,10 @@ class RiverWorkbench {
   escapeHtml(value) {
     return String(value).replace(/[&<>"]/g, (ch) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  }
+
+  clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
   }
 }
 

@@ -49,11 +49,13 @@ To activate the simulator:
 
 1. Open `http://127.0.0.1:8766/tools/river-workbench/`.
 2. In the left `Simulator` panel, keep `Replace current rivers` checked if you want a fresh generated draft.
-3. Set `Min Flow`, `Max Rivers`, `Grid Step`, and `Smoothing`.
+3. Set `Min Flow`, `Max Rivers`, `Grid Step`, `Smoothing`, `Min Length`, `Source Spacing`, `Point Density`, and `Variant Seed`.
 4. Click `Run River Simulator`.
-5. Generated rivers become normal editable rivers. Use `Select`, `Add Point`, `Delete Point`, `Reverse Direction`, and the right inspector to fix them by hand.
+5. Click `Randomize Draft` to choose a new seed and generate another version with the same hydrology logic.
+6. Use `Reset Simulator Settings` if a draft does not appear after experimenting with strict settings.
+7. Generated rivers become normal editable rivers. Use `Select`, `Add Point`, `Delete Point`, `Reverse Direction`, and the right inspector to fix them by hand.
 
-The simulator is deterministic. It uses the heightmap and existing masks rather than random noise or visual AI.
+The simulator is deterministic for each seed. It uses the heightmap and existing masks rather than visual AI. The seed only changes valid close-call source ranking and bend phases; flow direction and flow accumulation still come from the map.
 
 It calculates:
 
@@ -62,6 +64,28 @@ It calculates:
 - stream order, discharge estimate, width class, navigability, and tributary join quality
 - floodplain fertility, crossing difficulty, bridge/ford score, port score, canal feasibility, marsh risk, and strategic chokepoint score
 
+For more rivers:
+
+- increase `Max Rivers`
+- lower `Min Flow`
+- lower `Source Spacing`
+- lower `Min Length`
+
+The default simulator settings are now tuned for a fuller draft network rather than only a few major rivers.
+
+If a run finds zero rivers, the workbench automatically tries one safer relaxed pass and reports that in the simulator panel.
+
+## Heightmap View
+
+Use the `Layers` panel to switch between:
+
+- `Terrain`: terrain preview
+- `Height Relief`: readable hillshade-style heightmap for node editing
+- `Raw Heightmap`: the source heightmap image
+- `Province RGB`: unique-RGB province picking source
+
+Enable `Contours` to show elevation bands over the active layer. The bottom-left cursor readout also shows the current map coordinate and sampled height value.
+
 ## Editing
 
 - `New River` creates a selected river and switches to `Add Point`.
@@ -69,6 +93,7 @@ It calculates:
 - `Select` lets you select rivers and drag control points.
 - `Delete Point` removes the clicked control point.
 - `Reverse Direction` flips source-to-mouth order.
+- `Add More Points` splits every segment of the selected river so you have more draggable nodes.
 - The right panel edits id, name, type, width class, navigability, source province, mouth, connected provinces, crossings, and notes.
 
 ## Exports

@@ -418,18 +418,8 @@
 
       this._drawWorldEdgeFrame(ctx, z);
 
-      // rivers
-      ctx.lineCap = "round"; ctx.lineJoin = "round";
-      for (const river of this.riverPaths) {
-        ctx.beginPath();
-        river.forEach(([rx, ry], i) => {
-          const pt = this.worldToScreen(rx, ry);
-          if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
-        });
-        ctx.strokeStyle = "rgba(66, 104, 134, 0.85)";
-        ctx.lineWidth = Math.max(1.5, 3.4 * z);
-        ctx.stroke();
-      }
+      // River line art is intentionally disabled in normal map rendering.
+      // River paths stay in data for future CK-style rendering and mechanics.
 
       // terrain glyph doodads (subtle painted-map furniture)
       ctx.textAlign = "center";

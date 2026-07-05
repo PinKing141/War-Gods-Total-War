@@ -54,6 +54,44 @@
         { label: String(id || "unknown").replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()) };
     }
 
+    riverFeature(pid) {
+      return (this.map && this.map.riverFeatures && this.map.riverFeatures(pid)) || null;
+    }
+
+    riverSummary(feature) {
+      if (!feature || !feature.hasRiver) return "";
+      const name = feature.primaryRiverName || feature.primaryRiverId || "Unnamed river";
+      const count = feature.riverIds.length > 1 ? ` + ${feature.riverIds.length - 1} more` : "";
+      const width = feature.maxWidthClass ? `class ${feature.maxWidthClass}` : "unclassed";
+      return `${name}${count} (${width})`;
+    }
+
+    riverRows(feature) {
+      if (!feature || !feature.hasRiver) return "";
+      const types = feature.riverTypes.length
+        ? feature.riverTypes.map((t) => t.replace(/_/g, " ")).join(", ")
+        : "river";
+      const crossing = feature.hasCrossing
+        ? feature.riverCrossingType.replace(/;/g, ", ").replace(/_/g, " ")
+        : "none";
+      const navigation = feature.navigableRiver ? "navigable" : "not navigable";
+      const effects = [
+        feature.riverTradeValue ? `trade +${feature.riverTradeValue}` : "",
+        feature.supplyBonus ? `supply +${feature.supplyBonus}` : "",
+        feature.farmlandBonus ? `farmland +${feature.farmlandBonus}` : "",
+        feature.riverDefenseBonus ? `defense +${feature.riverDefenseBonus}` : "",
+        feature.riverMovementPenalty ? `movement penalty +${feature.riverMovementPenalty}` : "",
+      ].filter(Boolean).join(" · ");
+      return `
+        <div class="row"><span>River</span><b>${esc(this.riverSummary(feature))}</b></div>
+        <div class="row"><span>Type</span><b>${esc(types)}</b></div>
+        <div class="row"><span>Crossing</span><b>${esc(crossing)}</b></div>
+        <div class="row"><span>Navigation</span><b>${esc(navigation)}</b></div>
+        ${feature.hasFloodplain ? `<div class="row"><span>Floodplain</span><b>yes</b></div>` : ""}
+        ${effects ? `<div class="row"><span>Effects</span><b>${esc(effects)}</b></div>` : ""}
+      `;
+    }
+
     shieldChip(fid, size) {
       const f = this.faction(fid);
       if (!f) return "";
@@ -162,6 +200,8 @@
       else this.map.selected = pid;
       const st = this.provinceState(pid);
       const terr = this.terrainInfo(p.terrain);
+      const river = this.riverFeature(p.id);
+      const riverRows = this.riverRows(river);
       const claims = this.sim.claims.filter((c) => c.target === pid && c.strength > 10);
       const armies = this.sim.armies.filter((a) => a.loc === pid);
       const names = [
@@ -190,6 +230,7 @@
           <div class="row"><span>Strategic value</span><b>${p.value}</b></div>
           ${p.regionName ? `<div class="row"><span>Region</span><b>${esc(p.regionName)}</b></div>` : ""}
         </div>
+        ${riverRows ? `<h3>River data</h3><div class="stat-rows">${riverRows}</div>` : ""}
         ${armies.length ? `<h3>Armies present</h3>` + armies.map((a) =>
           `<div class="row">${this.shieldChip(a.faction)}<b>${a.size.toLocaleString()} under ${this.charLink(a.commanderId)}</b></div>`).join("") : ""}
         ${claims.length ? `<h3>Claims on this land</h3>` + claims.map((c) =>
@@ -555,6 +596,7 @@
       const st = this.provinceState(p.id);
       const f = this.faction(st.controller);
       const terr = this.terrainInfo(p.terrain);
+      const river = this.riverFeature(p.id);
       const armies = this.sim.armies.filter((a) => a.loc === prov.id);
       tip.innerHTML = `
         <div class="tt-title">${esc(p.name)}</div>
@@ -562,6 +604,8 @@
         ${st.occupier ? `<div class="tt-row bad">occupied by ${esc(this.sim.faction(st.occupier).name)}</div>` : ""}
         ${st.siege ? `<div class="tt-row bad">under siege — ${Math.round(st.siege.progress * 100)}%</div>` : ""}
         <div class="tt-row fine">${esc(terr.label)} · pop ${st.pop.toLocaleString()} · fort ${p.fort}</div>
+        ${river && river.hasRiver ? `<div class="tt-row fine">River: ${esc(this.riverSummary(river))}</div>` : ""}
+        ${river && river.hasCrossing ? `<div class="tt-row fine">Crossing: ${esc(river.riverCrossingType.replace(/;/g, ", "))}</div>` : ""}
         ${armies.map((a) => `<div class="tt-row fine">⚑ ${esc(this.sim.faction(a.faction).name)}: ${a.size.toLocaleString()}</div>`).join("")}
       `;
       tip.classList.remove("hidden");
@@ -591,6 +635,7 @@
         <div class="debug-row"><span>terrain</span><b>${esc(info.terrain)}</b></div>
         <div class="debug-row"><span>region</span><b>${esc(info.region)}</b></div>
         <div class="debug-row"><span>controller</span><b>${esc(info.controller)}</b></div>
+        <div class="debug-row"><span>river</span><b>${esc(info.river || "none")}</b></div>
       `;
       el.classList.remove("hidden");
     }

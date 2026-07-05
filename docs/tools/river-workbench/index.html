@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>River Workbench - War Gods Total War</title>
-<link rel="stylesheet" href="river_workbench.css">
+<link rel="stylesheet" href="river_workbench.css?v=river-tools-20260705">
 </head>
 <body>
   <header class="topbar">
@@ -25,9 +25,11 @@
       <section>
         <h2>Layers</h2>
         <label><input type="radio" name="base-layer" value="terrain" checked> Terrain</label>
-        <label><input type="radio" name="base-layer" value="heightmap"> Heightmap</label>
+        <label><input type="radio" name="base-layer" value="height-relief"> Height Relief</label>
+        <label><input type="radio" name="base-layer" value="heightmap"> Raw Heightmap</label>
         <label><input type="radio" name="base-layer" value="province"> Province RGB</label>
         <div class="toggles">
+          <label><input type="checkbox" data-overlay-layer="height-contours"> Contours</label>
           <label><input type="checkbox" data-mask-layer="water"> Water</label>
           <label><input type="checkbox" data-mask-layer="land"> Land</label>
           <label><input type="checkbox" data-mask-layer="mountain"> Mountain</label>
@@ -48,6 +50,7 @@
           <button id="btn-new-river">New River</button>
           <button id="btn-delete-river">Delete River</button>
           <button id="btn-reverse-river">Reverse Direction</button>
+          <button id="btn-add-river-points">Add More Points</button>
           <button id="btn-load-existing">Load Existing Rivers</button>
         </div>
       </section>
@@ -55,10 +58,10 @@
       <section>
         <h2>Simulator</h2>
         <label>Min Flow
-          <input id="sim-min-flow" type="number" min="8" max="300" step="1" value="32">
+          <input id="sim-min-flow" type="number" min="4" max="300" step="1" value="18">
         </label>
         <label>Max Rivers
-          <input id="sim-max-rivers" type="number" min="1" max="80" step="1" value="18">
+          <input id="sim-max-rivers" type="number" min="1" max="200" step="1" value="40">
         </label>
         <label>Grid Step
           <input id="sim-grid-step" type="number" min="8" max="32" step="4" value="16">
@@ -66,9 +69,23 @@
         <label>Smoothing
           <input id="sim-smoothing" type="number" min="0" max="3" step="1" value="1">
         </label>
+        <label>Min Length
+          <input id="sim-min-length" type="number" min="60" max="800" step="10" value="140">
+        </label>
+        <label>Source Spacing
+          <input id="sim-source-spacing" type="number" min="40" max="320" step="10" value="90">
+        </label>
+        <label>Point Density
+          <input id="sim-point-density" type="number" min="1" max="6" step="1" value="1">
+        </label>
+        <label>Variant Seed
+          <input id="sim-seed" type="number" min="1" max="999999" step="1" value="1">
+        </label>
         <label class="check"><input id="sim-replace" type="checkbox" checked> Replace current rivers</label>
         <div class="button-stack">
           <button id="btn-run-simulator">Run River Simulator</button>
+          <button id="btn-randomize-simulator">Randomize Draft</button>
+          <button id="btn-reset-simulator">Reset Simulator Settings</button>
           <button id="btn-clear-simulation">Clear Simulated Drafts</button>
         </div>
         <div id="sim-report" class="sim-report">Simulator idle.</div>
@@ -140,6 +157,6 @@
     </aside>
   </main>
 
-  <script type="module" src="river_workbench.js"></script>
+  <script type="module" src="river_workbench.js?v=river-tools-20260705"></script>
 </body>
 </html>
