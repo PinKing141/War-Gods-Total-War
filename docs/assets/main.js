@@ -12,9 +12,13 @@
 
   const seed = window.WG_SEED;
   const canvas = document.getElementById("map");
-  const map = new WG.WorldMap(canvas, seed);
+  const params = new URLSearchParams(location.search);
+  // the continent is fixed across visits; override with ?world=N to explore
+  const WORLD_SEED = params.get("world") ? Number(params.get("world")) : 20770;
+  const world = WG.buildWorld(seed, WORLD_SEED);
+  const map = new WG.WorldMap(canvas, seed, world);
   // every visit births a different history; pin ?seed=N to replay one
-  const pinned = new URLSearchParams(location.search).get("seed");
+  const pinned = params.get("seed");
   const rngSeed = pinned ? Number(pinned) : (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
   const sim = new WG.Simulation(seed, rngSeed);
   sim.adjacency = map.adjacency;

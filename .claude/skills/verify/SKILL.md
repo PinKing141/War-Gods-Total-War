@@ -19,6 +19,9 @@ Fully static, plain-script (no modules), so it loads from `file://`.
 - Healthy 12-year world: several wars, dozens of battles, sieges, at least one
   cession, 1-2 successions, >0 `magic` events, 0 page errors.
 - Regenerate seed after lore CSV edits: `python scripts/export_web_seed.py`.
+- The continent comes from a pinned world seed; `?world=N` overrides it for
+  worldgen experiments. Wait for `window.__wg` before driving — worldgen +
+  first paint take ~0.7-1.3 s.
 
 ## Desktop Qt app
 

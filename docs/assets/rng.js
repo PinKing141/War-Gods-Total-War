@@ -65,7 +65,18 @@
       return value; // ~0..1
     }
 
-    return { noise2, fbm };
+    function ridged(x, y, octaves) {
+      // Sharp-crested fbm variant — reads as mountain chains in a heightmap.
+      let value = 0, amp = 0.5, freq = 1;
+      for (let o = 0; o < octaves; o++) {
+        const n = 1 - Math.abs(2 * noise2(x * freq, y * freq) - 1);
+        value += amp * n * n;
+        amp *= 0.5; freq *= 2;
+      }
+      return value; // ~0..1
+    }
+
+    return { noise2, fbm, ridged };
   }
 
   /* ---- Culture-aware name generation for heirs and captains ---- */
