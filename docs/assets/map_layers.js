@@ -98,6 +98,9 @@
       this.provinceAdjacency = {};
       this.realmLabelPoints = [];
       this.riverPaths = [];
+      this.selectedRealm = null;
+      this.selectedRealmProvinceIds = [];
+      this._selectedRealmBoundarySegs = [];
       this._adjacencyText = "";
       this._heightData = null;
       this._provinceData = null;
@@ -110,13 +113,13 @@
         this.layerStatus = "ready";
         this.W = this.provinceMapWidth;
         this.H = this.provinceMapHeight;
-        this.view = { x: this.W / 2, y: this.H / 2, zoom: 0.9 };
         this.provinces = this.mapProvinces;
         this._buildRenderSources();
         this._computeLayerCoastDistance();
         this._buildCsvAdjacency();
         this._computeLayerDecorations();
         this._buildRealmLabels();
+        this.view = this._initialView();
         this.cellOwner = this._renderProvinceIndex;
         this.markDirty();
       }).catch((err) => {
@@ -543,6 +546,23 @@
       return s - Math.floor(s);
     }
 
+    _initialView() {
+      const focus = this.mapProvinces.filter((p) => p.isSeedFrontier);
+      if (!focus.length) return { x: this.W / 2, y: this.H / 2, zoom: 1.0 };
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const p of focus) {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x);
+        maxY = Math.max(maxY, p.y);
+      }
+      return {
+        x: (minX + maxX) / 2 + 40,
+        y: (minY + maxY) / 2 + 12,
+        zoom: 1.24,
+      };
+    }
+
     province(id) {
       return this.provinceById.get(id) || this.seedProvinceById.get(id) || null;
     }
@@ -570,6 +590,54 @@
         pop: p ? Math.max(900, Math.round(2200 + p.value * 120 + p.pixelArea * 0.18)) : 0,
         staticMapProvince: true,
       };
+    }
+
+    controlledProvinces(fid, sim) {
+      if (!fid) return [];
+      return this.mapProvinces.filter((p) => {
+        const st = this.provinceState(p, sim);
+        return st.controller === fid || st.occupier === fid;
+      });
+    }
+
+    selectProvince(id) {
+      this.selected = id;
+      this.selectedRealm = null;
+      this.selectedRealmProvinceIds = [];
+      this._selectedRealmBoundarySegs = [];
+    }
+
+    selectRealm(fid, sim) {
+      const provinces = this.controlledProvinces(fid, sim);
+      this.selected = null;
+      this.selectedRealm = fid;
+      this.selectedRealmProvinceIds = provinces.map((p) => p.id);
+      this._selectedRealmBoundarySegs = this._computeRealmBoundarySegs(new Set(this.selectedRealmProvinceIds));
+    }
+
+    clearSelection() {
+      this.selected = null;
+      this.selectedRealm = null;
+      this.selectedRealmProvinceIds = [];
+      this._selectedRealmBoundarySegs = [];
+    }
+
+    _computeRealmBoundarySegs(selectedIds) {
+      if (!selectedIds.size || !this._renderProvinceIndex) return [];
+      const segs = [];
+      const sx = this.W / RENDER_W, sy = this.H / RENDER_H;
+      const isSelected = (idx) => idx !== SEA && selectedIds.has(this.mapProvinces[idx].id);
+      for (let y = 0; y < RENDER_H; y++) {
+        for (let x = 0; x < RENDER_W; x++) {
+          const idx = this._renderProvinceIndex[y * RENDER_W + x];
+          if (!isSelected(idx)) continue;
+          const right = x + 1 < RENDER_W ? this._renderProvinceIndex[y * RENDER_W + x + 1] : SEA;
+          const down = y + 1 < RENDER_H ? this._renderProvinceIndex[(y + 1) * RENDER_W + x] : SEA;
+          if (!isSelected(right)) segs.push([(x + 1) * sx, y * sy, (x + 1) * sx, (y + 1) * sy]);
+          if (!isSelected(down)) segs.push([x * sx, (y + 1) * sy, (x + 1) * sx, (y + 1) * sy]);
+        }
+      }
+      return segs;
     }
 
     provinceIdAtPixel(px, py) {
@@ -766,11 +834,114 @@
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(this._image, tl.x, tl.y, this.W * z, this.H * z);
 
+      this._drawWorldEdgeFrame(ctx, z);
       this._drawRiverPaths(ctx, z);
       this._drawTerrainGlyphs(ctx, z);
+      this._drawRealmSelection(ctx, z);
       this._drawSelectedOutline(ctx, z);
       this._drawProvinceLabels(ctx, z);
       if (this.mapMode === "political") this._drawRealmLabels(ctx, z);
+      ctx.restore();
+    }
+
+    _drawWorldEdgeFrame(ctx, z) {
+      const alpha = Math.max(0, Math.min(1, (1.18 - this.view.zoom) / 0.35));
+      if (alpha <= 0) return;
+      const tl = this.worldToScreen(0, 0);
+      const br = this.worldToScreen(this.W, this.H);
+      const x = tl.x, y = tl.y, w = br.x - tl.x, h = br.y - tl.y;
+      if (x > this.canvas.width + 40 || y > this.canvas.height + 40 || x + w < -40 || y + h < -40) return;
+
+      const strokeOuter = Math.max(5, 13 * z);
+      const strokeMid = Math.max(2, 5 * z);
+      const inset = Math.max(9, 18 * z);
+      const corner = Math.max(34, 76 * z);
+      const tick = Math.max(6, 13 * z);
+      const gap = Math.max(42, 76 * z);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      ctx.strokeStyle = "rgba(10, 7, 3, 0.86)";
+      ctx.lineWidth = strokeOuter;
+      ctx.strokeRect(x, y, w, h);
+
+      ctx.strokeStyle = "rgba(229, 192, 88, 0.92)";
+      ctx.lineWidth = strokeMid;
+      ctx.strokeRect(x + inset * 0.30, y + inset * 0.30, w - inset * 0.60, h - inset * 0.60);
+
+      ctx.strokeStyle = "rgba(92, 64, 24, 0.95)";
+      ctx.lineWidth = Math.max(1.4, 2.2 * z);
+      ctx.strokeRect(x + inset, y + inset, w - inset * 2, h - inset * 2);
+
+      ctx.strokeStyle = "rgba(245, 218, 132, 0.86)";
+      ctx.lineWidth = Math.max(1.2, 1.9 * z);
+      ctx.beginPath();
+      for (let tx = x + gap; tx < x + w - gap * 0.5; tx += gap) {
+        const long = Math.round((tx - x) / gap) % 3 === 0;
+        const len = long ? tick * 1.65 : tick;
+        ctx.moveTo(tx, y + inset * 0.55);
+        ctx.lineTo(tx, y + inset * 0.55 + len);
+        ctx.moveTo(tx, y + h - inset * 0.55);
+        ctx.lineTo(tx, y + h - inset * 0.55 - len);
+      }
+      for (let ty = y + gap; ty < y + h - gap * 0.5; ty += gap) {
+        const long = Math.round((ty - y) / gap) % 3 === 0;
+        const len = long ? tick * 1.65 : tick;
+        ctx.moveTo(x + inset * 0.55, ty);
+        ctx.lineTo(x + inset * 0.55 + len, ty);
+        ctx.moveTo(x + w - inset * 0.55, ty);
+        ctx.lineTo(x + w - inset * 0.55 - len, ty);
+      }
+      ctx.stroke();
+
+      this._drawFrameCorner(ctx, x + inset * 0.45, y + inset * 0.45, 1, 1, corner);
+      this._drawFrameCorner(ctx, x + w - inset * 0.45, y + inset * 0.45, -1, 1, corner);
+      this._drawFrameCorner(ctx, x + w - inset * 0.45, y + h - inset * 0.45, -1, -1, corner);
+      this._drawFrameCorner(ctx, x + inset * 0.45, y + h - inset * 0.45, 1, -1, corner);
+
+      ctx.restore();
+    }
+
+    _drawFrameCorner(ctx, x, y, sx, sy, size) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(sx, sy);
+
+      ctx.strokeStyle = "rgba(9, 6, 2, 0.78)";
+      ctx.lineWidth = Math.max(3, size * 0.09);
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.90);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(size * 0.90, 0);
+      ctx.moveTo(size * 0.18, size * 0.72);
+      ctx.lineTo(size * 0.72, size * 0.18);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(244, 215, 119, 0.95)";
+      ctx.lineWidth = Math.max(1.5, size * 0.035);
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.84);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(size * 0.84, 0);
+      ctx.moveTo(size * 0.18, size * 0.68);
+      ctx.quadraticCurveTo(size * 0.34, size * 0.34, size * 0.68, size * 0.18);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(178, 129, 42, 0.92)";
+      ctx.strokeStyle = "rgba(40, 25, 8, 0.82)";
+      ctx.lineWidth = Math.max(1, size * 0.025);
+      ctx.beginPath();
+      ctx.moveTo(size * 0.33, size * 0.05);
+      ctx.lineTo(size * 0.45, size * 0.17);
+      ctx.lineTo(size * 0.33, size * 0.29);
+      ctx.lineTo(size * 0.21, size * 0.17);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
       ctx.restore();
     }
 
@@ -835,34 +1006,90 @@
       ctx.restore();
     }
 
+    _drawRealmSelection(ctx, z) {
+      if (!this.selectedRealm || !this.selectedRealmProvinceIds.length) return;
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      ctx.strokeStyle = "rgba(238, 214, 140, 0.24)";
+      ctx.lineWidth = Math.max(0.7, 1.15 * z);
+      ctx.beginPath();
+      for (const id of this.selectedRealmProvinceIds) {
+        for (const [x1, y1, x2, y2] of this.borderSegs[id] || []) {
+          const a = this.worldToScreen(x1, y1), b = this.worldToScreen(x2, y2);
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+        }
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(255, 230, 145, 0.96)";
+      ctx.lineWidth = Math.max(1.7, 3.2 * z);
+      ctx.beginPath();
+      for (const [x1, y1, x2, y2] of this._selectedRealmBoundarySegs) {
+        const a = this.worldToScreen(x1, y1), b = this.worldToScreen(x2, y2);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+      }
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255, 230, 145, 0.72)";
+      ctx.strokeStyle = "rgba(28, 20, 8, 0.78)";
+      ctx.lineWidth = Math.max(0.8, 1.2 * z);
+      for (const id of this.selectedRealmProvinceIds) {
+        const p = this.provinceById.get(id);
+        if (!p) continue;
+        const pt = this.worldToScreen(p.x, p.y);
+        if (pt.x < -12 || pt.y < -12 || pt.x > this.canvas.width + 12 || pt.y > this.canvas.height + 12) continue;
+        const r = Math.max(2.2, Math.min(6.5, 3.2 * z));
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     _drawProvinceLabels(ctx, z) {
       ctx.save();
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      const placed = [];
       for (const p of this.mapProvinces) {
         const seed = p.isSeedFrontier || this.seedProvinceIds.has(p.id);
         const selected = this.selected === p.id;
         const major = p.value >= 90 || p.pixelArea > 9500;
-        if (!seed && !selected && !(this.view.zoom > 1.35 && major) &&
-            !(this.view.zoom > 2.25 && p.pixelArea > 3200)) continue;
+        if (!selected && seed && this.view.zoom < 1.42) continue;
+        if (!seed && !selected && !(this.view.zoom > 1.95 && major) &&
+            !(this.view.zoom > 2.65 && p.pixelArea > 3200)) continue;
         const pt = this.worldToScreen(p.x, p.y);
         if (pt.x < -90 || pt.y < -30 || pt.x > this.canvas.width + 90 || pt.y > this.canvas.height + 30) continue;
-        const size = seed || selected ? Math.max(9, 15 * z) : Math.max(7, 10.5 * z);
+        const size = seed || selected ? Math.max(9, Math.min(14, 13 * z)) : Math.max(7, Math.min(10, 9.5 * z));
         ctx.font = `${seed || selected ? 700 : 600} ${size}px 'Iowan Old Style', 'Palatino Linotype', Georgia, serif`;
         ctx.fillStyle = seed || selected ? "rgba(24, 18, 8, 0.90)" : "rgba(24, 18, 8, 0.70)";
         ctx.strokeStyle = "rgba(244, 232, 200, 0.58)";
         ctx.lineWidth = seed || selected ? 3 : 2;
         const label = p.name.toUpperCase();
+        const ly = pt.y + (seed ? 24 : 16) * z;
+        if (!selected) {
+          const width = ctx.measureText(label).width + 14;
+          const height = size + 10;
+          const box = { x1: pt.x - width / 2, y1: ly - height / 2, x2: pt.x + width / 2, y2: ly + height / 2 };
+          if (placed.some((b) => !(box.x2 < b.x1 || box.x1 > b.x2 || box.y2 < b.y1 || box.y1 > b.y2))) continue;
+          placed.push(box);
+        }
         ctx.save();
         ctx.letterSpacing = `${seed ? 1.4 * z : 0.8 * z}px`;
-        ctx.strokeText(label, pt.x, pt.y + (seed ? 24 : 16) * z);
-        ctx.fillText(label, pt.x, pt.y + (seed ? 24 : 16) * z);
+        ctx.strokeText(label, pt.x, ly);
+        ctx.fillText(label, pt.x, ly);
         ctx.restore();
       }
       ctx.restore();
     }
 
     _drawRealmLabels(ctx, z) {
+      if (this.view.zoom > 1.08) return;
       ctx.save();
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";

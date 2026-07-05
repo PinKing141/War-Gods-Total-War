@@ -113,7 +113,8 @@
 
     closePanel() {
       this.el.inspector.classList.add("hidden");
-      this.map.selected = null;
+      if (this.map.clearSelection) this.map.clearSelection();
+      else this.map.selected = null;
     }
 
     openWorld() {
@@ -157,7 +158,8 @@
     openProvince(pid) {
       const p = this.province(pid);
       if (!p) return;
-      this.map.selected = pid;
+      if (this.map.selectProvince) this.map.selectProvince(pid);
+      else this.map.selected = pid;
       const st = this.provinceState(pid);
       const terr = this.terrainInfo(p.terrain);
       const claims = this.sim.claims.filter((c) => c.target === pid && c.strength > 10);
@@ -198,6 +200,7 @@
     openRealm(fid) {
       const f = this.faction(fid);
       if (!f) return;
+      if (this.map.selectRealm) this.map.selectRealm(fid, this.sim);
       if (!this.sim.factionState[fid]) {
         const provinces = this.map && this.map.mapProvinces
           ? this.map.mapProvinces.filter((p) => p.controller === fid)

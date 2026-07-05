@@ -29,6 +29,8 @@
       this.view = { x: this.W / 2, y: this.H / 2, zoom: 0.9 };
       this.mapMode = "political";  // political | culture | religion | terrain | devastation
       this.selected = null;        // province id to outline
+      this.selectedRealm = null;   // faction id to outline at country scale
+      this.selectedRealmProvinceIds = [];
       this.riverPaths = seed.riverPaths || [];
       this._image = null;          // offscreen canvas with the painted map
       this._dirty = true;
@@ -219,6 +221,43 @@
       return idx >= 0 ? this.provinces[idx] : null;
     }
 
+    province(id) {
+      return this.provinces.find((p) => p.id === id) || null;
+    }
+
+    provinceState(province, sim) {
+      const id = typeof province === "string" ? province : province.id;
+      const p = typeof province === "string" ? this.province(id) : province;
+      if (sim && sim.provinceState[id]) return sim.provinceState[id];
+      return { controller: p ? p.controller : null, occupier: null };
+    }
+
+    controlledProvinces(fid, sim) {
+      if (!fid) return [];
+      return this.provinces.filter((p) => {
+        const st = this.provinceState(p, sim);
+        return st.controller === fid || st.occupier === fid;
+      });
+    }
+
+    selectProvince(id) {
+      this.selected = id;
+      this.selectedRealm = null;
+      this.selectedRealmProvinceIds = [];
+    }
+
+    selectRealm(fid, sim) {
+      this.selected = null;
+      this.selectedRealm = fid;
+      this.selectedRealmProvinceIds = this.controlledProvinces(fid, sim).map((p) => p.id);
+    }
+
+    clearSelection() {
+      this.selected = null;
+      this.selectedRealm = null;
+      this.selectedRealmProvinceIds = [];
+    }
+
     /* ---------------- painting ---------------- */
 
     markDirty() { this._dirty = true; }
@@ -377,6 +416,8 @@
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(this._image, tl.x, tl.y, this.W * z, this.H * z);
 
+      this._drawWorldEdgeFrame(ctx, z);
+
       // rivers
       ctx.lineCap = "round"; ctx.lineJoin = "round";
       for (const river of this.riverPaths) {
@@ -405,6 +446,19 @@
       }
 
       // selected province outline
+      if (this.selectedRealm && this.selectedRealmProvinceIds.length) {
+        ctx.strokeStyle = "rgba(255, 230, 145, 0.82)";
+        ctx.lineWidth = Math.max(1.1, 1.8 * z);
+        ctx.beginPath();
+        for (const id of this.selectedRealmProvinceIds) {
+          for (const [x1, y1, x2, y2] of this.borderSegs[id] || []) {
+            const a = this.worldToScreen(x1, y1), b = this.worldToScreen(x2, y2);
+            ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+          }
+        }
+        ctx.stroke();
+      }
+
       if (this.selected && this.borderSegs[this.selected]) {
         ctx.strokeStyle = "rgba(238, 214, 140, 0.95)";
         ctx.lineWidth = Math.max(1.5, 2.6 * z);
@@ -457,6 +511,107 @@
           ctx.restore();
         }
       }
+      ctx.restore();
+    }
+
+    _drawWorldEdgeFrame(ctx, z) {
+      const alpha = Math.max(0, Math.min(1, (1.18 - this.view.zoom) / 0.35));
+      if (alpha <= 0) return;
+      const tl = this.worldToScreen(0, 0);
+      const br = this.worldToScreen(this.W, this.H);
+      const x = tl.x, y = tl.y, w = br.x - tl.x, h = br.y - tl.y;
+      if (x > this.canvas.width + 40 || y > this.canvas.height + 40 || x + w < -40 || y + h < -40) return;
+
+      const strokeOuter = Math.max(5, 13 * z);
+      const strokeMid = Math.max(2, 5 * z);
+      const inset = Math.max(9, 18 * z);
+      const corner = Math.max(34, 76 * z);
+      const tick = Math.max(6, 13 * z);
+      const gap = Math.max(42, 76 * z);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      ctx.strokeStyle = "rgba(10, 7, 3, 0.86)";
+      ctx.lineWidth = strokeOuter;
+      ctx.strokeRect(x, y, w, h);
+
+      ctx.strokeStyle = "rgba(229, 192, 88, 0.92)";
+      ctx.lineWidth = strokeMid;
+      ctx.strokeRect(x + inset * 0.30, y + inset * 0.30, w - inset * 0.60, h - inset * 0.60);
+
+      ctx.strokeStyle = "rgba(92, 64, 24, 0.95)";
+      ctx.lineWidth = Math.max(1.4, 2.2 * z);
+      ctx.strokeRect(x + inset, y + inset, w - inset * 2, h - inset * 2);
+
+      ctx.strokeStyle = "rgba(245, 218, 132, 0.86)";
+      ctx.lineWidth = Math.max(1.2, 1.9 * z);
+      ctx.beginPath();
+      for (let tx = x + gap; tx < x + w - gap * 0.5; tx += gap) {
+        const long = Math.round((tx - x) / gap) % 3 === 0;
+        const len = long ? tick * 1.65 : tick;
+        ctx.moveTo(tx, y + inset * 0.55);
+        ctx.lineTo(tx, y + inset * 0.55 + len);
+        ctx.moveTo(tx, y + h - inset * 0.55);
+        ctx.lineTo(tx, y + h - inset * 0.55 - len);
+      }
+      for (let ty = y + gap; ty < y + h - gap * 0.5; ty += gap) {
+        const long = Math.round((ty - y) / gap) % 3 === 0;
+        const len = long ? tick * 1.65 : tick;
+        ctx.moveTo(x + inset * 0.55, ty);
+        ctx.lineTo(x + inset * 0.55 + len, ty);
+        ctx.moveTo(x + w - inset * 0.55, ty);
+        ctx.lineTo(x + w - inset * 0.55 - len, ty);
+      }
+      ctx.stroke();
+
+      this._drawFrameCorner(ctx, x + inset * 0.45, y + inset * 0.45, 1, 1, corner);
+      this._drawFrameCorner(ctx, x + w - inset * 0.45, y + inset * 0.45, -1, 1, corner);
+      this._drawFrameCorner(ctx, x + w - inset * 0.45, y + h - inset * 0.45, -1, -1, corner);
+      this._drawFrameCorner(ctx, x + inset * 0.45, y + h - inset * 0.45, 1, -1, corner);
+
+      ctx.restore();
+    }
+
+    _drawFrameCorner(ctx, x, y, sx, sy, size) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(sx, sy);
+
+      ctx.strokeStyle = "rgba(9, 6, 2, 0.78)";
+      ctx.lineWidth = Math.max(3, size * 0.09);
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.90);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(size * 0.90, 0);
+      ctx.moveTo(size * 0.18, size * 0.72);
+      ctx.lineTo(size * 0.72, size * 0.18);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(244, 215, 119, 0.95)";
+      ctx.lineWidth = Math.max(1.5, size * 0.035);
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.84);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(size * 0.84, 0);
+      ctx.moveTo(size * 0.18, size * 0.68);
+      ctx.quadraticCurveTo(size * 0.34, size * 0.34, size * 0.68, size * 0.18);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(178, 129, 42, 0.92)";
+      ctx.strokeStyle = "rgba(40, 25, 8, 0.82)";
+      ctx.lineWidth = Math.max(1, size * 0.025);
+      ctx.beginPath();
+      ctx.moveTo(size * 0.33, size * 0.05);
+      ctx.lineTo(size * 0.45, size * 0.17);
+      ctx.lineTo(size * 0.33, size * 0.29);
+      ctx.lineTo(size * 0.21, size * 0.17);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
       ctx.restore();
     }
 

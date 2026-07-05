@@ -72,12 +72,27 @@
 
   const overlayEl = document.getElementById("overlay");
   let animPauseTimer = null;
+  const PROVINCE_CLICK_ZOOM = 1.25;
+  function controllerOf(prov) {
+    const st = map.provinceState ? map.provinceState(prov, sim) : sim.provinceState[prov.id];
+    return (st && st.controller) || prov.controller;
+  }
+
+  function clickMapProvince(prov) {
+    if (!prov) return;
+    const controller = controllerOf(prov);
+    const zoomedIn = map.view.zoom >= PROVINCE_CLICK_ZOOM;
+    const drillingIntoSelectedRealm = map.selectedRealm === controller;
+    if (!zoomedIn && controller && !drillingIntoSelectedRealm) ui.openRealm(controller);
+    else ui.openProvince(prov.id);
+  }
+
   map.attach(document.getElementById("map-wrap"), {
     onHover: (prov, ev, w) => {
       ui.tooltip(prov, ev);
       ui.mapDebug(w);
     },
-    onClick: (prov) => { if (prov) ui.openProvince(prov.id); },
+    onClick: (prov) => clickMapProvince(prov),
     onViewChange: () => {
       overlayDirty = true;
       // suppress marker slide animation while the camera itself moves
