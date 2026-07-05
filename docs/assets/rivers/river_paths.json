@@ -1,0 +1,108 @@
+{
+  "map_size": [
+    3072,
+    2048
+  ],
+  "rivers": [
+    {
+      "id": "RIV_ROV_MAIN",
+      "name": "Rov River",
+      "type": "major_river",
+      "width": 18,
+      "navigable": true,
+      "points": [[2020,565],[1905,620],[1800,695],[1713,742],[1606,819],[1508,861],[1390,900],[1290,950]],
+      "connected_provinces": ["PROV_WEST_GEAR","PROV_OPEN_GATE","PROV_ROV_HALEM","PROV_SEVRIN_CANAL","PROV_BLUE_CHAIN"],
+      "crossings": ["BRG_HALEM","FORD_SEVRIN"]
+    },
+    {
+      "id": "CAN_SEVRIN",
+      "name": "Sevrin Canal",
+      "type": "canal",
+      "width": 12,
+      "navigable": true,
+      "points": [[1713,742],[1660,780],[1606,819],[1545,840],[1508,861]],
+      "connected_provinces": ["PROV_ROV_HALEM","PROV_SEVRIN_CANAL","PROV_BLUE_CHAIN"],
+      "crossings": ["LOCK_SEVRIN","BRG_BLUE_CHAIN"]
+    },
+    {
+      "id": "RIV_GREYHOOK_SPRING",
+      "name": "Greyhook Spring",
+      "type": "tributary",
+      "width": 9,
+      "navigable": false,
+      "points": [[2180,520],[2110,610],[2097,739],[1975,725],[1850,735],[1713,742]],
+      "connected_provinces": ["PROV_WEST_GEAR","PROV_ROV_HALEM"],
+      "crossings": ["FORD_WEST_GEAR"]
+    },
+    {
+      "id": "RIV_RED_BOG_BLACKWATER",
+      "name": "Red Bog Blackwater",
+      "type": "marsh_channel",
+      "width": 11,
+      "navigable": false,
+      "points": [[1400,470],[1450,615],[1500,700],[1606,819]],
+      "connected_provinces": ["PROV_RED_BOG","PROV_SEVRIN_CANAL"],
+      "crossings": ["FORD_RED_BOG"]
+    },
+    {
+      "id": "RIV_NINTH_FIELD_RUN",
+      "name": "Ninth Field Run",
+      "type": "tributary",
+      "width": 8,
+      "navigable": false,
+      "points": [[1919,684],[1871,852],[1775,835],[1713,742]],
+      "connected_provinces": ["PROV_OPEN_GATE","PROV_NINTH_BANNER","PROV_ROV_HALEM"],
+      "crossings": ["BRG_NINTH_FIELD"]
+    },
+    {
+      "id": "RIV_TALUUN_SILVERGRASS",
+      "name": "Silvergrass River",
+      "type": "major_river",
+      "width": 15,
+      "navigable": true,
+      "points": [[2600,500],[2485,610],[2316,716],[2185,785],[2050,870],[1985,970]],
+      "connected_provinces": ["PROV_WHITE_MARE","PROV_OPEN_GATE","PROV_NINTH_BANNER"],
+      "crossings": ["FORD_WHITE_MARE"]
+    },
+    {
+      "id": "RIV_LANTER_NORTH_FEEDER",
+      "name": "Lanter North Feeder",
+      "type": "major_river",
+      "width": 14,
+      "navigable": true,
+      "points": [[1110,560],[1199,558],[1305,556],[1450,620],[1606,819],[1460,910],[1320,1000]],
+      "connected_provinces": ["PROV_ROV_BASIN_001","PROV_SEVRIN_CANAL","PROV_BLUE_CHAIN"],
+      "crossings": ["BRG_LEDGER_ROAD"]
+    },
+    {
+      "id": "RIV_FENWARD_GREENMIRE",
+      "name": "Greenmire Channels",
+      "type": "marsh_channel",
+      "width": 14,
+      "navigable": false,
+      "points": [[730,930],[850,980],[930,1080],[1040,1160],[1120,1270]],
+      "connected_provinces": [],
+      "crossings": []
+    },
+    {
+      "id": "RIV_QERESH_SALT_WADI",
+      "name": "Salt Witness Wadi",
+      "type": "oasis_wadi",
+      "width": 10,
+      "navigable": false,
+      "points": [[2100,1180],[2210,1235],[2325,1290],[2440,1360],[2570,1425]],
+      "connected_provinces": [],
+      "crossings": ["FORD_SALT_WITNESS"]
+    },
+    {
+      "id": "RIV_MAREN_TIDE_BRANCH",
+      "name": "Maren Tide Branch",
+      "type": "delta",
+      "width": 11,
+      "navigable": true,
+      "points": [[1508,861],[1450,920],[1390,980],[1320,1030],[1245,1080]],
+      "connected_provinces": ["PROV_BLUE_CHAIN","PROV_SEVRIN_CANAL"],
+      "crossings": []
+    }
+  ]
+}
