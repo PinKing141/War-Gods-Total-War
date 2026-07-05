@@ -1,0 +1,42 @@
+{
+  "project": "War Gods Total War",
+  "map_size": [
+    3072,
+    2048
+  ],
+  "province_count": 670,
+  "seed_frontier_provinces": [
+    "PROV_ROV_HALEM",
+    "PROV_SEVRIN_CANAL",
+    "PROV_RED_BOG",
+    "PROV_OPEN_GATE",
+    "PROV_WEST_GEAR",
+    "PROV_THIRD_CHARTER",
+    "PROV_BLUE_CHAIN",
+    "PROV_WHITE_MARE",
+    "PROV_NINTH_BANNER"
+  ],
+  "files": {
+    "heightmap_16bit": "war_gods_total_war_custom_world_heightmap_ck2scale_3072x2048_16bit.png",
+    "province_unique_rgb": "war_gods_world_provinces_unique_rgb_3072x2048.png",
+    "painted_province_preview": "war_gods_world_province_preview_labeled_1536x1024.png",
+    "painted_fullsize": "war_gods_world_province_painted_3072x2048.png",
+    "province_definitions_csv": "war_gods_world_province_definitions.csv",
+    "adjacency_csv": "war_gods_world_province_adjacency.csv"
+  },
+  "rules": {
+    "heightmap": "black water, brighter means higher terrain",
+    "province_map": "each land province has one unique RGB value; water is RGB 0,0,0",
+    "preview": "for humans only; do not use as machine province map"
+  },
+  "region_lore_basis": [
+    "REG_ROV_BASIN",
+    "REG_GREYHOOK",
+    "REG_CAIRN_MARCH",
+    "REG_TALUUN_STEPPE",
+    "REG_QERESH_WELLS",
+    "REG_MAREN_COAST",
+    "REG_FENWARD",
+    "REG_BANNERFIELDS"
+  ]
+}

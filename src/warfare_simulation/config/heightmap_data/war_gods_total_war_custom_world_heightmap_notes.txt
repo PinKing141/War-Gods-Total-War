@@ -1,0 +1,7 @@
+War Gods Total War — custom fantasy world heightmap
+
+Resolution: 3072 x 2048, CK2-style large grand-strategy raster
+Format: 16-bit grayscale PNG for terrain generation
+Meaning: black = ocean/sea/lowest elevation; white = highest mountain ridges
+Design: familiar Afro-Eurasia-inspired layout, but deliberately fantasy-altered with reshaped coasts, inland seas, ring mountains, rifts, extended mountain arcs, and island chains.
+Recommended use: import the 16-bit PNG as the macro terrain height layer. Use a separate water mask or treat pure black as sea. Add smaller-scale procedural noise in-engine for local hills/cliffs.
