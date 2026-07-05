@@ -29,6 +29,7 @@
       this.view = { x: this.W / 2, y: this.H / 2, zoom: 0.9 };
       this.mapMode = "political";  // political | culture | religion | terrain | devastation
       this.selected = null;        // province id to outline
+      this.riverPaths = seed.riverPaths || [];
       this._image = null;          // offscreen canvas with the painted map
       this._dirty = true;
       this._computeOwnership();
@@ -378,7 +379,7 @@
 
       // rivers
       ctx.lineCap = "round"; ctx.lineJoin = "round";
-      for (const river of this.seed.rivers) {
+      for (const river of this.riverPaths) {
         ctx.beginPath();
         river.forEach(([rx, ry], i) => {
           const pt = this.worldToScreen(rx, ry);

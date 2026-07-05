@@ -442,6 +442,29 @@ h3 {
   pointer-events: none;
 }
 
+#map-debug {
+  position: absolute;
+  left: 16px;
+  bottom: 36px;
+  z-index: 24;
+  min-width: 260px;
+  max-width: 340px;
+  padding: 8px 10px;
+  background: rgba(15, 10, 4, 0.88);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.55);
+}
+#map-debug.hidden { display: none; }
+#map-debug .debug-title { color: var(--gold-bright); margin-bottom: 3px; }
+#map-debug .debug-row { display: flex; justify-content: space-between; gap: 14px; }
+#map-debug .debug-row span:first-child { color: var(--ink-dim); }
+
 /* ---------- map modes ---------- */
 
 #map-modes {

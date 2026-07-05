@@ -10,6 +10,7 @@
   const PROVINCE_MAP_URL = "assets/provinces/world_provinces_unique_rgb_3072x2048.png";
   const DEFINITIONS_URL = "assets/provinces/world_province_definitions.csv";
   const ADJACENCY_URL = "assets/provinces/world_province_adjacency.csv";
+  const RIVER_PATHS_URL = "assets/rivers/river_paths.json";
 
   const LOCAL_FACTIONS = {
     FAC_QERESH_LOCAL: {
@@ -96,6 +97,7 @@
       for (const f of Object.values(LOCAL_FACTIONS)) this.factionById.set(f.id, f);
       this.provinceAdjacency = {};
       this.realmLabelPoints = [];
+      this.riverPaths = [];
       this._adjacencyText = "";
       this._heightData = null;
       this._provinceData = null;
@@ -130,7 +132,7 @@
     }
 
     async _loadLayers() {
-      const [heightImg, provinceImg, definitionsText, adjacencyText] = await Promise.all([
+      const [heightImg, provinceImg, definitionsText, adjacencyText, riverPaths] = await Promise.all([
         this._loadImage(HEIGHTMAP_URL),
         this._loadImage(PROVINCE_MAP_URL),
         fetch(DEFINITIONS_URL).then((r) => {
@@ -141,9 +143,11 @@
           if (!r.ok) throw new Error(ADJACENCY_URL);
           return r.text();
         }),
+        this._loadOptionalJson(RIVER_PATHS_URL),
       ]);
 
       this._adjacencyText = adjacencyText;
+      this._parseRiverPaths(riverPaths);
       this._parseDefinitions(definitionsText);
       this.provinceMapWidth = provinceImg.naturalWidth;
       this.provinceMapHeight = provinceImg.naturalHeight;
@@ -173,6 +177,28 @@
       c.height = img.naturalHeight;
       c.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0);
       return c;
+    }
+
+    async _loadOptionalJson(src) {
+      try {
+        const r = await fetch(src);
+        if (!r.ok) return null;
+        return await r.json();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    _parseRiverPaths(data) {
+      if (!data) {
+        this.riverPaths = [];
+        return;
+      }
+      const raw = Array.isArray(data) ? data : (data.rivers || data.paths || []);
+      this.riverPaths = raw.map((river) => {
+        if (Array.isArray(river)) return river;
+        return river.points || river.path || [];
+      }).filter((river) => river.length >= 2);
     }
 
     _parseCsv(text) {
@@ -551,6 +577,37 @@
       return idx === SEA ? null : this.mapProvinces[idx].id;
     }
 
+    rgbAtPixel(px, py) {
+      if (!this._provinceData || px < 0 || py < 0 ||
+          px >= this.provinceMapWidth || py >= this.provinceMapHeight) {
+        return [0, 0, 0];
+      }
+      const off = (py * this.provinceMapWidth + px) * 4;
+      return [
+        this._provinceData[off],
+        this._provinceData[off + 1],
+        this._provinceData[off + 2],
+      ];
+    }
+
+    provinceDebugAt(worldX, worldY) {
+      if (this.layerStatus !== "ready") return null;
+      const px = Math.floor(worldX / this.W * this.provinceMapWidth);
+      const py = Math.floor(worldY / this.H * this.provinceMapHeight);
+      const id = this.provinceIdAtPixel(px, py);
+      const p = id ? this.provinceById.get(id) : null;
+      const rgb = this.rgbAtPixel(px, py);
+      return {
+        province_id: id || "water",
+        rgb,
+        center_x: p ? p.x : null,
+        center_y: p ? p.y : null,
+        terrain: p ? p.terrain : "water",
+        region: p ? p.region : "water",
+        controller: p ? p.controller : "none",
+      };
+    }
+
     provinceAt(worldX, worldY) {
       if (this.layerStatus !== "ready") return super.provinceAt(worldX, worldY);
       const px = Math.floor(worldX / this.W * this.provinceMapWidth);
@@ -709,7 +766,7 @@
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(this._image, tl.x, tl.y, this.W * z, this.H * z);
 
-      this._drawFrontierWaterlines(ctx, z);
+      this._drawRiverPaths(ctx, z);
       this._drawTerrainGlyphs(ctx, z);
       this._drawSelectedOutline(ctx, z);
       this._drawProvinceLabels(ctx, z);
@@ -717,16 +774,15 @@
       ctx.restore();
     }
 
-    _drawFrontierWaterlines(ctx, z) {
-      const paths = [
-        ["PROV_RED_BOG", "PROV_ROV_HALEM", "PROV_SEVRIN_CANAL", "PROV_BLUE_CHAIN"],
-        ["PROV_NINTH_BANNER", "PROV_ROV_HALEM", "PROV_THIRD_CHARTER"],
-      ];
+    _drawRiverPaths(ctx, z) {
+      if (!this.riverPaths.length) return;
       ctx.save();
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      for (const ids of paths) {
-        const pts = ids.map((id) => this.provinceById.get(id)).filter(Boolean);
+      for (const river of this.riverPaths) {
+        const pts = river
+          .map((pt) => Array.isArray(pt) ? { x: Number(pt[0]), y: Number(pt[1]) } : { x: Number(pt.x), y: Number(pt.y) })
+          .filter((pt) => Number.isFinite(pt.x) && Number.isFinite(pt.y));
         if (pts.length < 2) continue;
         ctx.beginPath();
         pts.forEach((p, i) => {

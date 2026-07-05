@@ -73,7 +73,10 @@
   const overlayEl = document.getElementById("overlay");
   let animPauseTimer = null;
   map.attach(document.getElementById("map-wrap"), {
-    onHover: (prov, ev) => ui.tooltip(prov, ev),
+    onHover: (prov, ev, w) => {
+      ui.tooltip(prov, ev);
+      ui.mapDebug(w);
+    },
     onClick: (prov) => { if (prov) ui.openProvince(prov.id); },
     onViewChange: () => {
       overlayDirty = true;

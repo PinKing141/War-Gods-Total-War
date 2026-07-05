@@ -19,7 +19,10 @@
         toasts: document.getElementById("toasts"),
         overlay: document.getElementById("overlay"),
         chronTabs: document.getElementById("chronicle-tabs"),
+        mapDebug: document.getElementById("map-debug"),
       };
+      const params = new URLSearchParams(location.search);
+      this.debugMapEnabled = params.get("debug") === "map" || params.has("mapDebug");
       this.chronMode = "chronicle";
       this._wireDelegates();
       this._wireChronicleTabs();
@@ -565,6 +568,28 @@
       if (x + w > window.innerWidth - 8) x = ev.clientX - w - pad;
       if (y + h > window.innerHeight - 8) y = ev.clientY - h - pad;
       tip.style.left = x + "px"; tip.style.top = y + "px";
+    }
+
+    mapDebug(world) {
+      const el = this.el.mapDebug;
+      if (!this.debugMapEnabled || !el || !world || !this.map.provinceDebugAt) {
+        if (el) el.classList.add("hidden");
+        return;
+      }
+      const info = this.map.provinceDebugAt(world.x, world.y);
+      if (!info) { el.classList.add("hidden"); return; }
+      const center = info.center_x === null
+        ? "—"
+        : `${info.center_x.toFixed(2)}, ${info.center_y.toFixed(2)}`;
+      el.innerHTML = `
+        <div class="debug-title">${esc(info.province_id)}</div>
+        <div class="debug-row"><span>RGB</span><b>${info.rgb.join(",")}</b></div>
+        <div class="debug-row"><span>center</span><b>${center}</b></div>
+        <div class="debug-row"><span>terrain</span><b>${esc(info.terrain)}</b></div>
+        <div class="debug-row"><span>region</span><b>${esc(info.region)}</b></div>
+        <div class="debug-row"><span>controller</span><b>${esc(info.controller)}</b></div>
+      `;
+      el.classList.remove("hidden");
     }
 
     /* ---------- delegation ---------- */
