@@ -28,8 +28,31 @@
 
     /* ---------- shared fragments ---------- */
 
+    province(pid) {
+      return (this.map && this.map.province && this.map.province(pid)) ||
+        this.sim.province(pid);
+    }
+
+    provinceState(pid) {
+      const p = this.province(pid);
+      if (this.map && this.map.provinceState) return this.map.provinceState(p || pid, this.sim);
+      return this.sim.provinceState[pid];
+    }
+
+    faction(fid) {
+      return this.sim.faction(fid) ||
+        (this.map && this.map.faction && this.map.faction(fid)) ||
+        { id: fid, name: fid || "Unknown", shortName: fid || "Unknown", color: "#888070", charge: "peak" };
+    }
+
+    terrainInfo(id) {
+      return (this.map && this.map.terrainInfo && this.map.terrainInfo(id)) ||
+        this.sim.seed.terrains[id] ||
+        { label: String(id || "unknown").replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()) };
+    }
+
     shieldChip(fid, size) {
-      const f = this.sim.faction(fid);
+      const f = this.faction(fid);
       if (!f) return "";
       return `<span class="chip" data-open-realm="${f.id}">${WG.shieldSVG(f, size || 18)}<span>${esc(f.name)}</span></span>`;
     }
@@ -41,7 +64,7 @@
     }
 
     provLink(pid) {
-      const p = this.sim.province(pid);
+      const p = this.province(pid);
       return p ? `<a data-open-prov="${p.id}">${esc(p.name)}</a>` : "<i>—</i>";
     }
 
@@ -129,11 +152,11 @@
     }
 
     openProvince(pid) {
-      const p = this.sim.province(pid);
+      const p = this.province(pid);
       if (!p) return;
       this.map.selected = pid;
-      const st = this.sim.provinceState[pid];
-      const terr = this.sim.seed.terrains[p.terrain] || { label: p.terrain };
+      const st = this.provinceState(pid);
+      const terr = this.terrainInfo(p.terrain);
       const claims = this.sim.claims.filter((c) => c.target === pid && c.strength > 10);
       const armies = this.sim.armies.filter((a) => a.loc === pid);
       const names = [
@@ -145,11 +168,12 @@
       this._openPanel(`
         <div class="panel-head">
           <h2>${esc(p.name)}</h2>
-          <div class="subtitle">${esc(terr.label)} · ${esc(p.resource.replace(/_/g, " ").toLowerCase())}</div>
+          <div class="subtitle">${esc(terr.label)} · ${esc(String(p.resource || "unknown").replace(/_/g, " ").toLowerCase())}</div>
         </div>
         ${names}
         <div class="stat-rows">
           <div class="row"><span>Held by</span><b>${this.shieldChip(st.controller)}</b></div>
+          ${st.staticMapProvince ? `<div class="row"><span>Simulation</span><b class="fine">world-map province</b></div>` : ""}
           ${st.occupier ? `<div class="row occupied"><span>Occupied by</span><b>${this.shieldChip(st.occupier)}</b></div>` : ""}
           ${st.siege ? `<div class="row occupied"><span>Under siege</span><b>${this.shieldChip(st.siege.by)} — ${Math.round(st.siege.progress * 100)}%</b></div>` : ""}
           <div class="row"><span>Population</span><b>${st.pop.toLocaleString()}</b></div>
@@ -159,6 +183,7 @@
           ${p.manaSite ? `<div class="row"><span>Mana site</span><b>${this.pips(p.manaSite, 3, "✦")}</b></div>` : ""}
           ${st.devastation > 4 ? `<div class="row"><span>Devastation</span><b class="bad">${Math.round(st.devastation)}%</b></div>` : ""}
           <div class="row"><span>Strategic value</span><b>${p.value}</b></div>
+          ${p.regionName ? `<div class="row"><span>Region</span><b>${esc(p.regionName)}</b></div>` : ""}
         </div>
         ${armies.length ? `<h3>Armies present</h3>` + armies.map((a) =>
           `<div class="row">${this.shieldChip(a.faction)}<b>${a.size.toLocaleString()} under ${this.charLink(a.commanderId)}</b></div>`).join("") : ""}
@@ -168,8 +193,54 @@
     }
 
     openRealm(fid) {
-      const f = this.sim.faction(fid);
+      const f = this.faction(fid);
       if (!f) return;
+      if (!this.sim.factionState[fid]) {
+        const provinces = this.map && this.map.mapProvinces
+          ? this.map.mapProvinces.filter((p) => p.controller === fid)
+          : [];
+        const culture = this.sim.seed.cultures[f.culture] || {};
+        const religion = this.sim.seed.religions[f.religion] || {};
+        const terrainCounts = {};
+        const regionCounts = {};
+        for (const p of provinces) {
+          terrainCounts[p.terrain] = (terrainCounts[p.terrain] || 0) + 1;
+          regionCounts[p.regionName || p.region] = (regionCounts[p.regionName || p.region] || 0) + 1;
+        }
+        const topTerrain = Object.entries(terrainCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 4)
+          .map(([terrain, count]) => `${esc(this.terrainInfo(terrain).label)} (${count})`)
+          .join(", ");
+        const topRegions = Object.entries(regionCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 4)
+          .map(([region, count]) => `${esc(region)} (${count})`)
+          .join(", ");
+        this._openPanel(`
+          <div class="panel-head realm-head">
+            ${WG.shieldSVG(f, 52)}
+            <div>
+              <h2>${esc(f.name)}</h2>
+              <div class="subtitle">${esc(f.identity || "mapped local power")} · ${esc((f.government || "local_rule").replace(/_/g, " "))}</div>
+            </div>
+          </div>
+          <div class="stat-rows">
+            <div class="row"><span>Mapped provinces</span><b>${provinces.length}</b></div>
+            ${topRegions ? `<div class="row"><span>Regions</span><b>${topRegions}</b></div>` : ""}
+            ${topTerrain ? `<div class="row"><span>Terrain</span><b>${topTerrain}</b></div>` : ""}
+          </div>
+          ${religion.name ? `<h3>Faith — ${esc(religion.name)}</h3><div class="quote">“${esc(religion.claim || "")}”</div>` : ""}
+          ${culture.name ? `<h3>Culture — ${esc(culture.name)} (${esc(culture.selfName || "")})</h3>
+            <div class="fine">${esc(culture.values || "")}</div>
+            <div class="quote">${esc(culture.contradiction || "")}</div>` : ""}
+          <h3>Lands</h3>
+          ${provinces.slice(0, 36).map((p) =>
+            `<div class="row"><span>${this.provLink(p.id)}</span><b class="fine">${esc(this.terrainInfo(p.terrain).label)}</b></div>`).join("")}
+          ${provinces.length > 36 ? `<div class="fine pad">${provinces.length - 36} more provinces are mapped in this realm.</div>` : ""}
+        `);
+        return;
+      }
       const s = this.sim.factionState[fid];
       const culture = this.sim.seed.cultures[f.culture] || {};
       const religion = this.sim.seed.religions[f.religion] || {};
@@ -331,7 +402,7 @@
 
     _focusEvent(ev) {
       if (ev.refs.province) {
-        const p = this.sim.province(ev.refs.province);
+        const p = this.province(ev.refs.province);
         if (p) { this.map.view.x = p.x; this.map.view.y = p.y; }
       }
       if (ev.refs.war) this.openWar(ev.refs.war);
@@ -404,7 +475,7 @@
       const byLoc = {};
       for (const a of this.sim.armies) (byLoc[a.loc] = byLoc[a.loc] || []).push(a);
       for (const [loc, group] of Object.entries(byLoc)) {
-        const p = this.sim.province(loc);
+        const p = this.province(loc);
         if (!p) continue;
         const pt = this.map.worldToScreen(p.x, p.y);
         const x = pt.x / dpr, y = pt.y / dpr;
@@ -431,7 +502,8 @@
           });
         }
       }
-      for (const p of this.sim.seed.provinces) {
+      for (const seedProv of this.sim.seed.provinces) {
+        const p = this.province(seedProv.id) || seedProv;
         const st = this.sim.provinceState[p.id];
         if (!st.siege) continue;
         const pt = this.map.worldToScreen(p.x, p.y);
@@ -449,7 +521,7 @@
 
       // transient effects: floating casualty numbers, captured-banner flashes
       for (const fx of this.sim.fx.splice(0)) {
-        const p = this.sim.province(fx.loc);
+        const p = this.province(fx.loc);
         if (!p) continue;
         const pt = this.map.worldToScreen(p.x, p.y);
         const el = document.createElement("div");
@@ -473,16 +545,17 @@
     tooltip(prov, ev) {
       const tip = this.el.tooltip;
       if (!prov) { tip.classList.add("hidden"); return; }
-      const st = this.sim.provinceState[prov.id];
-      const f = this.sim.faction(st.controller);
-      const terr = this.sim.seed.terrains[prov.terrain] || { label: prov.terrain };
+      const p = this.province(prov.id) || prov;
+      const st = this.provinceState(p.id);
+      const f = this.faction(st.controller);
+      const terr = this.terrainInfo(p.terrain);
       const armies = this.sim.armies.filter((a) => a.loc === prov.id);
       tip.innerHTML = `
-        <div class="tt-title">${esc(prov.name)}</div>
+        <div class="tt-title">${esc(p.name)}</div>
         <div class="tt-row">${WG.shieldSVG(f, 15)} ${esc(f.name)}</div>
         ${st.occupier ? `<div class="tt-row bad">occupied by ${esc(this.sim.faction(st.occupier).name)}</div>` : ""}
         ${st.siege ? `<div class="tt-row bad">under siege — ${Math.round(st.siege.progress * 100)}%</div>` : ""}
-        <div class="tt-row fine">${esc(terr.label)} · pop ${st.pop.toLocaleString()} · fort ${prov.fort}</div>
+        <div class="tt-row fine">${esc(terr.label)} · pop ${st.pop.toLocaleString()} · fort ${p.fort}</div>
         ${armies.map((a) => `<div class="tt-row fine">⚑ ${esc(this.sim.faction(a.faction).name)}: ${a.size.toLocaleString()}</div>`).join("")}
       `;
       tip.classList.remove("hidden");
