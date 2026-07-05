@@ -35,14 +35,28 @@ PROVINCE_COORDS = {
 }
 
 FACTION_STYLE = {
-    "FAC_ROV_HALEN":          {"color": "#3f6fc4", "charge": "bridge"},
-    "FAC_KAERN_RED_BOG":      {"color": "#a83a2c", "charge": "cairn"},
-    "FAC_GHARU_OPEN_GATE":    {"color": "#4d8a3c", "charge": "gate"},
-    "FAC_KAVARI_WEST_GEAR":   {"color": "#8a7440", "charge": "peak"},
-    "FAC_NALARI_THIRD_CHARTER": {"color": "#7f5ca8", "charge": "scroll"},
-    "FAC_MAREN_BLUE_CHAIN":   {"color": "#2e9aa0", "charge": "bell"},
-    "FAC_TALUUN_WHITE_MARE":  {"color": "#c08a34", "charge": "horseshoe"},
-    "FAC_NINE_BANNERS_HALLOW": {"color": "#a03058", "charge": "banners"},
+    "FAC_ROV_HALEN":          {"color": "#3f6fc4", "charge": "bridge", "short": "Rov Halem"},
+    "FAC_KAERN_RED_BOG":      {"color": "#a83a2c", "charge": "cairn", "short": "Red Bog"},
+    "FAC_GHARU_OPEN_GATE":    {"color": "#4d8a3c", "charge": "gate", "short": "Open Gate"},
+    "FAC_KAVARI_WEST_GEAR":   {"color": "#8a7440", "charge": "peak", "short": "West Gear"},
+    "FAC_NALARI_THIRD_CHARTER": {"color": "#7f5ca8", "charge": "scroll", "short": "Third Charter"},
+    "FAC_MAREN_BLUE_CHAIN":   {"color": "#2e9aa0", "charge": "bell", "short": "Blue Chain"},
+    "FAC_TALUUN_WHITE_MARE":  {"color": "#c08a34", "charge": "horseshoe", "short": "White Mare"},
+    "FAC_NINE_BANNERS_HALLOW": {"color": "#a03058", "charge": "banners", "short": "Nine Banners"},
+}
+
+CULTURE_COLORS = {
+    "CULT_ROVANT": "#4a6fc0", "CULT_KAERN": "#b04a38", "CULT_GHARU": "#55923f",
+    "CULT_KAVARI": "#97803e", "CULT_NALARI": "#8a63b8", "CULT_MAREN": "#3a9d9d",
+    "CULT_TALUUN": "#cf9a3e", "CULT_QERESH": "#c2a14a", "CULT_OSTREN": "#7a9a5a",
+    "multi_culture": "#9a5a72",
+}
+
+RELIGION_COLORS = {
+    "REL_MEASURE_ROADS": "#5577cc", "REL_NINE_BANNERS": "#b34a6b",
+    "REL_HEARTH_BELOW": "#a05a32", "REL_INNER_STONE": "#8d8578",
+    "REL_LONG_ACCOUNT": "#7f5ca8", "REL_BELL_RETURN": "#2e9aa0",
+    "REL_SALT_WITNESS": "#c2a14a",
 }
 
 # Rivers as polylines in world space (mountains -> Rov Halem -> sea).
@@ -103,6 +117,7 @@ def build_seed() -> dict:
             "goal": row["primary_goal"],
             "color": style["color"],
             "charge": style["charge"],
+            "shortName": style["short"],
         })
 
     provinces = []
@@ -242,6 +257,8 @@ def build_seed() -> dict:
         "naming": naming,
         "terrains": TERRAIN_INFO,
         "rivers": [[list(pt) for pt in river] for river in RIVERS],
+        "cultureColors": CULTURE_COLORS,
+        "religionColors": RELIGION_COLORS,
     }
 
 

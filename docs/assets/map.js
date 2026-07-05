@@ -5,8 +5,14 @@
 (function () {
   "use strict";
 
-  const GRID_W = 640, GRID_H = 400;      // simulation-space raster
+  const GRID_W = 880, GRID_H = 550;      // simulation-space raster
   const SEA = -1;
+
+  const TERRAIN_GLYPHS = {
+    mountain_pass: "▲", bog_forest: "♣", canal_farmland: "≈",
+    river_city: "⌂", charter_city: "⌂", river_port: "⌂",
+    sacred_battlefield: "✦",
+  };
 
   class WorldMap {
     constructor(canvas, seed) {
@@ -20,10 +26,13 @@
       this.cellOwner = new Int16Array(GRID_W * GRID_H).fill(SEA);
       this.adjacency = {};
       this.view = { x: this.W / 2, y: this.H / 2, zoom: 0.9 };
+      this.mapMode = "political";  // political | culture | religion | terrain | devastation
+      this.selected = null;        // province id to outline
       this._image = null;          // offscreen canvas with the painted map
       this._dirty = true;
       this._computeOwnership();
       this._computeAdjacency();
+      this._computeDecorations();
     }
 
     /* ---------------- geometry ---------------- */
@@ -101,6 +110,41 @@
       if (!this.adjacency[b].includes(a)) this.adjacency[b].push(a);
     }
 
+    _computeDecorations() {
+      // Border segments per province (for the selected-province outline) and
+      // scattered glyph anchor points per province (for terrain doodads).
+      const sx = this.W / GRID_W, sy = this.H / GRID_H;
+      this.borderSegs = {};
+      this.glyphPoints = {};
+      this.provinces.forEach((p) => { this.borderSegs[p.id] = []; this.glyphPoints[p.id] = []; });
+
+      for (let gy = 0; gy < GRID_H; gy++) {
+        for (let gx = 0; gx < GRID_W; gx++) {
+          const o = this.cellOwner[gy * GRID_W + gx];
+          if (o < 0) continue;
+          const id = this.provinces[o].id;
+          const right = gx + 1 < GRID_W ? this.cellOwner[gy * GRID_W + gx + 1] : SEA;
+          const down = gy + 1 < GRID_H ? this.cellOwner[(gy + 1) * GRID_W + gx] : SEA;
+          if (right !== o) {
+            this.borderSegs[id].push([(gx + 1) * sx, gy * sy, (gx + 1) * sx, (gy + 1) * sy]);
+            if (right >= 0) this.borderSegs[this.provinces[right].id].push([(gx + 1) * sx, gy * sy, (gx + 1) * sx, (gy + 1) * sy]);
+          }
+          if (down !== o) {
+            this.borderSegs[id].push([gx * sx, (gy + 1) * sy, (gx + 1) * sx, (gy + 1) * sy]);
+            if (down >= 0) this.borderSegs[this.provinces[down].id].push([gx * sx, (gy + 1) * sy, (gx + 1) * sx, (gy + 1) * sy]);
+          }
+          // sparse interior glyph anchors, away from the label line
+          if (gx % 34 === 8 && gy % 30 === 6) {
+            const wx = gx * sx, wy = gy * sy;
+            const prov = this.provinces[o];
+            if (Math.abs(wy - prov.y) > 46 || Math.abs(wx - prov.x) > 120) {
+              this.glyphPoints[id].push([wx, wy]);
+            }
+          }
+        }
+      }
+    }
+
     provinceAt(worldX, worldY) {
       const gx = Math.floor(worldX / this.W * GRID_W);
       const gy = Math.floor(worldY / this.H * GRID_H);
@@ -130,10 +174,16 @@
       const data = img.data;
 
       const seaDeep = this._hex("#2c4257"), seaShallow = this._hex("#3d5c74");
-      const factionRGB = {};
-      for (const f of this.seed.factions) factionRGB[f.id] = this._hex(f.color);
+      const factionRGB = {}, cultureRGB = {}, religionRGB = {};
+      for (const f of this.seed.factions) {
+        factionRGB[f.id] = this._hex(f.color);
+        cultureRGB[f.id] = this._hex(this.seed.cultureColors[f.culture] || "#888070");
+        religionRGB[f.id] = this._hex(this.seed.religionColors[f.religion] || "#888070");
+      }
+      const ruinRGB = this._hex("#8c2f22");
       const terrainRGB = {};
       for (const [key, t] of Object.entries(this.seed.terrains)) terrainRGB[key] = this._hex(t.base);
+      const mode = this.mapMode;
 
       for (let gy = 0; gy < GRID_H; gy++) {
         for (let gx = 0; gx < GRID_W; gx++) {
@@ -160,19 +210,26 @@
           const state = sim ? sim.provinceState[prov.id] : null;
           const controller = state ? state.controller : prov.controller;
           const terr = terrainRGB[prov.terrain] || [170, 160, 120];
-          const fac = factionRGB[controller] || [120, 120, 120];
 
-          // political tint over terrain, CK3-style
+          // choose the tint layer for the active map mode
+          let tint = factionRGB[controller] || [120, 120, 120];
           let mix = 0.64;
-          // occupied provinces show the occupier in a hatch pattern
+          if (mode === "culture") tint = cultureRGB[controller] || tint;
+          else if (mode === "religion") tint = religionRGB[controller] || tint;
+          else if (mode === "terrain") mix = 0;
+          else if (mode === "devastation") {
+            const d = state ? Math.min(1, state.devastation / 80) : 0;
+            tint = ruinRGB; mix = 0.15 + d * 0.65;
+          }
           let rgb = [
-            terr[0] * (1 - mix) + fac[0] * mix,
-            terr[1] * (1 - mix) + fac[1] * mix,
-            terr[2] * (1 - mix) + fac[2] * mix,
+            terr[0] * (1 - mix) + tint[0] * mix,
+            terr[1] * (1 - mix) + tint[1] * mix,
+            terr[2] * (1 - mix) + tint[2] * mix,
           ];
-          if (state && state.occupier && state.occupier !== controller) {
+          // occupied provinces show the occupier in a hatch pattern
+          if (mode === "political" && state && state.occupier && state.occupier !== controller) {
             const occ = factionRGB[state.occupier] || [200, 200, 200];
-            const stripe = ((gx + gy) % 6) < 3;
+            const stripe = ((gx + gy) % 8) < 4;
             if (stripe) rgb = [
               terr[0] * 0.35 + occ[0] * 0.65,
               terr[1] * 0.35 + occ[1] * 0.65,
@@ -253,8 +310,33 @@
         ctx.stroke();
       }
 
-      // province labels
+      // terrain glyph doodads (subtle painted-map furniture)
       ctx.textAlign = "center";
+      const glyphSize = Math.max(8, 12 * z);
+      ctx.font = `${glyphSize}px Georgia, serif`;
+      ctx.fillStyle = "rgba(24, 20, 10, 0.28)";
+      for (const p of this.provinces) {
+        const glyph = TERRAIN_GLYPHS[p.terrain];
+        if (!glyph) continue;
+        for (const [gx, gy] of this.glyphPoints[p.id]) {
+          const pt = this.worldToScreen(gx, gy);
+          ctx.fillText(glyph, pt.x, pt.y);
+        }
+      }
+
+      // selected province outline
+      if (this.selected && this.borderSegs[this.selected]) {
+        ctx.strokeStyle = "rgba(238, 214, 140, 0.95)";
+        ctx.lineWidth = Math.max(1.5, 2.6 * z);
+        ctx.beginPath();
+        for (const [x1, y1, x2, y2] of this.borderSegs[this.selected]) {
+          const a = this.worldToScreen(x1, y1), b = this.worldToScreen(x2, y2);
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        }
+        ctx.stroke();
+      }
+
+      // province labels
       for (const p of this.provinces) {
         const pt = this.worldToScreen(p.x, p.y);
         const size = Math.max(9, 13 * z);
@@ -269,7 +351,38 @@
         ctx.fillText(label, pt.x, pt.y + 26 * z);
         ctx.restore();
       }
+
+      // realm names painted across their territory (political mode only)
+      if (this.mapMode === "political" && sim) {
+        for (const f of this.seed.factions) {
+          const owned = this.seed.provinces.filter(
+            (p) => sim.provinceState[p.id].controller === f.id);
+          if (!owned.length) continue;
+          let cx = 0, cy = 0;
+          for (const p of owned) { cx += p.x; cy += p.y; }
+          cx /= owned.length; cy /= owned.length;
+          const pt = this.worldToScreen(cx, cy);
+          const size = Math.max(13, (17 + Math.sqrt(owned.length) * 9) * z);
+          const yOff = owned.length === 1 ? -34 * z : -6 * z;
+          ctx.font = `700 italic ${size}px 'Iowan Old Style', 'Palatino Linotype', Georgia, serif`;
+          ctx.save();
+          ctx.letterSpacing = `${4 * z}px`;
+          ctx.globalAlpha = 0.62;
+          ctx.strokeStyle = "rgba(12, 9, 4, 0.9)";
+          ctx.lineWidth = Math.max(2, 3.4 * z);
+          ctx.fillStyle = "rgba(246, 233, 198, 0.95)";
+          const name = f.shortName.toUpperCase();
+          ctx.strokeText(name, pt.x, pt.y + yOff);
+          ctx.fillText(name, pt.x, pt.y + yOff);
+          ctx.restore();
+        }
+      }
       ctx.restore();
+    }
+
+    setMode(mode) {
+      this.mapMode = mode;
+      this.markDirty();
     }
 
     /* ---------------- interaction ---------------- */

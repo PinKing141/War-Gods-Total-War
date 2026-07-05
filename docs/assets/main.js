@@ -13,21 +13,28 @@
   const seed = window.WG_SEED;
   const canvas = document.getElementById("map");
   const map = new WG.WorldMap(canvas, seed);
-  const sim = new WG.Simulation(seed, 20260704);
+  // every visit births a different history; pin ?seed=N to replay one
+  const pinned = new URLSearchParams(location.search).get("seed");
+  const rngSeed = pinned ? Number(pinned) : (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
+  const sim = new WG.Simulation(seed, rngSeed);
   sim.adjacency = map.adjacency;
   const ui = new WG.UI(sim, map);
 
-  let paused = true;
+  let paused = false;
   let speedIdx = 0;
   let timer = null;
   let overlayDirty = true;
+  let paintedVersion = -1;
 
   function applySpeed() {
     if (timer) { clearInterval(timer); timer = null; }
     if (!paused) {
       timer = setInterval(() => {
         sim.tick();
-        map.markDirty();          // recolor on ownership/occupation changes
+        if (sim.mapVersion !== paintedVersion) {   // repaint only on real change
+          paintedVersion = sim.mapVersion;
+          map.markDirty();
+        }
         overlayDirty = true;
         ui.renderClock();
         if (sim.date.day === 1) ui.renderShieldStrip();
@@ -52,11 +59,28 @@
       ev.preventDefault(); paused = !paused; applySpeed();
     }
   });
+  document.getElementById("btn-world").addEventListener("click", () => ui.openWorld());
+  document.getElementById("map-modes").addEventListener("click", (ev) => {
+    const btn = ev.target.closest("[data-mode]");
+    if (!btn) return;
+    map.setMode(btn.dataset.mode);
+    for (const b of document.querySelectorAll("#map-modes [data-mode]")) {
+      b.classList.toggle("active", b === btn);
+    }
+  });
 
+  const overlayEl = document.getElementById("overlay");
+  let animPauseTimer = null;
   map.attach(document.getElementById("map-wrap"), {
     onHover: (prov, ev) => ui.tooltip(prov, ev),
     onClick: (prov) => { if (prov) ui.openProvince(prov.id); },
-    onViewChange: () => { overlayDirty = true; },
+    onViewChange: () => {
+      overlayDirty = true;
+      // suppress marker slide animation while the camera itself moves
+      overlayEl.classList.add("no-anim");
+      clearTimeout(animPauseTimer);
+      animPauseTimer = setTimeout(() => overlayEl.classList.remove("no-anim"), 220);
+    },
   });
 
   function frame() {

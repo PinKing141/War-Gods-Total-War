@@ -85,11 +85,53 @@
       this.el.inspector.classList.remove("hidden");
     }
 
-    closePanel() { this.el.inspector.classList.add("hidden"); }
+    closePanel() {
+      this.el.inspector.classList.add("hidden");
+      this.map.selected = null;
+    }
+
+    openWorld() {
+      const s = this.sim;
+      const ranked = [...s.seed.factions].sort((a, b) =>
+        s.factionState[b.id].prestige - s.factionState[a.id].prestige);
+      const strongest = ranked[0];
+      const rulers = s.characters.filter((c) => c.isRuler);
+      const eldest = s.characters.filter((c) => c.alive)
+        .reduce((a, b) => (a.age > b.age ? a : b));
+      this._openPanel(`
+        <div class="panel-head">
+          <h2>The World</h2>
+          <div class="subtitle">${esc(s.seed.world.region)} · ${esc(s.formatDate())}</div>
+        </div>
+        <div class="stat-rows">
+          <div class="row"><span>Wars fought / ended</span><b>${s.wars.length} / ${s.totals.warsEnded}</b></div>
+          <div class="row"><span>Soldiers fallen</span><b>${s.totals.fallen.toLocaleString()}</b></div>
+          <div class="row"><span>Rulers crowned</span><b>${rulers.length}</b></div>
+          <div class="row"><span>Eldest living soul</span><b>${this.charLink(eldest.id)} <span class="fine">(${eldest.age})</span></b></div>
+          <div class="row"><span>Mightiest banner</span><b>${this.shieldChip(strongest.id)}</b></div>
+        </div>
+        <h3>The powers, by prestige</h3>
+        ${ranked.map((f, i) => {
+          const st = s.factionState[f.id];
+          const provs = s.ownedProvinces(f.id).length;
+          const ruler = s.rulerOf(f.id);
+          return `<div class="rank-row" data-open-realm="${f.id}">
+            <span class="rank-num">${i + 1}</span>
+            ${WG.shieldSVG(f, 22)}
+            <div class="rank-body">
+              <div>${esc(f.name)}${provs === 0 ? ' <span class="bad fine">landless</span>' : ""}</div>
+              <div class="fine">${ruler ? esc(ruler.name) : "—"} · ${provs} land${provs === 1 ? "" : "s"} · ${s.armyStrength(f.id).toLocaleString()} levied</div>
+            </div>
+            <b>${Math.round(st.prestige)}</b>
+          </div>`;
+        }).join("")}
+      `);
+    }
 
     openProvince(pid) {
       const p = this.sim.province(pid);
       if (!p) return;
+      this.map.selected = pid;
       const st = this.sim.provinceState[pid];
       const terr = this.sim.seed.terrains[p.terrain] || { label: p.terrain };
       const claims = this.sim.claims.filter((c) => c.target === pid && c.strength > 10);
@@ -158,6 +200,12 @@
             <div class="ruler-name">${esc(ruler.name)}</div>
             <div class="fine">${esc(ruler.role)} · ${ruler.age} years · ${ruler.traits.map((t) => t.label).join(", ")}</div>
           </div>` : `<div class="ruler-card"><i>The seat stands empty.</i></div>`}
+        ${(() => {
+          const heir = this.sim.heirOf(fid);
+          return heir
+            ? `<div class="row"><span>Heir</span><b>${this.charLink(heir.id)} <span class="fine">(${heir.age})</span></b></div>`
+            : `<div class="row"><span>Heir</span><b class="fine"><i>the line hangs by a thread</i></b></div>`;
+        })()}
         <div class="stat-rows">
           <div class="row"><span>Treasury</span><b>${s.treasury.toLocaleString()} silver</b></div>
           <div class="row"><span>Monthly ledger</span><b class="${income - upkeep >= 0 ? "good" : "bad"}">${income - upkeep >= 0 ? "+" : ""}${(income - upkeep).toLocaleString()}</b></div>
@@ -210,6 +258,14 @@
           ${c.isRuler && c.reignStart ? `<div class="row"><span>Reigning since</span><b>${c.reignStart} AE</b></div>` : ""}
         </div>
         <div class="quote">Their burden: ${esc(c.pressure)}.</div>
+        ${(() => {
+          const parent = c.parentId ? this.sim.character(c.parentId) : null;
+          const kids = this.sim.childrenOf(c.id);
+          if (!parent && !kids.length) return "";
+          return "<h3>Lineage</h3>" +
+            (parent ? `<div class="row"><span>Born to</span><b>${this.charLink(parent.id)}</b></div>` : "") +
+            kids.map((k) => `<div class="row"><span>${k.alive ? "Child" : "Child †"}</span><b>${this.charLink(k.id)} <span class="fine">(${k.age})</span></b></div>`).join("");
+        })()}
         ${mage ? `<h3>The Gift</h3>
           <div class="stat-rows">
             <div class="row"><span>Specialization</span><b>${esc(mage.specialization)}</b></div>
@@ -233,9 +289,9 @@
           <div class="subtitle">${w.over ? `concluded ${esc(w.endDate)}` : `raging since ${esc(w.startDate)}`}</div>
         </div>
         <div class="war-sides">
-          <div>${this.shieldChip(w.attacker, 26)}</div>
+          <div>${w.atkSide.map((fid) => this.shieldChip(fid, 24)).join("<br>")}</div>
           <div class="vs">against</div>
-          <div>${this.shieldChip(w.defender, 26)}</div>
+          <div>${w.defSide.map((fid) => this.shieldChip(fid, 24)).join("<br>")}</div>
         </div>
         <div class="stat-rows">
           <div class="row"><span>The prize</span><b>${w.goal.type === "raid" ? "plunder and tribute" : this.provLink(w.goal.province)}</b></div>
@@ -255,7 +311,7 @@
 
     _iconFor(type) {
       return { war: "⚔", battle: "⚔", siege: "🏰", peace: "🕊", succession: "👑",
-               death: "✝", magic: "✦", muster: "🛡" }[type] || "•";
+               death: "✝", magic: "✦", muster: "🛡", birth: "✼" }[type] || "•";
     }
 
     _onEvent(ev) {
@@ -328,7 +384,23 @@
 
     renderOverlay() {
       const dpr = window.devicePixelRatio || 1;
-      const bits = [];
+      if (!this._markers) this._markers = new Map();
+      const keep = new Set();
+      const upsert = (key, cls, build) => {
+        let el = this._markers.get(key);
+        if (!el) {
+          el = document.createElement("div");
+          el.className = cls;
+          this.el.overlay.appendChild(el);
+          this._markers.set(key, el);
+          build(el, true);
+        } else {
+          build(el, false);
+        }
+        keep.add(key);
+        return el;
+      };
+
       const byLoc = {};
       for (const a of this.sim.armies) (byLoc[a.loc] = byLoc[a.loc] || []).push(a);
       for (const [loc, group] of Object.entries(byLoc)) {
@@ -336,27 +408,64 @@
         if (!p) continue;
         const pt = this.map.worldToScreen(p.x, p.y);
         const x = pt.x / dpr, y = pt.y / dpr;
-        const factions = new Set(group.map((a) => a.faction));
-        const battling = factions.size > 1;
+        const battling = new Set(group.map((a) => a.faction)).size > 1;
         group.forEach((a, i) => {
           const f = this.sim.faction(a.faction);
-          bits.push(`<div class="army-marker" style="left:${x + (i - (group.length - 1) / 2) * 40}px;top:${y - 34}px"
-            data-open-char="${a.commanderId}" title="${esc(f.name)} — ${a.size.toLocaleString()}">
-            ${WG.shieldSVG(f, 20)}<span>${(a.size / 1000).toFixed(1)}k</span></div>`);
+          upsert("army:" + a.id, "army-marker", (el, fresh) => {
+            if (fresh) {
+              el.innerHTML = WG.shieldSVG(f, 20) + "<span></span>";
+              el.dataset.openChar = a.commanderId;
+              el.style.pointerEvents = "auto";
+            }
+            el.title = `${f.name} — ${a.size.toLocaleString()} under ${(this.sim.character(a.commanderId) || {}).name || "?"}`;
+            el.querySelector("span").textContent = (a.size / 1000).toFixed(1) + "k";
+            el.style.left = (x + (i - (group.length - 1) / 2) * 40) + "px";
+            el.style.top = (y - 34) + "px";
+          });
         });
         if (battling) {
-          bits.push(`<div class="battle-marker" style="left:${x}px;top:${y - 62}px">⚔</div>`);
+          upsert("battle:" + loc, "battle-marker", (el, fresh) => {
+            if (fresh) el.textContent = "⚔";
+            el.style.left = x + "px";
+            el.style.top = (y - 62) + "px";
+          });
         }
       }
       for (const p of this.sim.seed.provinces) {
         const st = this.sim.provinceState[p.id];
-        if (st.siege) {
-          const pt = this.map.worldToScreen(p.x, p.y);
-          bits.push(`<div class="siege-marker" style="left:${pt.x / dpr}px;top:${pt.y / dpr + 6}px"
-            title="Siege: ${Math.round(st.siege.progress * 100)}%">🏰<i style="width:${Math.round(st.siege.progress * 100)}%"></i></div>`);
-        }
+        if (!st.siege) continue;
+        const pt = this.map.worldToScreen(p.x, p.y);
+        upsert("siege:" + p.id, "siege-marker", (el, fresh) => {
+          if (fresh) el.innerHTML = "🏰<i></i>";
+          el.title = `Siege: ${Math.round(st.siege.progress * 100)}%`;
+          el.querySelector("i").style.width = Math.round(st.siege.progress * 100) + "%";
+          el.style.left = (pt.x / dpr) + "px";
+          el.style.top = (pt.y / dpr + 6) + "px";
+        });
       }
-      this.el.overlay.innerHTML = bits.join("");
+      for (const [key, el] of [...this._markers]) {
+        if (!keep.has(key)) { el.remove(); this._markers.delete(key); }
+      }
+
+      // transient effects: floating casualty numbers, captured-banner flashes
+      for (const fx of this.sim.fx.splice(0)) {
+        const p = this.sim.province(fx.loc);
+        if (!p) continue;
+        const pt = this.map.worldToScreen(p.x, p.y);
+        const el = document.createElement("div");
+        if (fx.kind === "loss") {
+          el.className = "float-text";
+          el.textContent = `−${fx.amount.toLocaleString()}`;
+        } else {
+          el.className = "float-text flag";
+          el.textContent = "⚑";
+          el.style.color = fx.color;
+        }
+        el.style.left = (pt.x / dpr) + "px";
+        el.style.top = (pt.y / dpr - 46) + "px";
+        this.el.overlay.appendChild(el);
+        setTimeout(() => el.remove(), 1600);
+      }
     }
 
     /* ---------- tooltip ---------- */

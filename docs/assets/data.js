@@ -18,7 +18,8 @@ window.WG_SEED = {
    "pressure": "Claims old imperial legitimacy and wants road control.",
    "goal": "restore_road_order",
    "color": "#3f6fc4",
-   "charge": "bridge"
+   "charge": "bridge",
+   "shortName": "Rov Halem"
   },
   {
    "id": "FAC_KAERN_RED_BOG",
@@ -31,7 +32,8 @@ window.WG_SEED = {
    "pressure": "Controls iron and resists canal taxation.",
    "goal": "defend_hearth_and_iron",
    "color": "#a83a2c",
-   "charge": "cairn"
+   "charge": "cairn",
+   "shortName": "Red Bog"
   },
   {
    "id": "FAC_GHARU_OPEN_GATE",
@@ -44,7 +46,8 @@ window.WG_SEED = {
    "pressure": "Wants recognition, land security and an end to service-yoke claims.",
    "goal": "legal_recognition",
    "color": "#4d8a3c",
-   "charge": "gate"
+   "charge": "gate",
+   "shortName": "Open Gate"
   },
   {
    "id": "FAC_KAVARI_WEST_GEAR",
@@ -57,7 +60,8 @@ window.WG_SEED = {
    "pressure": "Controls iron passes and sells engineering to rivals.",
    "goal": "protect_pass_tolls",
    "color": "#8a7440",
-   "charge": "peak"
+   "charge": "peak",
+   "shortName": "West Gear"
   },
   {
    "id": "FAC_NALARI_THIRD_CHARTER",
@@ -70,7 +74,8 @@ window.WG_SEED = {
    "pressure": "Holds ancient contracts everyone disputes.",
    "goal": "enforce_charters",
    "color": "#7f5ca8",
-   "charge": "scroll"
+   "charge": "scroll",
+   "shortName": "Third Charter"
   },
   {
    "id": "FAC_MAREN_BLUE_CHAIN",
@@ -83,7 +88,8 @@ window.WG_SEED = {
    "pressure": "Funds wars, manipulates debt and wants river access.",
    "goal": "secure_river_credit",
    "color": "#2e9aa0",
-   "charge": "bell"
+   "charge": "bell",
+   "shortName": "Blue Chain"
   },
   {
    "id": "FAC_TALUUN_WHITE_MARE",
@@ -96,7 +102,8 @@ window.WG_SEED = {
    "pressure": "Raids, trades horses and pressures settled states.",
    "goal": "pasture_and_tribute",
    "color": "#c08a34",
-   "charge": "horseshoe"
+   "charge": "horseshoe",
+   "shortName": "White Mare"
   },
   {
    "id": "FAC_NINE_BANNERS_HALLOW",
@@ -109,7 +116,8 @@ window.WG_SEED = {
    "pressure": "Controls a sacred battlefield and mage legality disputes.",
    "goal": "control_oath_war_legitimacy",
    "color": "#a03058",
-   "charge": "banners"
+   "charge": "banners",
+   "shortName": "Nine Banners"
   }
  ],
  "provinces": [
@@ -899,5 +907,26 @@ window.WG_SEED = {
     545
    ]
   ]
- ]
+ ],
+ "cultureColors": {
+  "CULT_ROVANT": "#4a6fc0",
+  "CULT_KAERN": "#b04a38",
+  "CULT_GHARU": "#55923f",
+  "CULT_KAVARI": "#97803e",
+  "CULT_NALARI": "#8a63b8",
+  "CULT_MAREN": "#3a9d9d",
+  "CULT_TALUUN": "#cf9a3e",
+  "CULT_QERESH": "#c2a14a",
+  "CULT_OSTREN": "#7a9a5a",
+  "multi_culture": "#9a5a72"
+ },
+ "religionColors": {
+  "REL_MEASURE_ROADS": "#5577cc",
+  "REL_NINE_BANNERS": "#b34a6b",
+  "REL_HEARTH_BELOW": "#a05a32",
+  "REL_INNER_STONE": "#8d8578",
+  "REL_LONG_ACCOUNT": "#7f5ca8",
+  "REL_BELL_RETURN": "#2e9aa0",
+  "REL_SALT_WITNESS": "#c2a14a"
+ }
 };

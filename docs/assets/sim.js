@@ -45,6 +45,9 @@
       this.wars = [];
       this.armies = [];
       this.adjacency = null;   // provided by map after ownership raster
+      this.fx = [];            // transient visual effects for the UI to drain
+      this.totals = { fallen: 0, warsEnded: 0 };
+      this.mapVersion = 0;     // bumped when the political map must repaint
 
       this.factionState = {};
       this.provinceState = {};
@@ -120,9 +123,13 @@
 
     warBetween(a, b) {
       return this.wars.find((w) => !w.over &&
-        ((w.attacker === a && w.defender === b) || (w.attacker === b && w.defender === a)));
+        ((w.atkSide.includes(a) && w.defSide.includes(b)) ||
+         (w.atkSide.includes(b) && w.defSide.includes(a))));
     }
-    warsOf(fid) { return this.wars.filter((w) => !w.over && (w.attacker === fid || w.defender === fid)); }
+    warsOf(fid) {
+      return this.wars.filter((w) => !w.over &&
+        (w.atkSide.includes(fid) || w.defSide.includes(fid)));
+    }
     atWar(a, b) { return !!this.warBetween(a, b); }
 
     _rollTraits() {
@@ -252,27 +259,27 @@
     }
 
     _armyTargets(army, war) {
-      const enemy = war.attacker === army.faction ? war.defender : war.attacker;
-      const isAttacker = war.attacker === army.faction;
-      // 1. hostile army on our soil -> intercept
+      const onAtkSide = war.atkSide.includes(army.faction);
+      const mySide = onAtkSide ? war.atkSide : war.defSide;
+      const enemySide = onAtkSide ? war.defSide : war.atkSide;
+      const mainEnemy = onAtkSide ? war.defender : war.attacker;
+      // 1. hostile army on my side's soil -> intercept the largest
       const invaders = this.armies.filter((a) =>
-        a.faction === enemy && this.provinceState[a.loc] &&
-        this.provinceState[a.loc].controller === army.faction);
+        enemySide.includes(a.faction) && this.provinceState[a.loc] &&
+        mySide.includes(this.provinceState[a.loc].controller));
       if (invaders.length) {
         return invaders.reduce((x, y) => (x.size > y.size ? x : y)).loc;
       }
-      // 2. attacker: take the war goal, then anything unoccupied of theirs
-      const enemyProvinces = this.ownedProvinces(enemy)
-        .filter((p) => this.provinceState[p.id].occupier !== army.faction);
-      if (isAttacker && war.goal.province &&
-          this.provinceState[war.goal.province].controller === enemy &&
+      // 2. attacker side: take the war goal, then anything unoccupied of theirs
+      if (onAtkSide && war.goal.province &&
+          this.provinceState[war.goal.province].controller === war.defender &&
           this.provinceState[war.goal.province].occupier !== army.faction) {
         return war.goal.province;
       }
-      if (enemyProvinces.length) {
-        // nearest by BFS depth — approximate with first found
-        return enemyProvinces[0].id;
-      }
+      const enemyProvinces = [mainEnemy, ...enemySide]
+        .flatMap((fid) => this.ownedProvinces(fid))
+        .filter((p) => this.provinceState[p.id].occupier !== army.faction);
+      if (enemyProvinces.length) return enemyProvinces[0].id;
       // 3. nothing to do: hold the capital
       const cap = this.capital(army.faction);
       return cap ? cap.id : army.loc;
@@ -386,9 +393,11 @@
       const winLost = (winner === A ? battle.aStart - A.size : battle.bStart - B.size);
       war.activeBattle = null;
 
-      // warscore swings toward the winner
+      // warscore swings toward the winner's side
       const swing = Math.min(28, 8 + lost / 120);
-      war.score += (winner.faction === war.attacker ? swing : -swing);
+      war.score += (war.atkSide.includes(winner.faction) ? swing : -swing);
+      this.totals.fallen += lost + winLost;
+      this.fx.push({ kind: "loss", loc, amount: lost, color: this.faction(loser.faction).color });
       war.battles.push({
         name: `Battle of ${prov.name}`, day: this.day, date: this.formatDate(),
         winner: winner.faction, loser: loser.faction,
@@ -419,10 +428,12 @@
     _siegeTick(army, war) {
       const provSt = this.provinceState[army.loc];
       const prov = this.province(army.loc);
-      const enemy = war.attacker === army.faction ? war.defender : war.attacker;
-      if (provSt.controller !== enemy || provSt.occupier === army.faction) return;
+      const enemySide = war.atkSide.includes(army.faction) ? war.defSide : war.atkSide;
+      if (!enemySide.includes(provSt.controller) || provSt.occupier === army.faction) return;
+      const enemy = provSt.controller;
       if (!provSt.siege || provSt.siege.by !== army.faction) {
         provSt.siege = { by: army.faction, progress: 0 };
+        this.mapVersion++;
         this.log(2, "siege",
           `${this.faction(army.faction).name} lays siege to ${prov.name}${prov.fort >= 4 ? ", whose great walls have never fallen" : ""}.`,
           { province: army.loc, war: war.id, faction: army.faction });
@@ -434,8 +445,10 @@
         provSt.occupier = army.faction;
         provSt.devastation = Math.min(100, provSt.devastation + 25);
         provSt.pop = Math.round(provSt.pop * 0.96);
+        this.mapVersion++;
+        this.fx.push({ kind: "flag", loc: army.loc, color: this.faction(army.faction).color });
         const isGoal = war.goal.province === army.loc;
-        war.score += (army.faction === war.attacker ? 1 : -1) * (isGoal ? 38 : 14);
+        war.score += (war.atkSide.includes(army.faction) ? 1 : -1) * (isGoal ? 38 : 14);
         this.factionState[enemy].exhaustion += 12;
         this.log(3, "siege",
           `${prov.name} falls. ${this.faction(army.faction).name} banners rise over the ${prov.fort >= 3 ? "citadel" : "walls"}.`,
@@ -477,8 +490,21 @@
         const st = this.provinceState[p.id];
         st.devastation = Math.max(0, st.devastation - 2);
         st.pop = Math.round(st.pop * 1.002);
-        if (st.occupier && !this.atWar(st.occupier, st.controller)) st.occupier = null;
+        if (st.occupier && !this.atWar(st.occupier, st.controller)) {
+          st.occupier = null;
+          this.mapVersion++;
+        }
+        // hunger riots when the land is bled white
+        if (st.devastation > 45 && !st.riotLogged) {
+          st.riotLogged = true;
+          st.pop = Math.round(st.pop * 0.97);
+          this.log(2, "death",
+            `Hunger riots in ${p.name}: the granaries are bare and the ${this.faction(st.controller).name} tax men dare not enter.`,
+            { province: p.id, faction: st.controller });
+        }
+        if (st.devastation < 25) st.riotLogged = false;
       }
+      this.mapVersion++; // devastation drift matters in the Ruin map mode
       this._diplomacyPulse();
       this._peacePulse();
       this._restorationPulse();
@@ -511,6 +537,7 @@
         this.provinceState[target].controller = f.id;
         this.provinceState[target].occupier = null;
         this.provinceState[target].siege = null;
+        this.mapVersion++;
         this._refreshManpower(f.id, true);
         this.factionState[f.id].exhaustion = 0;
         let ruler = this.rulerOf(f.id);
@@ -607,6 +634,7 @@
           : `War of ${prizeName}`,
         attacker, defender, goal, score: 0, startDay: this.day,
         startDate: this.formatDate(), battles: [], over: false,
+        atkSide: [attacker], defSide: [defender],
       };
       this.wars.push(war);
       const reason = claim
@@ -619,6 +647,24 @@
       this._bumpOpinion(attacker, defender, -25);
       this._raiseArmy(attacker, war);
       this._raiseArmy(defender, war);
+
+      // friends of the defender may honour old oaths and join the defence
+      const defFaith = this.faction(defender).religion;
+      for (const f of this.seed.factions) {
+        if (f.id === attacker || f.id === defender) continue;
+        if (!this.ownedProvinces(f.id).length) continue;
+        if (this.warsOf(f.id).length) continue;
+        if ((this.factionState[f.id].truces[attacker] || 0) > this.day) continue;
+        const sworn = f.religion === defFaith || this.opinion(f.id, defender) >= 30;
+        if (!sworn || this.opinion(f.id, attacker) > 20) continue;
+        if (!this.rng.chance(0.55)) continue;
+        war.defSide.push(f.id);
+        this._bumpOpinion(f.id, attacker, -15);
+        this.log(3, "war",
+          `${f.name} rides to the defence of ${this.faction(defender).name}, honouring ${f.religion === defFaith ? "shared faith" : "old friendship"}.`,
+          { war: war.id, faction: f.id });
+        this._raiseArmy(f.id, war);
+      }
     }
 
     _borderPrize(attacker, defender) {
@@ -645,18 +691,29 @@
 
     _endWar(war, victor) {
       war.over = true; war.endDate = this.formatDate();
+      this.totals.warsEnded++;
       const att = this.faction(war.attacker), def = this.faction(war.defender);
       const sa = this.factionState[war.attacker], sd = this.factionState[war.defender];
-      sa.truces[war.defender] = this.day + 360 * 5;
-      sd.truces[war.attacker] = this.day + 360 * 5;
+      for (const atk of war.atkSide) {
+        for (const dfd of war.defSide) {
+          this.factionState[atk].truces[dfd] = this.day + 360 * 5;
+          this.factionState[dfd].truces[atk] = this.day + 360 * 5;
+        }
+      }
+      // allies remember who stood with them
+      for (const ally of war.defSide) {
+        if (ally !== war.defender) this._bumpOpinion(ally, war.defender, 12);
+      }
 
-      // lift occupations between the two parties
+      // lift occupations between the warring sides
+      const parties = [...war.atkSide, ...war.defSide];
       for (const p of this.seed.provinces) {
         const st = this.provinceState[p.id];
-        if (st.occupier === war.attacker || st.occupier === war.defender) {
-          if (st.controller === war.attacker || st.controller === war.defender) st.occupier = null;
+        if (st.occupier && parties.includes(st.occupier) && parties.includes(st.controller)) {
+          st.occupier = null;
+          this.mapVersion++;
         }
-        if (st.siege && (st.siege.by === war.attacker || st.siege.by === war.defender)) st.siege = null;
+        if (st.siege && parties.includes(st.siege.by)) { st.siege = null; this.mapVersion++; }
       }
 
       if (!victor) {
@@ -671,6 +728,7 @@
           const prov = this.province(war.goal.province);
           this.provinceState[prov.id].controller = war.attacker;
           this.provinceState[prov.id].occupier = null;
+          this.mapVersion++;
           const claim = this.claims.find((c) => c.id === war.goal.claim);
           if (claim) claim.strength = Math.min(100, claim.strength + 10);
           // the loser now remembers a grievance: a new claim is born
@@ -707,7 +765,48 @@
 
     /* ------------------------------------------------ yearly pulse */
 
+    childrenOf(cid) {
+      return this.characters.filter((c) => c.parentId === cid);
+    }
+
+    heirOf(fid) {
+      const ruler = this.rulerOf(fid);
+      if (!ruler) return null;
+      const kids = this.childrenOf(ruler.id).filter((c) => c.alive)
+        .sort((a, b) => b.age - a.age);
+      return kids[0] || null;
+    }
+
+    _fertility(species, age) {
+      if (species === "elf") return age >= 60 && age <= 280 ? 0.04 : 0;
+      if (species === "dwarf") return age >= 30 && age <= 100 ? 0.08 : 0;
+      return age >= 18 && age <= 50 ? 0.16 : 0;
+    }
+
     _yearlyPulse() {
+      // children are born to ruling lines
+      for (const f of this.seed.factions) {
+        const ruler = this.rulerOf(f.id);
+        if (!ruler || !ruler.alive) continue;
+        const brood = this.childrenOf(ruler.id).filter((c) => c.alive);
+        if (brood.length >= 4) continue;
+        if (!this.rng.chance(this._fertility(ruler.species, ruler.age))) continue;
+        const dynasty = ruler.name.split(" ").slice(1).join(" ");
+        const child = {
+          id: uid("char"),
+          name: this.forge.given(ruler.culture) + (dynasty ? " " + dynasty : ""),
+          species: ruler.species, culture: ruler.culture, faction: f.id,
+          role: "scion of the ruling line", age: 0,
+          pressure: "must grow into a name that is already spoken for",
+          alive: true, isRuler: false, traits: this._rollTraits(),
+          prestige: 0, kills: 0, parentId: ruler.id,
+        };
+        this.characters.push(child);
+        this.log(2, "birth",
+          `A child is born to ${ruler.name}: the ${f.name} court swears the oaths over ${child.name}.`,
+          { faction: f.id, character: child.id });
+      }
+
       for (const c of this.characters) {
         if (!c.alive) continue;
         c.age += 1;
@@ -740,22 +839,40 @@
           { faction: character.faction, character: character.id });
         return;
       }
-      // succession
-      const dynasty = character.name.split(" ").slice(1).join(" ");
-      const heir = {
-        id: uid("char"),
-        name: this.forge.given(f.culture) + (dynasty ? " " + dynasty : " " + this.forge.epithet()),
-        species: character.species, culture: character.culture, faction: character.faction,
-        role: character.role, age: Math.max(16, this.rng.int(17, 40)),
-        pressure: this.rng.pick(PRESSURE_TEMPLATES),
-        alive: true, isRuler: true, traits: this._rollTraits(),
-        prestige: Math.round(character.prestige * 0.3), kills: 0,
-        reignStart: this.date.year,
-      };
-      this.characters.push(heir);
+      // succession: the eldest living child inherits; failing that, distant kin
+      const children = this.childrenOf(character.id).filter((c) => c.alive)
+        .sort((a, b) => b.age - a.age);
+      let heir = children[0] || null;
+      let regency = false;
+      if (heir) {
+        heir.isRuler = true;
+        heir.role = character.role;
+        heir.reignStart = this.date.year;
+        heir.prestige += Math.round(character.prestige * 0.3);
+        if (heir.age < 16) { regency = true; heir.pressure = "must survive the regents who rule in their name"; }
+        else heir.pressure = this.rng.pick(PRESSURE_TEMPLATES);
+      } else {
+        const dynasty = character.name.split(" ").slice(1).join(" ");
+        heir = {
+          id: uid("char"),
+          name: this.forge.given(f.culture) + (dynasty ? " " + dynasty : " " + this.forge.epithet()),
+          species: character.species, culture: character.culture, faction: character.faction,
+          role: character.role, age: Math.max(16, this.rng.int(17, 40)),
+          pressure: this.rng.pick(PRESSURE_TEMPLATES),
+          alive: true, isRuler: true, traits: this._rollTraits(),
+          prestige: Math.round(character.prestige * 0.3), kills: 0,
+          reignStart: this.date.year,
+        };
+        this.characters.push(heir);
+      }
       this.factionState[character.faction].rulerId = heir.id;
+      const line = children.length
+        ? (regency
+          ? `${heir.name} is but ${heir.age}; a regency council rules ${f.name} in their name.`
+          : `${heir.name}, ${heir.age} years old, inherits rule of ${f.name}.`)
+        : `The direct line is broken: ${heir.name}, a kin of the house, takes up rule of ${f.name}.`;
       this.log(3, "succession",
-        `${character.name} ${causeText}. ${heir.name}, ${heir.age} years old, takes up rule of ${f.name} — ${heir.pressure}.`,
+        `${character.name} ${causeText}. ${line}`,
         { faction: character.faction, character: heir.id });
     }
   }
