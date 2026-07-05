@@ -15,7 +15,8 @@
   const map = new (WG.LayeredWorldMap || WG.WorldMap)(canvas, seed);
   if (map.ready) await map.ready;
   // every visit births a different history; pin ?seed=N to replay one
-  const pinned = new URLSearchParams(location.search).get("seed");
+  const params = new URLSearchParams(location.search);
+  const pinned = params.get("seed");
   const rngSeed = pinned ? Number(pinned) : (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
   const sim = new WG.Simulation(seed, rngSeed);
   sim.adjacency = map.adjacency;
@@ -70,6 +71,24 @@
       b.classList.toggle("active", mode === b.dataset.mode);
     }
   });
+
+  function setupMaskDebugPanel() {
+    const enabled = params.get("debug") === "masks" || params.has("maskDebug");
+    const panel = document.getElementById("mask-debug-panel");
+    if (!enabled || !panel || !map.setDebugMask || !map.debugMaskOptions) return;
+    panel.innerHTML = map.debugMaskOptions.map((mask) =>
+      `<button data-mask="${mask.id}">${mask.label}</button>`).join("");
+    panel.classList.remove("hidden");
+    panel.addEventListener("click", (ev) => {
+      const btn = ev.target.closest("[data-mask]");
+      if (!btn) return;
+      const active = map.setDebugMask(btn.dataset.mask);
+      for (const b of panel.querySelectorAll("[data-mask]")) {
+        b.classList.toggle("active", b.dataset.mask === active);
+      }
+    });
+  }
+  setupMaskDebugPanel();
 
   const overlayEl = document.getElementById("overlay");
   let animPauseTimer = null;

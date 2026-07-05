@@ -11,6 +11,38 @@
   const DEFINITIONS_URL = "assets/provinces/world_province_definitions.csv";
   const ADJACENCY_URL = "assets/provinces/world_province_adjacency.csv";
   const RIVER_PATHS_URL = "assets/rivers/river_paths.json";
+  const MASK_BASE_URL = "assets/terrain_masks/masks_3072x2048/";
+
+  const TERRAIN_MASKS = [
+    "water", "land", "coast", "shallow_water", "deep_water",
+    "lowland", "fertile_lowland", "farmland", "forest", "marsh",
+    "dryland", "steppe", "oasis_wetland", "highland", "mountain",
+    "bare_rock", "snow_peak",
+  ];
+
+  const DEBUG_MASK_OPTIONS = [
+    { id: "forest", label: "Forest" },
+    { id: "marsh", label: "Marsh" },
+    { id: "dryland", label: "Dryland" },
+    { id: "farmland", label: "Farmland" },
+    { id: "steppe", label: "Steppe" },
+    { id: "mountain", label: "Mountain" },
+    { id: "bare_rock", label: "Bare Rock" },
+    { id: "snow_peak", label: "Snow" },
+    { id: "coast", label: "Coast" },
+  ];
+
+  const MASK_DEBUG_COLORS = {
+    forest: [73, 180, 86],
+    marsh: [70, 184, 164],
+    dryland: [214, 158, 73],
+    farmland: [150, 207, 85],
+    steppe: [207, 188, 92],
+    mountain: [184, 178, 157],
+    bare_rock: [210, 205, 188],
+    snow_peak: [246, 246, 231],
+    coast: [114, 202, 210],
+  };
 
   const LOCAL_FACTIONS = {
     FAC_QERESH_LOCAL: {
@@ -101,10 +133,15 @@
       this.selectedRealm = null;
       this.selectedRealmProvinceIds = [];
       this.showRealmSelectionAnchors = false;
+      this.debugMask = null;
+      this.debugMaskOptions = DEBUG_MASK_OPTIONS;
       this._selectedRealmBoundarySegs = [];
       this._adjacencyText = "";
       this._heightData = null;
       this._provinceData = null;
+      this._maskData = {};
+      this._maskDebugCanvas = null;
+      this._maskDebugCanvasFor = null;
       this._renderProvinceIndex = null;
       this._renderHeight = null;
       this._renderShade = null;
@@ -136,7 +173,7 @@
     }
 
     async _loadLayers() {
-      const [heightImg, provinceImg, definitionsText, adjacencyText, riverPaths] = await Promise.all([
+      const [heightImg, provinceImg, definitionsText, adjacencyText, riverPaths, maskImages] = await Promise.all([
         this._loadImage(HEIGHTMAP_URL),
         this._loadImage(PROVINCE_MAP_URL),
         fetch(DEFINITIONS_URL).then((r) => {
@@ -148,6 +185,7 @@
           return r.text();
         }),
         this._loadOptionalJson(RIVER_PATHS_URL),
+        this._loadTerrainMasks(),
       ]);
 
       this._adjacencyText = adjacencyText;
@@ -164,6 +202,7 @@
         .getImageData(0, 0, this.heightMapWidth, this.heightMapHeight).data;
       this._provinceData = provinceCanvas.getContext("2d", { willReadFrequently: true })
         .getImageData(0, 0, this.provinceMapWidth, this.provinceMapHeight).data;
+      this._buildMaskData(maskImages);
     }
 
     _loadImage(src) {
@@ -190,6 +229,30 @@
         return await r.json();
       } catch (_) {
         return null;
+      }
+    }
+
+    async _loadTerrainMasks() {
+      const entries = await Promise.all(TERRAIN_MASKS.map(async (name) => [
+        name,
+        await this._loadImage(`${MASK_BASE_URL}${name}_mask.png`),
+      ]));
+      return Object.fromEntries(entries);
+    }
+
+    _buildMaskData(maskImages) {
+      this._maskData = {};
+      const c = document.createElement("canvas");
+      c.width = RENDER_W;
+      c.height = RENDER_H;
+      const ctx = c.getContext("2d", { willReadFrequently: true });
+      for (const [name, img] of Object.entries(maskImages || {})) {
+        ctx.clearRect(0, 0, RENDER_W, RENDER_H);
+        ctx.drawImage(img, 0, 0, RENDER_W, RENDER_H);
+        const src = ctx.getImageData(0, 0, RENDER_W, RENDER_H).data;
+        const out = new Float32Array(RENDER_W * RENDER_H);
+        for (let i = 0; i < out.length; i++) out[i] = src[i * 4] / 255;
+        this._maskData[name] = out;
       }
     }
 
@@ -551,6 +614,80 @@
       ];
     }
 
+    _mask(name, i) {
+      const data = this._maskData && this._maskData[name];
+      return data ? data[i] : 0;
+    }
+
+    _clamp01(v) {
+      return Math.max(0, Math.min(1, v));
+    }
+
+    _mixRgb(rgb, target, amount) {
+      const t = this._clamp01(amount);
+      if (t <= 0) return rgb;
+      return [
+        rgb[0] * (1 - t) + target[0] * t,
+        rgb[1] * (1 - t) + target[1] * t,
+        rgb[2] * (1 - t) + target[2] * t,
+      ];
+    }
+
+    _waterColor(i, h, grain) {
+      const deep = this._mask("deep_water", i);
+      const shallow = this._mask("shallow_water", i);
+      const coast = this._mask("coast", i);
+      const shelf = Math.max(0, 1 - Math.min(1, this.coastDistance[i] / 38));
+      let rgb = [24, 43, 70];
+      rgb = this._mixRgb(rgb, [18, 32, 57], deep * 0.86);
+      rgb = this._mixRgb(rgb, [53, 90, 118], (1 - deep) * 0.32);
+      rgb = this._mixRgb(rgb, [70, 118, 139], shallow * 0.74 + shelf * 0.14);
+      rgb = this._mixRgb(rgb, [135, 178, 170], coast * 0.58);
+      const depthShade = Math.max(0, 0.55 - h) * 18;
+      return rgb.map((v) => v + grain * 0.55 - depthShade);
+    }
+
+    _maskedTerrainColor(prov, i, h, slope, grain) {
+      let rgb = [104, 108, 78];
+      const lowland = this._mask("lowland", i);
+      const fertile = this._mask("fertile_lowland", i);
+      const farmland = this._mask("farmland", i);
+      const forest = this._mask("forest", i);
+      const marsh = this._mask("marsh", i);
+      const dryland = this._mask("dryland", i);
+      const steppe = this._mask("steppe", i);
+      const oasis = this._mask("oasis_wetland", i);
+      const highland = this._mask("highland", i);
+      const mountain = this._mask("mountain", i);
+      const bareRock = this._mask("bare_rock", i);
+      const snow = this._mask("snow_peak", i);
+      const coast = this._mask("coast", i);
+
+      rgb = this._mixRgb(rgb, [122, 125, 86], lowland * 0.30);
+      rgb = this._mixRgb(rgb, [112, 139, 82], fertile * 0.48);
+      rgb = this._mixRgb(rgb, [149, 119, 70], dryland * 0.68);
+      rgb = this._mixRgb(rgb, [145, 132, 74], steppe * 0.64);
+      rgb = this._mixRgb(rgb, [136, 164, 74], farmland * 0.72);
+      rgb = this._mixRgb(rgb, [48, 83, 45], forest * 0.76);
+      rgb = this._mixRgb(rgb, [50, 101, 88], marsh * 0.72);
+      rgb = this._mixRgb(rgb, [84, 125, 98], oasis * 0.58);
+      rgb = this._mixRgb(rgb, [92, 101, 75], highland * 0.44);
+      rgb = this._mixRgb(rgb, [112, 109, 96], mountain * 0.68);
+      rgb = this._mixRgb(rgb, [143, 138, 122], bareRock * 0.76);
+      rgb = this._mixRgb(rgb, [228, 228, 216], snow * 0.86);
+      rgb = this._mixRgb(rgb, [139, 126, 86], coast * 0.20);
+
+      const fallback = this._biomeColor(prov, h, slope);
+      const maskPresence = Math.max(
+        forest, marsh, dryland, steppe, farmland, highland,
+        mountain, bareRock, snow, oasis, fertile, lowland,
+      );
+      rgb = this._mixRgb(fallback, rgb, Math.max(0.35, maskPresence));
+
+      const elevationLift = (h - 0.48) * 22 - slope * 10 + grain * 0.20;
+      return rgb.map((v) => v + elevationLift);
+    }
+
     _hash2(x, y) {
       const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
       return s - Math.floor(s);
@@ -756,29 +893,23 @@
           let rgb;
 
           if (idx === SEA) {
-            const shelf = Math.max(0, 1 - Math.min(1, this.coastDistance[i] / 38));
-            const depth = Math.max(0, 0.55 - h);
-            rgb = [
-              28 + shelf * 44 - depth * 10 + grain * 0.6,
-              47 + shelf * 57 - depth * 6 + grain * 0.6,
-              72 + shelf * 61 + grain * 0.7,
-            ];
-            if (this.coastDistance[i] <= 2) {
-              rgb = [rgb[0] * 0.68 + 154 * 0.32, rgb[1] * 0.68 + 187 * 0.32, rgb[2] * 0.68 + 184 * 0.32];
-            }
+            rgb = this._waterColor(i, h, grain);
           } else {
             const prov = this.mapProvinces[idx];
             const state = this.provinceState(prov, sim);
             const controller = state.controller || prov.controller;
-            rgb = this._biomeColor(prov, h, slope);
+            rgb = this._maskedTerrainColor(prov, i, h, slope, grain);
+            const shade = this._renderShade[i] + grain / 255;
+            rgb = [rgb[0] * shade, rgb[1] * shade, rgb[2] * shade];
+
             let tint = factionRGB[controller] || this._hex(this.faction(controller).color);
-            let mix = this.mapMode === "neutral" ? 0 : 0.34;
+            let mix = this.mapMode === "neutral" ? 0 : 0.26;
             if (this.mapMode === "culture") {
               tint = cultureRGB[controller] || tint;
-              mix = 0.42;
+              mix = 0.34;
             } else if (this.mapMode === "religion") {
               tint = religionRGB[controller] || tint;
-              mix = 0.42;
+              mix = 0.34;
             } else if (this.mapMode === "terrain") {
               mix = 0;
             } else if (this.mapMode === "devastation") {
@@ -797,9 +928,6 @@
               const occ = factionRGB[state.occupier] || [200, 200, 200];
               rgb = [rgb[0] * 0.35 + occ[0] * 0.65, rgb[1] * 0.35 + occ[1] * 0.65, rgb[2] * 0.35 + occ[2] * 0.65];
             }
-
-            const shade = this._renderShade[i] + grain / 255;
-            rgb = [rgb[0] * shade, rgb[1] * shade, rgb[2] * shade];
 
             let border = false, realmBorder = false;
             for (let d = 0; d < 4; d++) {
@@ -847,6 +975,7 @@
       this._drawWorldEdgeFrame(ctx, z);
       this._drawRiverPaths(ctx, z);
       this._drawTerrainGlyphs(ctx, z);
+      this._drawMaskDebugOverlay(ctx, z);
       this._drawRealmSelection(ctx, z);
       this._drawSelectedOutline(ctx, z);
       this._drawProvinceLabels(ctx, z);
@@ -979,6 +1108,43 @@
         ctx.stroke();
       }
       ctx.restore();
+    }
+
+    _drawMaskDebugOverlay(ctx, z) {
+      if (!this.debugMask || !this._maskData[this.debugMask]) return;
+      if (!this._maskDebugCanvas || this._maskDebugCanvasFor !== this.debugMask) {
+        this._maskDebugCanvas = this._buildMaskDebugCanvas(this.debugMask);
+        this._maskDebugCanvasFor = this.debugMask;
+      }
+      if (!this._maskDebugCanvas) return;
+      const tl = this.worldToScreen(0, 0);
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(this._maskDebugCanvas, tl.x, tl.y, this.W * z, this.H * z);
+      ctx.restore();
+    }
+
+    _buildMaskDebugCanvas(maskName) {
+      const mask = this._maskData[maskName];
+      if (!mask) return null;
+      const color = MASK_DEBUG_COLORS[maskName] || [238, 214, 140];
+      const c = document.createElement("canvas");
+      c.width = RENDER_W;
+      c.height = RENDER_H;
+      const ctx = c.getContext("2d");
+      const img = ctx.createImageData(RENDER_W, RENDER_H);
+      const data = img.data;
+      for (let i = 0; i < mask.length; i++) {
+        const strength = Math.pow(this._clamp01(mask[i]), 0.82);
+        const off = i * 4;
+        data[off] = color[0];
+        data[off + 1] = color[1];
+        data[off + 2] = color[2];
+        data[off + 3] = Math.round(strength * 188);
+      }
+      ctx.putImageData(img, 0, 0);
+      return c;
     }
 
     _drawTerrainGlyphs(ctx, z) {
@@ -1184,6 +1350,13 @@
     setMode(mode) {
       this.mapMode = mode;
       this.markDirty();
+    }
+
+    setDebugMask(maskName) {
+      this.debugMask = this.debugMask === maskName ? null : maskName;
+      this._maskDebugCanvas = null;
+      this._maskDebugCanvasFor = null;
+      return this.debugMask;
     }
   }
 

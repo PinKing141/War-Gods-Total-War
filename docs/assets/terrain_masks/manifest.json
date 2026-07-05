@@ -1,0 +1,48 @@
+{
+  "project": "War Gods Total War",
+  "resolution": [
+    3072,
+    2048
+  ],
+  "mask_format": "8-bit grayscale PNG; white=strong presence, black=absent",
+  "source_inputs": [
+    "war_gods_total_war_custom_world_heightmap_ck2scale_3072x2048_16bit.png",
+    "war_gods_world_provinces_unique_rgb_3072x2048.png",
+    "war_gods_world_province_definitions.csv"
+  ],
+  "masks": [
+    "bare_rock_mask.png",
+    "coast_mask.png",
+    "deep_water_mask.png",
+    "dryland_mask.png",
+    "farmland_mask.png",
+    "fertile_lowland_mask.png",
+    "forest_mask.png",
+    "fort_mask.png",
+    "highland_mask.png",
+    "land_mask.png",
+    "lowland_mask.png",
+    "mana_site_mask.png",
+    "marsh_mask.png",
+    "mountain_mask.png",
+    "oasis_wetland_mask.png",
+    "pass_mask.png",
+    "port_mask.png",
+    "road_influence_mask.png",
+    "shallow_water_mask.png",
+    "snow_peak_mask.png",
+    "steppe_mask.png",
+    "strategic_site_mask.png",
+    "water_mask.png"
+  ],
+  "previews": [
+    "terrain_mask_contact_sheet.png",
+    "terrain_masks_combined_preview_1536x1024.png",
+    "terrain_masks_combined_preview_3072x2048.png"
+  ],
+  "notes": [
+    "Generated baseline terrain masks from current heightmap, province RGB map, province definitions, terrain, region, and strategic values.",
+    "Use for visual blending, not province clicking.",
+    "Province clicking should continue to use the unique-RGB province map."
+  ]
+}

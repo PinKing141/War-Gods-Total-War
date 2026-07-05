@@ -555,6 +555,40 @@ h3 {
 #map-debug .debug-row { display: flex; justify-content: space-between; gap: 14px; }
 #map-debug .debug-row span:first-child { color: var(--ink-dim); }
 
+#mask-debug-panel {
+  position: absolute;
+  left: 16px;
+  top: 84px;
+  z-index: 24;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(74px, 1fr));
+  gap: 5px;
+  width: 270px;
+  padding: 8px;
+  background: rgba(15, 10, 4, 0.88);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.55);
+}
+#mask-debug-panel.hidden { display: none; }
+#mask-debug-panel button {
+  min-height: 28px;
+  padding: 5px 7px;
+  background: rgba(38, 28, 14, 0.78);
+  border: 1px solid rgba(74, 58, 34, 0.88);
+  border-radius: 3px;
+  color: var(--ink-dim);
+  font-family: var(--serif);
+  font-size: 11px;
+  cursor: pointer;
+}
+#mask-debug-panel button:hover { color: var(--ink); border-color: var(--gold); }
+#mask-debug-panel button.active {
+  color: var(--gold-bright);
+  background: rgba(201, 168, 76, 0.12);
+  border-color: var(--gold);
+}
+
 /* ---------- map modes ---------- */
 
 #map-modes {
