@@ -100,6 +100,7 @@
       this.riverPaths = [];
       this.selectedRealm = null;
       this.selectedRealmProvinceIds = [];
+      this.showRealmSelectionAnchors = false;
       this._selectedRealmBoundarySegs = [];
       this._adjacencyText = "";
       this._heightData = null;
@@ -509,15 +510,24 @@
       }
       this.realmLabelPoints = [...groups.entries()].map(([fid, g]) => {
         const f = this.factionById.get(fid) || this._fallbackFaction(fid);
+        const labelLines = this._realmLabelLines(f.shortName || f.name || fid);
         return {
           factionId: fid,
-          name: (f.shortName || f.name || fid).toUpperCase(),
+          name: labelLines.join(" "),
+          labelLines,
           x: g.x / g.area,
           y: g.y / g.area,
           count: g.count,
           area: g.area,
         };
       });
+    }
+
+    _realmLabelLines(rawName) {
+      const words = String(rawName || "").trim().toUpperCase().split(/\s+/).filter(Boolean);
+      if (words.length <= 2) return words.length ? words : [""];
+      const mid = Math.ceil(words.length / 2);
+      return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
     }
 
     _fallbackFaction(id) {
@@ -762,7 +772,7 @@
             const controller = state.controller || prov.controller;
             rgb = this._biomeColor(prov, h, slope);
             let tint = factionRGB[controller] || this._hex(this.faction(controller).color);
-            let mix = 0.34;
+            let mix = this.mapMode === "neutral" ? 0 : 0.34;
             if (this.mapMode === "culture") {
               tint = cultureRGB[controller] || tint;
               mix = 0.42;
@@ -840,7 +850,7 @@
       this._drawRealmSelection(ctx, z);
       this._drawSelectedOutline(ctx, z);
       this._drawProvinceLabels(ctx, z);
-      if (this.mapMode === "political") this._drawRealmLabels(ctx, z);
+      if (this.mapMode === "political" || this.mapMode === "neutral") this._drawRealmLabels(ctx, z);
       ctx.restore();
     }
 
@@ -1034,19 +1044,21 @@
       }
       ctx.stroke();
 
-      ctx.fillStyle = "rgba(255, 230, 145, 0.72)";
-      ctx.strokeStyle = "rgba(28, 20, 8, 0.78)";
-      ctx.lineWidth = Math.max(0.8, 1.2 * z);
-      for (const id of this.selectedRealmProvinceIds) {
-        const p = this.provinceById.get(id);
-        if (!p) continue;
-        const pt = this.worldToScreen(p.x, p.y);
-        if (pt.x < -12 || pt.y < -12 || pt.x > this.canvas.width + 12 || pt.y > this.canvas.height + 12) continue;
-        const r = Math.max(2.2, Math.min(6.5, 3.2 * z));
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+      if (this.showRealmSelectionAnchors) {
+        ctx.fillStyle = "rgba(255, 230, 145, 0.72)";
+        ctx.strokeStyle = "rgba(28, 20, 8, 0.78)";
+        ctx.lineWidth = Math.max(0.8, 1.2 * z);
+        for (const id of this.selectedRealmProvinceIds) {
+          const p = this.provinceById.get(id);
+          if (!p) continue;
+          const pt = this.worldToScreen(p.x, p.y);
+          if (pt.x < -12 || pt.y < -12 || pt.x > this.canvas.width + 12 || pt.y > this.canvas.height + 12) continue;
+          const r = Math.max(2.2, Math.min(6.5, 3.2 * z));
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
       }
       ctx.restore();
     }
@@ -1093,21 +1105,77 @@
       ctx.save();
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      for (const r of this.realmLabelPoints) {
+      const placed = [];
+      const labels = [...this.realmLabelPoints].sort((a, b) => b.area - a.area);
+      for (const r of labels) {
         if (r.count < 6 && this.view.zoom > 1.25) continue;
         if (r.count < 2 && this.view.zoom <= 1.25) continue;
-        const pt = this.worldToScreen(r.x, r.y);
-        if (pt.x < -180 || pt.y < -60 || pt.x > this.canvas.width + 180 || pt.y > this.canvas.height + 60) continue;
-        const size = Math.max(12, Math.min(34, (12 + Math.sqrt(r.count) * 3.5) * z));
+        const origin = this.worldToScreen(r.x, r.y);
+        if (origin.x < -180 || origin.y < -90 || origin.x > this.canvas.width + 180 || origin.y > this.canvas.height + 90) continue;
+        const lines = r.labelLines && r.labelLines.length ? r.labelLines : [r.name];
+        const size = Math.max(11, Math.min(28, (11 + Math.sqrt(r.count) * 3.1) * z));
         ctx.font = `700 italic ${size}px 'Iowan Old Style', 'Palatino Linotype', Georgia, serif`;
+        ctx.letterSpacing = "0px";
+        const lineHeight = size * 0.86;
+        const textWidth = Math.max(...lines.map((line) => ctx.measureText(line).width));
+        const textHeight = size + lineHeight * (lines.length - 1);
+        const padX = Math.max(10, size * 0.65);
+        const padY = Math.max(6, size * 0.45);
+        const spread = Math.max(18, size * 1.25);
+        const candidates = [
+          [0, 0],
+          [0, -spread],
+          [0, spread],
+          [-spread * 1.55, 0],
+          [spread * 1.55, 0],
+          [-spread * 1.15, -spread * 0.85],
+          [spread * 1.15, -spread * 0.85],
+          [-spread * 1.15, spread * 0.85],
+          [spread * 1.15, spread * 0.85],
+          [0, -spread * 2],
+          [0, spread * 2],
+          [-spread * 2.35, 0],
+          [spread * 2.35, 0],
+        ];
+        let labelPos = null;
+        let fallbackPos = null;
+        let fallbackOverlap = Infinity;
+        for (const [dx, dy] of candidates) {
+          const box = {
+            x1: origin.x + dx - textWidth / 2 - padX,
+            y1: origin.y + dy - textHeight / 2 - padY,
+            x2: origin.x + dx + textWidth / 2 + padX,
+            y2: origin.y + dy + textHeight / 2 + padY,
+          };
+          let overlap = 0;
+          for (const b of placed) {
+            const x = Math.max(0, Math.min(box.x2, b.x2) - Math.max(box.x1, b.x1));
+            const y = Math.max(0, Math.min(box.y2, b.y2) - Math.max(box.y1, b.y1));
+            overlap += x * y;
+          }
+          if (overlap === 0) {
+            labelPos = { x: origin.x + dx, y: origin.y + dy, box };
+            break;
+          }
+          if (overlap < fallbackOverlap) {
+            fallbackOverlap = overlap;
+            fallbackPos = { x: origin.x + dx, y: origin.y + dy, box };
+          }
+        }
+        if (!labelPos) labelPos = fallbackPos;
+        if (!labelPos) continue;
+        placed.push(labelPos.box);
         ctx.save();
-        ctx.letterSpacing = `${Math.max(1, 4 * z)}px`;
-        ctx.globalAlpha = 0.48;
-        ctx.strokeStyle = "rgba(12, 9, 4, 0.88)";
-        ctx.lineWidth = Math.max(2, 3.2 * z);
-        ctx.fillStyle = "rgba(246, 233, 198, 0.92)";
-        ctx.strokeText(r.name, pt.x, pt.y);
-        ctx.fillText(r.name, pt.x, pt.y);
+        ctx.globalAlpha = 0.62;
+        ctx.strokeStyle = "rgba(12, 9, 4, 0.92)";
+        ctx.lineWidth = Math.max(2, 3.1 * z);
+        ctx.fillStyle = "rgba(246, 233, 198, 0.94)";
+        const startY = labelPos.y - lineHeight * (lines.length - 1) / 2;
+        lines.forEach((line, i) => {
+          const y = startY + i * lineHeight;
+          ctx.strokeText(line, labelPos.x, y);
+          ctx.fillText(line, labelPos.x, y);
+        });
         ctx.restore();
       }
       ctx.restore();

@@ -64,9 +64,10 @@
   document.getElementById("map-modes").addEventListener("click", (ev) => {
     const btn = ev.target.closest("[data-mode]");
     if (!btn) return;
-    map.setMode(btn.dataset.mode);
+    const mode = map.mapMode === btn.dataset.mode ? "neutral" : btn.dataset.mode;
+    map.setMode(mode);
     for (const b of document.querySelectorAll("#map-modes [data-mode]")) {
-      b.classList.toggle("active", b === btn);
+      b.classList.toggle("active", mode === b.dataset.mode);
     }
   });
 
@@ -79,7 +80,10 @@
   }
 
   function clickMapProvince(prov) {
-    if (!prov) return;
+    if (!prov) {
+      ui.closePanel();
+      return;
+    }
     const controller = controllerOf(prov);
     const zoomedIn = map.view.zoom >= PROVINCE_CLICK_ZOOM;
     const drillingIntoSelectedRealm = map.selectedRealm === controller;

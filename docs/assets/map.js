@@ -27,7 +27,7 @@
       this.coastDistance = new Uint16Array(GRID_W * GRID_H);
       this.adjacency = {};
       this.view = { x: this.W / 2, y: this.H / 2, zoom: 0.9 };
-      this.mapMode = "political";  // political | culture | religion | terrain | devastation
+      this.mapMode = "political";  // political | culture | religion | terrain | devastation | neutral
       this.selected = null;        // province id to outline
       this.selectedRealm = null;   // faction id to outline at country scale
       this.selectedRealmProvinceIds = [];
@@ -332,7 +332,7 @@
 
           // choose the tint layer for the active map mode
           let tint = factionRGB[controller] || [120, 120, 120];
-          let mix = 0.64;
+          let mix = mode === "neutral" ? 0 : 0.64;
           if (mode === "culture") tint = cultureRGB[controller] || tint;
           else if (mode === "religion") tint = religionRGB[controller] || tint;
           else if (mode === "terrain") mix = 0;
@@ -487,7 +487,7 @@
       }
 
       // realm names painted across their territory (political mode only)
-      if (this.mapMode === "political" && sim) {
+      if ((this.mapMode === "political" || this.mapMode === "neutral") && sim) {
         for (const f of this.seed.factions) {
           const owned = this.seed.provinces.filter(
             (p) => sim.provinceState[p.id].controller === f.id);
