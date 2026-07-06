@@ -6,8 +6,15 @@ import csv
 import json
 import os
 import re
+import sys
 import tempfile
 from pathlib import Path
+
+from tests.observer_validation import (
+    collect_runtime_validation_issues,
+    collect_static_validation_issues,
+    format_issues,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +45,39 @@ def _local_map_faction_ids() -> set[str]:
     if not match:
         return set()
     return set(re.findall(r"\bid: \"([^\"]+)\"", match.group(1)))
+
+
+def test_validation_module_reports_clear_static_output():
+    issues = collect_static_validation_issues(
+        _load_seed(),
+        _csv_rows(PROVINCE_DEFINITIONS),
+        _csv_rows(PROVINCE_ADJACENCY),
+        _csv_rows(PROVINCE_RIVER_FEATURES),
+        _local_map_faction_ids(),
+    )
+    assert not issues, format_issues(issues)
+
+
+def test_validation_cli_outputs_clear_report():
+    with tempfile.NamedTemporaryFile("w", suffix=".out", delete=False) as f:
+        stdout_path = Path(f.name)
+    with tempfile.NamedTemporaryFile("w", suffix=".err", delete=False) as f:
+        stderr_path = Path(f.name)
+    try:
+        script = ROOT / "scripts" / "validate_observer_data.py"
+        exit_code = os.system(
+            f'cd /d "{ROOT}" && "{sys.executable}" "{script}" --runtime-days 5 --seed 123 '
+            f'> "{stdout_path}" 2> "{stderr_path}"'
+        )
+        output = stdout_path.read_text(encoding="utf-8") + stderr_path.read_text(encoding="utf-8")
+    finally:
+        stdout_path.unlink(missing_ok=True)
+        stderr_path.unlink(missing_ok=True)
+    assert exit_code == 0, output
+    assert "Observer Data Validation" in output
+    assert "Static seed/map data: OK" in output
+    assert "Runtime sample (5 day(s), seed 123, with sample war): OK" in output
+    assert "Validation passed: no issues found." in output
 
 
 def test_seed_observer_ids_are_consistent():
@@ -203,6 +243,9 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
         runner_path.unlink(missing_ok=True)
         snapshot_path.unlink(missing_ok=True)
     seed = _load_seed()
+    issues = collect_runtime_validation_issues(snapshot, seed)
+    assert not issues, format_issues(issues)
+
     factions = {f["id"] for f in seed["factions"]}
     provinces = {p["id"] for p in seed["provinces"]}
     cultures = set(seed["cultures"])
@@ -220,6 +263,7 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
       assert set(war["defSide"]) <= factions
       assert war["goal"]["province"] in provinces
       assert isinstance(war["score"], (int, float))
+      assert war["intentReason"]
       for battle in war["battles"]:
         assert battle["winner"] in factions
         assert battle["loser"] in factions
@@ -232,6 +276,11 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
       assert army["loc"] in provinces
       assert army["commanderId"] in characters
       assert army["size"] >= 0
+      assert army["supply"] >= 0
+      assert army["maxSupply"] >= 0
+      assert army["dailySupplyUse"] >= 0
+      assert isinstance(army["undersupplied"], bool)
+      assert army["intentReason"]
 
     for character in snapshot["characters"]:
       assert character["faction"] in factions
@@ -258,3 +307,97 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
       assert state["maxManpower"] >= 0
       assert state["prestige"] >= 0
       assert state["exhaustion"] >= 0
+
+
+def test_supply_movement_siege_and_peace_contracts():
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        snapshot_path = Path(f.name)
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
+        runner_path = Path(f.name)
+    script = f"""
+const fs = require('fs');
+const vm = require('vm');
+global.window = global;
+global.WG = {{}};
+for (const file of {json.dumps([str(DATA_JS), str(RNG_JS), str(SIM_JS)])}) {{
+  vm.runInThisContext(fs.readFileSync(file, 'utf8'), {{ filename: file }});
+}}
+const sim = new WG.Simulation(WG_SEED, 777);
+sim.adjacency = {{
+  PROV_ROV_HALEM: ['PROV_NINTH_BANNER', 'PROV_WEST_GEAR'],
+  PROV_NINTH_BANNER: ['PROV_ROV_HALEM'],
+  PROV_WEST_GEAR: ['PROV_ROV_HALEM'],
+  PROV_SEVRIN_CANAL: ['PROV_ROV_HALEM'],
+  PROV_RED_BOG: ['PROV_ROV_HALEM'],
+  PROV_OPEN_GATE: ['PROV_NINTH_BANNER'],
+  PROV_THIRD_CHARTER: ['PROV_NINTH_BANNER'],
+  PROV_BLUE_CHAIN: ['PROV_ROV_HALEM'],
+  PROV_WHITE_MARE: ['PROV_NINTH_BANNER'],
+}};
+sim._declareWar('FAC_ROV_HALEN', 'FAC_NINE_BANNERS_HALLOW', null, false);
+const war = sim.wars[0];
+const army = sim.armies.find((a) => a.faction === 'FAC_ROV_HALEN');
+const roadMove = sim._movementDays(army, 'PROV_ROV_HALEM');
+const mountainMove = sim._movementDays(army, 'PROV_WEST_GEAR');
+const baseSupplyUse = sim._supplyUseFor(army, sim.province('PROV_ROV_HALEM'), 'camp');
+const marshSupplyUse = sim._supplyUseFor(army, sim.province('PROV_RED_BOG'), 'camp');
+const drylandSupplyUse = sim._supplyUseFor(army, sim.province('PROV_WHITE_MARE'), 'camp');
+army.loc = 'PROV_NINTH_BANNER';
+army.supply = 1;
+const beforeAttrition = army.size;
+sim._consumeArmySupply(army, war, 'siege');
+const afterAttrition = army.size;
+army.maxSupply = 500;
+army.supply = army.maxSupply;
+sim.province('PROV_NINTH_BANNER').fort = 1;
+sim.provinceState.PROV_NINTH_BANNER.garrison = 80;
+sim.provinceState.PROV_NINTH_BANNER.siege = null;
+for (let i = 0; i < 140 && !sim.provinceState.PROV_NINTH_BANNER.occupier; i++) {{
+  sim._siegeTick(army, war);
+}}
+const siegeState = sim.provinceState.PROV_NINTH_BANNER;
+const occupiedBeforePeace = siegeState.occupier;
+war.score = 60;
+sim._peacePulse();
+fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
+  roadMove,
+  mountainMove,
+  baseSupplyUse,
+  marshSupplyUse,
+  drylandSupplyUse,
+  beforeAttrition,
+  afterAttrition,
+  undersupplied: army.undersupplied,
+  dailySupplyUse: army.dailySupplyUse,
+  siegeOccupiedBy: occupiedBeforePeace,
+  peaceSummary: war.peaceSummary,
+  warOver: war.over,
+  intentReason: war.intentReason,
+  armyIntentReason: army.intentReason,
+  siegeEventsLogged: sim.events.filter((ev) => ev.type === 'siege').map((ev) => ev.text),
+}}));
+"""
+    try:
+        runner_path.write_text(script, encoding="utf-8")
+        exit_code = os.system(f'cd /d "{ROOT}" && node "{runner_path}" >NUL 2>NUL')
+        assert exit_code == 0
+        snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    finally:
+        runner_path.unlink(missing_ok=True)
+        snapshot_path.unlink(missing_ok=True)
+
+    assert snapshot["mountainMove"] > snapshot["roadMove"]
+    assert snapshot["marshSupplyUse"] > snapshot["baseSupplyUse"]
+    assert snapshot["drylandSupplyUse"] > snapshot["baseSupplyUse"]
+    assert snapshot["afterAttrition"] < snapshot["beforeAttrition"]
+    assert snapshot["undersupplied"] is True
+    assert snapshot["dailySupplyUse"] > 0
+    assert snapshot["siegeOccupiedBy"] == "FAC_ROV_HALEN"
+    assert len(snapshot["siegeEventsLogged"]) >= 3
+    assert snapshot["warOver"] is True
+    assert snapshot["peaceSummary"]["reason"]
+    assert snapshot["peaceSummary"]["changedHands"]
+    assert snapshot["peaceSummary"]["prestige"]
+    assert "truce" in snapshot["peaceSummary"]["truce"]
+    assert snapshot["intentReason"]
+    assert snapshot["armyIntentReason"]

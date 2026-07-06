@@ -161,6 +161,7 @@
       }
       s.maxManpower = Math.round(max);
       if (initial) s.manpower = s.maxManpower;
+      else s.manpower = Math.max(0, Math.min(s.manpower, s.maxManpower));
     }
 
     monthlyIncome(fid) {
@@ -233,17 +234,124 @@
       return null;
     }
 
+    _terrainFlags(prov) {
+      const terrainId = prov ? prov.terrain : "";
+      const terr = this.seed.terrains[terrainId] || {};
+      const text = `${terrainId} ${terr.label || ""}`.toLowerCase();
+      return {
+        mountain: /mountain|highland|pass|hill|mine|iron/.test(text),
+        marsh: /marsh|bog|fen|wetland/.test(text),
+        dryland: /dryland|steppe|salt|oasis|waste/.test(text),
+      };
+    }
+
+    _movementDays(army, nextId) {
+      const from = this.province(army.loc);
+      const to = this.province(nextId);
+      const terr = this.seed.terrains[to && to.terrain] || {};
+      const flags = this._terrainFlags(to);
+      let days = terr.moveDays || 3;
+      if (flags.mountain) days += 1.25;
+      if (flags.marsh) days += 0.65;
+      const roadLevel = ((from && from.roads) || 0) + ((to && to.roads) || 0);
+      days -= Math.min(2.2, roadLevel * 0.24);
+      const st = to && this.provinceState[to.id];
+      if (st && st.controller !== army.faction && st.occupier !== army.faction) days += 1.1;
+      return Math.max(1, Math.ceil(days));
+    }
+
+    _armyMaxSupply(size, province) {
+      const roadBonus = province ? province.roads * 2 + province.port * 4 : 0;
+      return Math.max(18, Math.round(size / 85 + 28 + roadBonus));
+    }
+
+    _supplyUseFor(army, province, posture) {
+      const flags = this._terrainFlags(province);
+      let cost = Math.max(1, army.size / 1250);
+      if (posture === "march") cost += 0.65;
+      if (posture === "siege") cost += 1.2 + ((province && province.fort) || 0) * 0.18;
+      if (flags.marsh) cost *= 1.35;
+      if (flags.dryland) cost *= 1.22;
+      if (flags.mountain) cost *= 1.18;
+      const st = province && this.provinceState[province.id];
+      if (st && st.controller !== army.faction && st.occupier !== army.faction) cost *= 1.25;
+      if (province && province.roads) cost *= Math.max(0.78, 1 - province.roads * 0.035);
+      return Math.max(0.5, cost);
+    }
+
+    _resupplyArmy(army, province) {
+      if (!province) return;
+      const st = this.provinceState[province.id];
+      if (!st || st.controller !== army.faction || st.occupier) return;
+      const gain = 1.8 + province.roads * 0.45 + province.port * 0.8;
+      army.supply = Math.min(army.maxSupply, army.supply + gain);
+      if (army.supply > army.dailySupplyUse * 2) army.undersupplied = false;
+    }
+
+    _consumeArmySupply(army, war, posture) {
+      const province = this.province(army.loc);
+      army.maxSupply = this._armyMaxSupply(army.size, province);
+      if (army.supply === undefined) army.supply = army.maxSupply;
+      army.supply = Math.min(army.maxSupply, army.supply);
+      this._resupplyArmy(army, province);
+      const cost = this._supplyUseFor(army, province, posture);
+      army.dailySupplyUse = Math.round(cost * 10) / 10;
+      army.supply = Math.max(0, army.supply - cost);
+      army.undersupplied = army.supply <= 0.1;
+      if (!army.undersupplied) return;
+
+      const loss = Math.max(3, Math.round(army.size * (posture === "siege" ? 0.006 : 0.0035)));
+      army.size = Math.max(0, army.size - loss);
+      army.morale = Math.max(8, army.morale - 2.5);
+      this.factionState[army.faction].exhaustion += posture === "siege" ? 0.5 : 0.25;
+      if (!army.lastSupplyEventDay || this.day - army.lastSupplyEventDay >= 18) {
+        army.lastSupplyEventDay = this.day;
+        const commander = this.character(army.commanderId);
+        this.log(2, "muster",
+          `${this.faction(army.faction).name} suffers supply failure at ${province.name}: ${loss.toLocaleString()} leave the ranks${commander ? " under " + commander.name : ""}.`,
+          { faction: army.faction, province: army.loc, war: war && war.id, character: army.commanderId });
+      }
+    }
+
+    _armyIntent(army, war) {
+      const onAtkSide = war.atkSide.includes(army.faction);
+      const mySide = onAtkSide ? war.atkSide : war.defSide;
+      const enemySide = onAtkSide ? war.defSide : war.atkSide;
+      const mainEnemy = onAtkSide ? war.defender : war.attacker;
+      const invaders = this.armies.filter((a) =>
+        enemySide.includes(a.faction) && this.provinceState[a.loc] &&
+        mySide.includes(this.provinceState[a.loc].controller));
+      if (invaders.length) {
+        const target = invaders.reduce((x, y) => (x.size > y.size ? x : y));
+        return { targetId: target.loc, reason: `intercepting ${this.faction(target.faction).shortName || this.faction(target.faction).name} army on friendly land` };
+      }
+      if (onAtkSide && war.goal.province &&
+          this.provinceState[war.goal.province].controller === war.defender &&
+          this.provinceState[war.goal.province].occupier !== army.faction) {
+        return { targetId: war.goal.province, reason: `pressing the war goal at ${this.province(war.goal.province).name}` };
+      }
+      const enemyProvinces = [mainEnemy, ...enemySide]
+        .flatMap((fid) => this.ownedProvinces(fid))
+        .filter((p) => this.provinceState[p.id].occupier !== army.faction);
+      if (enemyProvinces.length) {
+        return { targetId: enemyProvinces[0].id, reason: `seeking pressure on ${this.faction(mainEnemy).shortName || this.faction(mainEnemy).name} holdings` };
+      }
+      const cap = this.capital(army.faction);
+      return { targetId: cap ? cap.id : army.loc, reason: "holding the capital because no better war target remains" };
+    }
+
     _raiseArmy(fid, war) {
       const cap = this.capital(fid);
       if (!cap) return;
       const s = this.factionState[fid];
-      const size = Math.max(500, Math.round(s.manpower * 0.65));
-      s.manpower -= Math.min(s.manpower, size);
-      const culture = this.seed.cultures[this.faction(fid).culture];
+      if (s.manpower < 120) return;
+      const size = Math.max(120, Math.round(s.manpower * 0.65));
+      s.manpower = Math.max(0, s.manpower - Math.min(s.manpower, size));
       let commander = this.rulerOf(fid);
       if (!commander || this.rng.chance(0.55)) {
         commander = this._spawnCharacter(fid, "war captain");
       }
+      const maxSupply = this._armyMaxSupply(size, cap);
       this.armies.push({
         id: uid("army"),
         faction: fid, size, morale: 100,
@@ -251,6 +359,9 @@
         commanderId: commander.id,
         loc: cap.id, moveLeft: 0, dest: null,
         warId: war.id, retreatUntil: 0,
+        supply: maxSupply, maxSupply,
+        dailySupplyUse: 0, undersupplied: false,
+        intentReason: `mustering for ${war.name}`,
       });
       this.log(2, "muster",
         `${this.faction(fid).name} musters ${size.toLocaleString()} under ${commander.name} at ${cap.name}.`,
@@ -274,30 +385,7 @@
     }
 
     _armyTargets(army, war) {
-      const onAtkSide = war.atkSide.includes(army.faction);
-      const mySide = onAtkSide ? war.atkSide : war.defSide;
-      const enemySide = onAtkSide ? war.defSide : war.atkSide;
-      const mainEnemy = onAtkSide ? war.defender : war.attacker;
-      // 1. hostile army on my side's soil -> intercept the largest
-      const invaders = this.armies.filter((a) =>
-        enemySide.includes(a.faction) && this.provinceState[a.loc] &&
-        mySide.includes(this.provinceState[a.loc].controller));
-      if (invaders.length) {
-        return invaders.reduce((x, y) => (x.size > y.size ? x : y)).loc;
-      }
-      // 2. attacker side: take the war goal, then anything unoccupied of theirs
-      if (onAtkSide && war.goal.province &&
-          this.provinceState[war.goal.province].controller === war.defender &&
-          this.provinceState[war.goal.province].occupier !== army.faction) {
-        return war.goal.province;
-      }
-      const enemyProvinces = [mainEnemy, ...enemySide]
-        .flatMap((fid) => this.ownedProvinces(fid))
-        .filter((p) => this.provinceState[p.id].occupier !== army.faction);
-      if (enemyProvinces.length) return enemyProvinces[0].id;
-      // 3. nothing to do: hold the capital
-      const cap = this.capital(army.faction);
-      return cap ? cap.id : army.loc;
+      return this._armyIntent(army, war).targetId;
     }
 
     _tickArmies() {
@@ -323,16 +411,27 @@
         if (army.inBattle) { army.inBattle = false; continue; } // fought this tick
         if (this.day < army.retreatUntil) continue;
 
-        const targetId = this._armyTargets(army, war);
+        const decision = this._armyIntent(army, war);
+        const targetId = decision.targetId;
+        if (army.intentTarget !== targetId || army.intentReason !== decision.reason) {
+          army.intentTarget = targetId;
+          army.intentReason = decision.reason;
+          if (!army.lastIntentEventDay || this.day - army.lastIntentEventDay >= 20) {
+            army.lastIntentEventDay = this.day;
+            this.log(1, "muster",
+              `${this.faction(army.faction).name} redirects ${this.character(army.commanderId)?.name || "an army"}: ${decision.reason}.`,
+              { faction: army.faction, province: army.loc, war: war.id, character: army.commanderId });
+          }
+        }
         if (targetId && targetId !== army.loc) {
+          this._consumeArmySupply(army, war, "march");
           if (!army.dest || army.dest !== targetId) {
             army.dest = targetId; army.moveLeft = 0;
           }
           if (army.moveLeft <= 0) {
             const next = this._pathNext(army.loc, army.dest);
             if (next) {
-              const terr = this.seed.terrains[this.province(next).terrain];
-              army.moveLeft = terr ? terr.moveDays : 3;
+              army.moveLeft = this._movementDays(army, next);
               army.nextLoc = next;
             }
           }
@@ -343,7 +442,8 @@
             }
           }
         } else {
-          this._siegeTick(army, war);
+          const sieging = this._siegeTick(army, war);
+          if (!sieging) this._consumeArmySupply(army, war, "camp");
         }
         army.morale = Math.min(100, army.morale + 0.4);
       }
@@ -444,17 +544,35 @@
       const provSt = this.provinceState[army.loc];
       const prov = this.province(army.loc);
       const enemySide = war.atkSide.includes(army.faction) ? war.defSide : war.atkSide;
-      if (!enemySide.includes(provSt.controller) || provSt.occupier === army.faction) return;
+      if (!enemySide.includes(provSt.controller) || provSt.occupier === army.faction) return false;
       const enemy = provSt.controller;
       if (!provSt.siege || provSt.siege.by !== army.faction) {
-        provSt.siege = { by: army.faction, progress: 0 };
+        provSt.siege = { by: army.faction, progress: 0, startedDay: this.day, events: {} };
         this.mapVersion++;
         this.log(2, "siege",
-          `${this.faction(army.faction).name} lays siege to ${prov.name}${prov.fort >= 4 ? ", whose great walls have never fallen" : ""}.`,
+          `${this.faction(army.faction).name} lays siege to ${prov.name}${prov.fort >= 4 ? ", whose great walls have never fallen" : ""}. Fort level ${prov.fort} sets the pace of the siege.`,
           { province: army.loc, war: war.id, faction: army.faction });
       }
-      const rate = army.size / (900 + prov.fort * 950 + provSt.garrison * 2.2);
-      provSt.siege.progress += rate * this.rng.float(0.7, 1.3);
+      if (!provSt.siege.events) provSt.siege.events = {};
+      this._consumeArmySupply(army, war, "siege");
+      const fortDuration = 18 + prov.fort * 18 + provSt.garrison / 95;
+      const pressure = Math.max(0.20, Math.sqrt(Math.max(army.size, 1)) / 56);
+      const supplyMod = army.undersupplied ? 0.55 : 1;
+      const moraleMod = Math.max(0.55, army.morale / 100);
+      const rate = pressure * supplyMod * moraleMod / fortDuration;
+      provSt.siege.progress += rate * this.rng.float(0.78, 1.22);
+      if (provSt.siege.progress >= 0.35 && !provSt.siege.events.invested) {
+        provSt.siege.events.invested = true;
+        this.log(2, "siege",
+          `${prov.name} is fully invested: roads are watched, gates are rationed, and ${this.faction(army.faction).name} tightens the ring.`,
+          { province: army.loc, war: war.id, faction: army.faction });
+      }
+      if (provSt.siege.progress >= 0.70 && !provSt.siege.events.breach) {
+        provSt.siege.events.breach = true;
+        this.log(2, "siege",
+          `A breach opens at ${prov.name}; the garrison spends its last strength while ${this.faction(army.faction).name} prepares the final assault.`,
+          { province: army.loc, war: war.id, faction: army.faction });
+      }
       if (provSt.siege.progress >= 1) {
         provSt.siege = null;
         provSt.occupier = army.faction;
@@ -469,11 +587,12 @@
           `${prov.name} falls. ${this.faction(army.faction).name} banners rise over the ${prov.fort >= 3 ? "citadel" : "walls"}.`,
           { province: army.loc, war: war.id, faction: army.faction });
       }
+      return true;
     }
 
     _disband(army) {
       const s = this.factionState[army.faction];
-      s.manpower = Math.min(s.maxManpower, s.manpower + Math.round(army.size * 0.7));
+      s.manpower = Math.max(0, Math.min(s.maxManpower, s.manpower + Math.round(Math.max(0, army.size) * 0.7)));
       army.size = 0;
     }
 
@@ -486,19 +605,21 @@
         const court = Math.max(0, Math.round(s.treasury * 0.02));
         s.treasury += this.monthlyIncome(f.id) - this.monthlyUpkeep(f.id) - court;
         if (s.treasury < 0) {
-          s.exhaustion += 4;
-          s.treasury = Math.max(s.treasury, -400);
+          s.exhaustion += 4 + Math.min(6, Math.ceil(Math.abs(s.treasury) / 120));
+          s.treasury = 0;
         }
-        s.manpower = Math.min(s.maxManpower, s.manpower + Math.round(s.maxManpower * 0.045));
+        s.manpower = Math.max(0, Math.min(s.maxManpower, s.manpower + Math.round(s.maxManpower * 0.045)));
         s.exhaustion = Math.max(0, s.exhaustion - (this.warsOf(f.id).length ? 0 : 6));
         this._refreshManpower(f.id, false);
         // tribute payments
         for (const [to, remaining] of Object.entries(s.tribute)) {
           if (remaining <= 0) { delete s.tribute[to]; continue; }
-          const pay = Math.min(40, remaining);
+          const pay = Math.min(40, remaining, s.treasury);
           s.treasury -= pay; this.factionState[to].treasury += pay;
           s.tribute[to] = remaining - pay;
         }
+        s.treasury = Math.max(0, s.treasury);
+        s.manpower = Math.max(0, s.manpower);
       }
       // devastation heals, occupation lifts if occupier no longer at war
       for (const p of this.seed.provinces) {
@@ -530,7 +651,8 @@
         const st = this.provinceState[army.loc];
         if (st && st.controller === army.faction && s.manpower > 200) {
           const add = Math.min(300, s.manpower - 100);
-          army.size += add; s.manpower -= add;
+          army.size += add; s.manpower = Math.max(0, s.manpower - add);
+          army.maxSupply = this._armyMaxSupply(army.size, this.province(army.loc));
         }
       }
       this._recordMonthlyRecap();
@@ -677,14 +799,29 @@
           // sprawling realms draw wary coalitions of excuses — expansion slows
           p *= 1 / (1 + Math.max(0, this.ownedProvinces(agg).length - 2) * 0.8);
           if (this.rng.chance(Math.min(0.5, p))) {
-            this._declareWar(agg, def, claim, isRaider && !claim);
+            const intent = this._warIntentReason(agg, def, claim, isRaider && !claim, rel, p);
+            this._declareWar(agg, def, claim, isRaider && !claim, intent);
             break;
           }
         }
       }
     }
 
-    _declareWar(attacker, defender, claim, isRaid) {
+    _warIntentReason(attacker, defender, claim, isRaid, relation, chance) {
+      const attackerName = this.faction(attacker).shortName || this.faction(attacker).name;
+      const defenderName = this.faction(defender).shortName || this.faction(defender).name;
+      const risk = relation ? ` seeded risk ${relation.warRisk}` : "";
+      const odds = chance !== undefined ? ` current chance ${(Math.min(0.5, chance) * 100).toFixed(1)}%` : "";
+      if (claim) {
+        return `${attackerName} sees a usable ${claim.type} claim on ${this.province(claim.target).name}; opinion with ${defenderName} is ${Math.round(this.opinion(attacker, defender))}.${risk}${odds}`;
+      }
+      if (isRaid) {
+        return `${attackerName} chooses a raid because its government rewards plunder and ${defenderName} is reachable.${risk}${odds}`;
+      }
+      return `${attackerName} escalates a border quarrel with ${defenderName}; hostile opinion and adjacency make war plausible.${risk}${odds}`;
+    }
+
+    _declareWar(attacker, defender, claim, isRaid, intentReason) {
       const goal = claim
         ? { type: "conquest", province: claim.target, claim: claim.id }
         : isRaid
@@ -699,6 +836,7 @@
         attacker, defender, goal, score: 0, startDay: this.day,
         startDate: this.formatDate(), battles: [], over: false,
         atkSide: [attacker], defSide: [defender],
+        intentReason: intentReason || this._warIntentReason(attacker, defender, claim, isRaid),
       };
       this.wars.push(war);
       const reason = claim
@@ -706,7 +844,7 @@
         : isRaid ? "riding for plunder and tribute"
           : "pressing a border quarrel into open war";
       this.log(3, "war",
-        `${this.faction(attacker).name} declares war on ${this.faction(defender).name}, ${reason}. The prize: ${prizeName}.`,
+        `${this.faction(attacker).name} declares war on ${this.faction(defender).name}, ${reason}. The prize: ${prizeName}. Intent: ${war.intentReason}.`,
         { war: war.id, faction: attacker, province: goal.province });
       this._bumpOpinion(attacker, defender, -25);
       this._raiseArmy(attacker, war);
@@ -747,17 +885,22 @@
         const sa = this.factionState[war.attacker], sd = this.factionState[war.defender];
         const years = (this.day - war.startDay) / 360;
         // exhaustion pushes both sides to the table
-        if (war.score >= 55 || sd.exhaustion >= 65) { this._endWar(war, war.attacker); continue; }
-        if (war.score <= -45 || sa.exhaustion >= 65) { this._endWar(war, war.defender); continue; }
-        if (years > 4.5) { this._endWar(war, null); continue; }
+        if (war.score >= 55) { this._endWar(war, war.attacker, "attacker war score became decisive"); continue; }
+        if (sd.exhaustion >= 65) { this._endWar(war, war.attacker, "defender exhaustion broke their bargaining position"); continue; }
+        if (war.score <= -45) { this._endWar(war, war.defender, "defender war score held firm"); continue; }
+        if (sa.exhaustion >= 65) { this._endWar(war, war.defender, "attacker exhaustion made the offensive collapse"); continue; }
+        if (years > 4.5) { this._endWar(war, null, "neither side could force a decision after years of campaigning"); continue; }
       }
     }
 
-    _endWar(war, victor) {
+    _endWar(war, victor, endReason) {
       war.over = true; war.endDate = this.formatDate();
       this.totals.warsEnded++;
       const att = this.faction(war.attacker), def = this.faction(war.defender);
       const sa = this.factionState[war.attacker], sd = this.factionState[war.defender];
+      const changedHands = [];
+      const prestige = [];
+      const standingLosses = [];
       for (const atk of war.atkSide) {
         for (const dfd of war.defSide) {
           this.factionState[atk].truces[dfd] = this.day + 360 * 5;
@@ -781,17 +924,28 @@
       }
 
       if (!victor) {
+        war.peaceSummary = {
+          victor: null,
+          reason: endReason,
+          changedHands,
+          prestige,
+          standingLosses,
+          truce: "five-year truce between all war parties",
+        };
         this.log(3, "peace",
-          `${war.name} gutters out after years of ruin — a white peace between ${att.name} and ${def.name}.`,
+          `${war.name} gutters out in white peace because ${endReason}. No land changes hands; no court can claim glory. A five-year truce is sworn between the war parties.`,
           { war: war.id, faction: war.attacker });
       } else if (victor === war.attacker) {
         sa.warsWon += 1; sd.warsLost += 1; sa.prestige += 25;
+        prestige.push({ faction: war.attacker, amount: 25 });
+        standingLosses.push({ faction: war.defender, reason: "lost the war" });
         // the prize can only change hands if the defender still holds it
         if (war.goal.type === "conquest" && war.goal.province &&
             this.provinceState[war.goal.province].controller === war.defender) {
           const prov = this.province(war.goal.province);
           this.provinceState[prov.id].controller = war.attacker;
           this.provinceState[prov.id].occupier = null;
+          changedHands.push({ province: prov.id, from: war.defender, to: war.attacker });
           this.mapVersion++;
           const claim = this.claims.find((c) => c.id === war.goal.claim);
           if (claim) claim.strength = Math.min(100, claim.strength + 10);
@@ -801,27 +955,57 @@
             type: "war grievance", source: `${war.name}, ${war.endDate}`,
             strength: 55, myth: "living memory", recognizedBy: def.religion,
           });
+          war.peaceSummary = {
+            victor,
+            reason: endReason,
+            changedHands,
+            prestige,
+            standingLosses,
+            truce: "five-year truce between all war parties",
+          };
           this.log(3, "peace",
-            `${war.name} ends: ${prov.name} is ceded to ${att.name}. ${def.name} signs, and does not forget.`,
+            `${war.name} ends because ${endReason}: ${prov.name} is ceded to ${att.name}. ${att.shortName || att.name} gains 25 prestige; ${def.shortName || def.name} loses standing and receives a grievance claim. A five-year truce is sworn.`,
             { war: war.id, faction: war.attacker, province: prov.id });
         } else {
-          const gold = Math.min(400, Math.max(120, Math.round(sd.treasury * 0.4)));
+          const gold = Math.min(400, Math.max(0, Math.round(sd.treasury * 0.4)));
           sd.treasury -= gold; sa.treasury += gold;
           sd.tribute[war.attacker] = (sd.tribute[war.attacker] || 0) + 240;
+          changedHands.push({ tributeFrom: war.defender, to: war.attacker, silver: gold, futureTribute: 240 });
+          war.peaceSummary = {
+            victor,
+            reason: endReason,
+            changedHands,
+            prestige,
+            standingLosses,
+            truce: "five-year truce between all war parties",
+          };
           this.log(3, "peace",
-            `${war.name} ends: ${def.name} buys off the riders with ${gold} silver and a promise of tribute.`,
+            `${war.name} ends because ${endReason}: ${def.name} buys peace with ${gold} silver and future tribute. ${att.shortName || att.name} gains 25 prestige; ${def.shortName || def.name} loses standing. A five-year truce is sworn.`,
             { war: war.id, faction: war.attacker });
         }
         const ruler = this.rulerOf(war.attacker);
         if (ruler) ruler.prestige += 20;
       } else {
         sd.warsWon += 1; sa.warsLost += 1; sd.prestige += 20;
-        const gold = Math.min(250, Math.max(80, Math.round(sa.treasury * 0.3)));
+        prestige.push({ faction: war.defender, amount: 20 });
+        standingLosses.push({ faction: war.attacker, reason: "failed offensive" });
+        const gold = Math.min(250, Math.max(0, Math.round(sa.treasury * 0.3)));
         sa.treasury -= gold; sd.treasury += gold;
+        changedHands.push({ reparationsFrom: war.attacker, to: war.defender, silver: gold });
+        war.peaceSummary = {
+          victor,
+          reason: endReason,
+          changedHands,
+          prestige,
+          standingLosses,
+          truce: "five-year truce between all war parties",
+        };
         this.log(3, "peace",
-          `${war.name} ends in humiliation for ${att.name}: reparations of ${gold} silver flow to ${def.name}.`,
+          `${war.name} ends because ${endReason}: ${att.name} pays ${gold} silver to ${def.name}. ${def.shortName || def.name} gains 20 prestige; ${att.shortName || att.name} loses standing. A five-year truce is sworn.`,
           { war: war.id, faction: war.defender });
       }
+      sa.treasury = Math.max(0, sa.treasury);
+      sd.treasury = Math.max(0, sd.treasury);
       this._bumpOpinion(war.attacker, war.defender, -10);
       // armies march home and stand down
       for (const a of this.armies) if (a.warId === war.id) this._disband(a);

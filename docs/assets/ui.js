@@ -267,6 +267,39 @@
       };
     }
 
+    peaceSummaryRows(war) {
+      const summary = war.peaceSummary;
+      if (!summary) return "";
+      const changed = (summary.changedHands || []).map((change) => {
+        if (change.province) {
+          return `${this.provLink(change.province)}: ${esc(this.faction(change.from).shortName || this.faction(change.from).name)} to ${esc(this.faction(change.to).shortName || this.faction(change.to).name)}`;
+        }
+        if (change.tributeFrom) {
+          return `${esc(this.faction(change.tributeFrom).shortName || this.faction(change.tributeFrom).name)} pays ${change.silver} silver and ${change.futureTribute} future tribute`;
+        }
+        if (change.reparationsFrom) {
+          return `${esc(this.faction(change.reparationsFrom).shortName || this.faction(change.reparationsFrom).name)} pays ${change.silver} silver reparations`;
+        }
+        return "";
+      }).filter(Boolean).join(" · ") || "no land changed hands";
+      const prestige = (summary.prestige || [])
+        .map((p) => `${esc(this.faction(p.faction).shortName || this.faction(p.faction).name)} +${p.amount}`)
+        .join(" · ") || "none";
+      const losses = (summary.standingLosses || [])
+        .map((p) => `${esc(this.faction(p.faction).shortName || this.faction(p.faction).name)}: ${esc(p.reason)}`)
+        .join(" · ") || "none";
+      return `
+        <h3>Peace summary</h3>
+        <div class="stat-rows">
+          <div class="row"><span>Why it ended</span><b>${esc(summary.reason || "unknown")}</b></div>
+          <div class="row"><span>Changed hands</span><b>${changed}</b></div>
+          <div class="row"><span>Prestige gained</span><b>${prestige}</b></div>
+          <div class="row"><span>Standing lost</span><b>${losses}</b></div>
+          <div class="row"><span>Truce</span><b>${esc(summary.truce || "none")}</b></div>
+        </div>
+      `;
+    }
+
     /* ---------- top bar ---------- */
 
     renderClock() {
@@ -387,7 +420,7 @@
         </div>
         ${riverRows ? `<h3>River data</h3><div class="stat-rows">${riverRows}</div>` : ""}
         ${armies.length ? `<h3>Armies present</h3>` + armies.map((a) =>
-          `<div class="row">${this.shieldChip(a.faction)}<b>${a.size.toLocaleString()} under ${this.charLink(a.commanderId)}</b></div>`).join("") : ""}
+          `<div class="row">${this.shieldChip(a.faction)}<b>${a.size.toLocaleString()} under ${this.charLink(a.commanderId)} <span class="fine">${a.undersupplied ? "undersupplied" : "supply"} ${Math.round(a.supply || 0)} / ${Math.round(a.maxSupply || 0)} · ${esc(a.intentReason || "holding position")}</span></b></div>`).join("") : ""}
         ${claims.length ? `<h3>Claims on this land</h3>` + claims.map((c) =>
           `<div class="claim"><b>${this.shieldChip(c.claimant)}</b> — ${esc(c.type)} (${Math.round(c.strength)}) <div class="fine">${esc(c.source)} · ${esc(c.myth)}</div></div>`).join("") : ""}
       `);
@@ -600,6 +633,7 @@
         </div>
         <div class="stat-rows">
           <div class="row"><span>War goal</span><b>${this.warGoalLabel(w)}</b></div>
+          ${w.intentReason ? `<div class="row"><span>War intent</span><b>${esc(w.intentReason)}</b></div>` : ""}
           <div class="row"><span>Target provinces</span><b>${targetProvinces.map((id) => this.provLink(id)).join(" · ") || "none"}</b></div>
           <div class="row"><span>Who is winning</span><b class="${w.score > 10 ? "bad" : w.score < -10 ? "good" : ""}">${esc(this.warWinnerSummary(w))}</b></div>
           <div class="row"><span>War score</span><b>${Math.round(w.score)}</b></div>
@@ -620,6 +654,7 @@
           `<div class="claim"><b>${esc(b.name)}</b> — won by ${this.shieldChip(b.winner)}
            <div class="fine">${esc(b.date)} · ${b.loserLosses.toLocaleString()} fell on the losing side, ${b.winnerLosses.toLocaleString()} on the winning</div></div>`).join("")
         : "<div class='fine'>No pitched battle has yet been fought.</div>"}
+        ${this.peaceSummaryRows(w)}
       `);
     }
 
@@ -760,7 +795,7 @@
               el.dataset.openChar = a.commanderId;
               el.style.pointerEvents = "auto";
             }
-            el.title = `${f.name} — ${a.size.toLocaleString()} under ${(this.sim.character(a.commanderId) || {}).name || "?"}`;
+            el.title = `${f.name} — ${a.size.toLocaleString()} under ${(this.sim.character(a.commanderId) || {}).name || "?"}; ${a.undersupplied ? "undersupplied" : "supply"} ${Math.round(a.supply || 0)}/${Math.round(a.maxSupply || 0)}; ${a.intentReason || "holding position"}`;
             el.querySelector("span").textContent = (a.size / 1000).toFixed(1) + "k";
             el.style.left = (x + (i - (group.length - 1) / 2) * 40) + "px";
             el.style.top = (y - 34) + "px";
@@ -832,7 +867,7 @@
         <div class="tt-row fine">${esc(biome.label)} · ${esc(feature.label)} · pop ${st.pop.toLocaleString()} · fort ${p.fort}</div>
         ${river && river.hasRiver ? `<div class="tt-row fine">River: ${esc(this.riverSummary(river))}</div>` : ""}
         ${river && river.hasCrossing ? `<div class="tt-row fine">Crossing: ${esc(river.riverCrossingType.replace(/;/g, ", "))}</div>` : ""}
-        ${armies.map((a) => `<div class="tt-row fine">⚑ ${esc(this.sim.faction(a.faction).name)}: ${a.size.toLocaleString()}</div>`).join("")}
+        ${armies.map((a) => `<div class="tt-row fine">⚑ ${esc(this.sim.faction(a.faction).name)}: ${a.size.toLocaleString()} · ${a.undersupplied ? "undersupplied" : "supply"} ${Math.round(a.supply || 0)}/${Math.round(a.maxSupply || 0)}</div>`).join("")}
       `;
       tip.classList.remove("hidden");
       const pad = 14;
