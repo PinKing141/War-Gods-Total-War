@@ -42,11 +42,15 @@
       this.date = { day: 1, month: 1, year: seed.world.startYear };
       this.listeners = [];
       this.events = [];
+      this.monthlyRecaps = [];
       this.wars = [];
       this.armies = [];
       this.adjacency = null;   // provided by map after ownership raster
       this.fx = [];            // transient visual effects for the UI to drain
       this.totals = { fallen: 0, warsEnded: 0 };
+      this._monthStartEventIndex = 0;
+      this._monthStartFallen = 0;
+      this._monthStartWarsEnded = 0;
       this.mapVersion = 0;     // bumped when the political map must repaint
 
       this.factionState = {};
@@ -180,6 +184,17 @@
       let total = 0;
       for (const a of this.armies) if (a.faction === fid) total += a.size;
       return total;
+    }
+
+    occupiedProvinces(fid) {
+      return this.seed.provinces.filter((p) => this.provinceState[p.id].occupier === fid);
+    }
+
+    contestedProvinces(fid) {
+      return this.seed.provinces.filter((p) => {
+        const st = this.provinceState[p.id];
+        return st.controller === fid && (st.occupier || st.siege);
+      });
     }
 
     /* ------------------------------------------------ main tick */
@@ -518,6 +533,55 @@
           army.size += add; s.manpower -= add;
         }
       }
+      this._recordMonthlyRecap();
+    }
+
+    _recordMonthlyRecap() {
+      const events = this.events.slice(this._monthStartEventIndex);
+      const typeCounts = {};
+      for (const ev of events) typeCounts[ev.type] = (typeCounts[ev.type] || 0) + 1;
+      const activeWars = this.wars.filter((w) => !w.over);
+      const activeSieges = this.seed.provinces
+        .filter((p) => this.provinceState[p.id].siege)
+        .map((p) => ({
+          province: p.id,
+          by: this.provinceState[p.id].siege.by,
+          progress: this.provinceState[p.id].siege.progress,
+        }));
+      const troubledFactions = this.seed.factions
+        .map((f) => {
+          const st = this.factionState[f.id];
+          const income = this.monthlyIncome(f.id);
+          const upkeep = this.monthlyUpkeep(f.id);
+          const pressure = income - upkeep - Math.max(0, Math.round(st.treasury * 0.02));
+          const risks = [];
+          if (pressure < 0) risks.push("deficit");
+          if (st.exhaustion >= 25) risks.push("exhaustion");
+          if (st.manpower < st.maxManpower * 0.25) risks.push("low manpower");
+          if (!this.ownedProvinces(f.id).length) risks.push("landless");
+          return { faction: f.id, pressure, exhaustion: st.exhaustion, risks };
+        })
+        .filter((r) => r.risks.length)
+        .sort((a, b) => b.risks.length - a.risks.length || a.pressure - b.pressure)
+        .slice(0, 6);
+
+      this.monthlyRecaps.push({
+        id: uid("recap"),
+        day: this.day,
+        date: this.formatDate(),
+        events: events.length,
+        typeCounts,
+        activeWars: activeWars.map((w) => w.id),
+        activeSieges,
+        fallen: this.totals.fallen - this._monthStartFallen,
+        warsEnded: this.totals.warsEnded - this._monthStartWarsEnded,
+        troubledFactions,
+        headlines: events.filter((ev) => ev.importance >= 3).slice(-5).map((ev) => ev.text),
+      });
+      if (this.monthlyRecaps.length > 72) this.monthlyRecaps.splice(0, this.monthlyRecaps.length - 72);
+      this._monthStartEventIndex = this.events.length;
+      this._monthStartFallen = this.totals.fallen;
+      this._monthStartWarsEnded = this.totals.warsEnded;
     }
 
     _restorationPulse() {

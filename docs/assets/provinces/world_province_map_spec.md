@@ -29,8 +29,24 @@ The machine province map must be the unique-RGB file, not the painted preview.
 ```text
 water = RGB 0,0,0
 each land province = one unique RGB value
-province_definitions.csv maps RGB values to province IDs, names, region, terrain, controller and strategic values
+province_definitions.csv maps RGB values to province IDs, names, region, biome, terrain feature, controller and strategic values
 ```
+
+## Biome and terrain feature split
+
+`biome` is the natural land cover used for broad rendering and world logic:
+
+```text
+forest / marsh / steppe / dryland / mountain / oasis / farmland / coast
+```
+
+`terrain_feature` is the province's special strategic identity:
+
+```text
+river_city / mountain_pass / canal_farmland / mine_hills / iron_hills / river_port / bog_forest / steppe_market / dryland_plateau / oasis_salt_road / grain_estate / frontier_farms / charter_city / sacred_battlefield
+```
+
+The legacy `terrain` column is kept as a compatibility alias for old code and data exports. New renderer/UI code should prefer `biome` for natural terrain and `terrain_feature` for labels, glyphs and special gameplay identity.
 
 ## Lore placement logic
 

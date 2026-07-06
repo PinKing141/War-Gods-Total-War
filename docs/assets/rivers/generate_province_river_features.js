@@ -111,6 +111,8 @@ function loadDefinitions() {
     id: row[idx.province_id],
     name: row[idx.common_name],
     terrain: row[idx.terrain],
+    biome: idx.biome === undefined ? "" : row[idx.biome],
+    terrainFeature: idx.terrain_feature === undefined ? row[idx.terrain] : row[idx.terrain_feature],
     roads: num(row[idx.road_level]),
     port: num(row[idx.port_level]),
     fort: num(row[idx.fort_level]),
@@ -265,9 +267,10 @@ function scoreFeature(feature) {
   const supply = hasRiver
     ? Math.round((feature.hasFloodplain ? 2 : 0) + (feature.navigable ? 2 : 0) + (hasCanal ? 2 : 0) + Math.min(3, trade / 6))
     : 0;
+  const landKey = `${p.biome || ""}_${p.terrainFeature || p.terrain || ""}`;
   const farmland = hasRiver
     ? Math.round((feature.hasFloodplain ? 2 : 0) + feature.floodplainFertility * 12 +
-        (hasCanal ? 2 : 0) + (/farm|grain|oasis|lowland|river/.test(p.terrain) ? 1 : 0))
+        (hasCanal ? 2 : 0) + (/farm|grain|oasis|lowland|river/.test(landKey) ? 1 : 0))
     : 0;
 
   return {

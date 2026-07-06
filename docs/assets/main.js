@@ -12,10 +12,65 @@
 
   const seed = window.WG_SEED;
   const canvas = document.getElementById("map");
-  const map = new (WG.LayeredWorldMap || WG.WorldMap)(canvas, seed);
-  if (map.ready) await map.ready;
   // every visit births a different history; pin ?seed=N to replay one
   const params = new URLSearchParams(location.search);
+  const useOldMap = params.has("oldMap");
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error(`Unable to load ${src}`));
+      document.body.appendChild(script);
+    });
+  }
+
+  function showMapBootError(err) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+
+    const ctx = canvas.getContext("2d");
+    ctx.save();
+    ctx.fillStyle = "#14262d";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(246, 233, 198, 0.92)";
+    ctx.font = `700 ${Math.max(18, 24 * dpr)}px Georgia, serif`;
+    ctx.fillText("Map assets could not load", canvas.width / 2, canvas.height / 2 - 28 * dpr);
+    ctx.font = `500 ${Math.max(12, 15 * dpr)}px Georgia, serif`;
+    const detail = location.protocol === "file:"
+      ? "Open this through the local server: http://127.0.0.1:8765/"
+      : String((err && err.message) || err || "Unknown map startup error");
+    ctx.fillText(detail, canvas.width / 2, canvas.height / 2 + 8 * dpr);
+    ctx.fillStyle = "rgba(238, 214, 140, 0.72)";
+    ctx.font = `500 ${Math.max(11, 13 * dpr)}px Georgia, serif`;
+    ctx.fillText("Debug old map: add ?oldMap=1", canvas.width / 2, canvas.height / 2 + 34 * dpr);
+    ctx.restore();
+  }
+
+  let map;
+  try {
+    if (useOldMap) await loadScript("assets/map_procedural_old.js");
+    const MapClass = useOldMap ? WG.ProceduralWorldMap : WG.LayeredWorldMap;
+    if (!MapClass) {
+      throw new Error(useOldMap
+        ? "Old procedural debug map is unavailable."
+        : "LayeredWorldMap is required for normal gameplay.");
+    }
+    map = new MapClass(canvas, seed);
+    if (map.ready) await map.ready;
+  } catch (err) {
+    console.error("Map startup failed.", err);
+    showMapBootError(err);
+    window.__wgLoadError = err;
+    return;
+  }
+
   const pinned = params.get("seed");
   const rngSeed = pinned ? Number(pinned) : (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
   const sim = new WG.Simulation(seed, rngSeed);
@@ -39,7 +94,10 @@
         }
         overlayDirty = true;
         ui.renderClock();
-        if (sim.date.day === 1) ui.renderShieldStrip();
+        if (sim.date.day === 1) {
+          ui.renderShieldStrip();
+          if (ui.chronMode === "recap") ui.renderRecapTab();
+        }
       }, SPEEDS[speedIdx].ms);
     }
     document.getElementById("btn-pause").textContent = paused ? "▶" : "⏸";

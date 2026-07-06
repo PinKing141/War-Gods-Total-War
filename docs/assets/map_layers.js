@@ -83,6 +83,17 @@
     mountain_pass: { label: "Mountain Pass", base: [103, 101, 97] },
   };
 
+  const BIOME_INFO = {
+    forest: { label: "Forest", base: [57, 91, 53] },
+    marsh: { label: "Marsh", base: [55, 101, 84] },
+    steppe: { label: "Steppe", base: [148, 132, 73] },
+    dryland: { label: "Dryland", base: [154, 124, 73] },
+    mountain: { label: "Mountain", base: [109, 105, 95] },
+    oasis: { label: "Oasis", base: [92, 130, 96] },
+    farmland: { label: "Farmland", base: [128, 151, 76] },
+    coast: { label: "Coast", base: [82, 121, 102] },
+  };
+
   const TERRAIN_GLYPHS = {
     mountain_pass: "▲", mine_hills: "▲", iron_hills: "▲",
     bog_forest: "♣", canal_farmland: "≈", oasis_salt_road: "≈",
@@ -113,7 +124,7 @@
     REG_BANNERFIELDS: "Bannerfields",
   };
 
-  class LayeredWorldMap extends WG.WorldMap {
+  class LayeredWorldMap extends WG.MapBase {
     constructor(canvas, seed) {
       super(canvas, seed);
       this.layerStatus = "loading";
@@ -160,11 +171,15 @@
         this._computeLayerDecorations();
         this._buildRealmLabels();
         this.view = this._initialView();
+        // Province picking and interaction use the unique-RGB province map, not
+        // the old procedural ownership grid.
         this.cellOwner = this._renderProvinceIndex;
         this.markDirty();
       }).catch((err) => {
-        console.warn("Layered map assets unavailable; using generated map fallback.", err);
-        this.layerStatus = "fallback";
+        console.error("Layered map assets unavailable; normal gameplay map cannot start.", err);
+        this.layerStatus = "error";
+        this.loadError = err;
+        throw err;
       });
     }
 
@@ -367,6 +382,8 @@
           regionName: REGION_LABELS[row[idx.region_id]] || row[idx.region_id],
           controller: row[idx.controller],
           terrain: row[idx.terrain],
+          biome: row[idx.biome] || this._inferBiome(row[idx.terrain]),
+          terrainFeature: row[idx.terrain_feature] || row[idx.terrain],
           resource: row[idx.primary_resource],
           roads: Number(row[idx.road_level] || 0),
           port: Number(row[idx.port_level] || 0),
@@ -429,6 +446,26 @@
         this.riverFeatureByProvince.set(p.id, feature);
         p.riverFeatures = feature;
       }
+    }
+
+    _inferBiome(feature) {
+      const map = {
+        river_city: "farmland",
+        canal_farmland: "farmland",
+        bog_forest: "marsh",
+        frontier_farms: "farmland",
+        mountain_pass: "mountain",
+        charter_city: "farmland",
+        river_port: "coast",
+        steppe_market: "steppe",
+        sacred_battlefield: "farmland",
+        mine_hills: "mountain",
+        iron_hills: "mountain",
+        oasis_salt_road: "oasis",
+        dryland_plateau: "dryland",
+        grain_estate: "farmland",
+      };
+      return map[feature] || "dryland";
     }
 
     _emptyRiverFeature(provinceId) {
@@ -654,7 +691,8 @@
           if (down !== idx) this._addBorder(id, down, x * sx, (y + 1) * sy, (x + 1) * sx, (y + 1) * sy);
 
           const p = this.mapProvinces[idx];
-          if (!TERRAIN_GLYPHS[p.terrain] || this.coastDistance[i] <= 2) continue;
+          const feature = p.terrainFeature || p.terrain;
+          if (!TERRAIN_GLYPHS[feature] || this.coastDistance[i] <= 2) continue;
           if (x % 14 === 7 && y % 14 === 7) {
             const h = this._hash2(x + idx * 97, y - idx * 131);
             if (h > 0.80) {
@@ -669,8 +707,9 @@
       }
 
       for (const p of this.mapProvinces) {
-        const min = p.terrain === "mountain_pass" ? 92 :
-          p.terrain === "bog_forest" ? 74 : 82;
+        const feature = p.terrainFeature || p.terrain;
+        const min = feature === "mountain_pass" ? 92 :
+          feature === "bog_forest" ? 74 : 82;
         const cap = p.isSeedFrontier ? 18 : p.pixelArea > 9000 ? 7 : 3;
         for (const cand of candidates[p.id].sort((a, b) => b[2] - a[2])) {
           if (this.glyphPoints[p.id].length >= cap) break;
@@ -878,6 +917,13 @@
       };
     }
 
+    biomeInfo(id) {
+      return BIOME_INFO[id] || {
+        label: String(id || "unknown").replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()),
+        base: [120, 120, 90],
+      };
+    }
+
     provinceState(province, sim) {
       const id = typeof province === "string" ? province : province.id;
       const p = typeof province === "string" ? this.province(id) : province;
@@ -972,6 +1018,8 @@
         center_x: p ? p.x : null,
         center_y: p ? p.y : null,
         terrain: p ? p.terrain : "water",
+        biome: p ? p.biome : "water",
+        terrain_feature: p ? p.terrainFeature || p.terrain : "water",
         region: p ? p.region : "water",
         controller: p ? p.controller : "none",
         river: river && river.hasRiver ? river.primaryRiverId || river.riverIds.join(";") : "none",
@@ -979,7 +1027,7 @@
     }
 
     provinceAt(worldX, worldY) {
-      if (this.layerStatus !== "ready") return super.provinceAt(worldX, worldY);
+      if (this.layerStatus !== "ready") return null;
       const px = Math.floor(worldX / this.W * this.provinceMapWidth);
       const py = Math.floor(worldY / this.H * this.provinceMapHeight);
       const id = this.provinceIdAtPixel(px, py);
@@ -987,16 +1035,17 @@
     }
 
     _biomeColor(prov, height, slope) {
-      const info = this.terrainInfo(prov && prov.terrain);
+      const info = this.biomeInfo(prov && prov.biome);
       let rgb = info.base.slice();
       const tint = REGION_TINTS[prov && prov.region] || [0, 0, 0];
       rgb = [rgb[0] + tint[0], rgb[1] + tint[1], rgb[2] + tint[2]];
 
-      if (prov && prov.terrain === "bog_forest") {
+      const feature = prov && (prov.terrainFeature || prov.terrain);
+      if (feature === "bog_forest") {
         rgb = [rgb[0] * 0.78, rgb[1] * 0.92, rgb[2] * 0.78];
-      } else if (prov && prov.terrain === "grain_estate") {
+      } else if (feature === "grain_estate") {
         rgb = [rgb[0] * 1.05 + 8, rgb[1] * 1.05 + 6, rgb[2] * 0.90];
-      } else if (prov && (prov.terrain === "dryland_plateau" || prov.terrain === "oasis_salt_road")) {
+      } else if (feature === "dryland_plateau" || feature === "oasis_salt_road") {
         rgb = [rgb[0] * 1.08 + 10, rgb[1] * 0.99, rgb[2] * 0.82];
       }
 
@@ -1020,7 +1069,7 @@
     }
 
     _paintWorld(sim) {
-      if (this.layerStatus !== "ready") return super._paintWorld(sim);
+      if (this.layerStatus !== "ready") return;
       if (!this._image) {
         this._image = document.createElement("canvas");
         this._image.width = RENDER_W;
@@ -1292,7 +1341,7 @@
       ctx.font = `${Math.max(8, 13 * z)}px Georgia, serif`;
       ctx.fillStyle = "rgba(22, 18, 10, 0.28)";
       for (const p of this.mapProvinces) {
-        const glyph = TERRAIN_GLYPHS[p.terrain];
+        const glyph = TERRAIN_GLYPHS[p.terrainFeature || p.terrain];
         if (!glyph) continue;
         if (!p.isSeedFrontier && this.view.zoom < 1.35 && p.value < 88) continue;
         for (const [gx, gy] of this.glyphPoints[p.id] || []) {
@@ -1500,4 +1549,5 @@
   window.WG = window.WG || {};
   window.WG.LayeredWorldMap = LayeredWorldMap;
   window.WG.WORLD_TERRAIN_INFO = TERRAIN_INFO;
+  window.WG.WORLD_BIOME_INFO = BIOME_INFO;
 })();
