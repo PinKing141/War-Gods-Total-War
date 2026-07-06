@@ -165,6 +165,28 @@
       return "peaceful";
     }
 
+    provinceImportance(p, st, river, armies, claims) {
+      const reasons = [];
+      if (p.value >= 90) reasons.push("high strategic value");
+      else if (p.value >= 75) reasons.push("valuable frontier holding");
+      if (p.fort >= 4) reasons.push("major fortress");
+      else if (p.fort >= 3) reasons.push("strong fort");
+      if (p.roads >= 4) reasons.push("road hub");
+      if (p.port) reasons.push("port access");
+      if (p.manaSite) reasons.push("mana site");
+      if (river && river.hasRiver) {
+        if (river.hasCrossing) reasons.push("river crossing");
+        if (river.hasFloodplain) reasons.push("floodplain");
+        if (river.navigableRiver) reasons.push("river trade");
+      }
+      if (st.siege) reasons.push("active siege");
+      if (st.occupier) reasons.push("occupied territory");
+      if (armies.length) reasons.push("armies present");
+      if (claims.length) reasons.push(`${claims.length} active claim${claims.length === 1 ? "" : "s"}`);
+      if (!reasons.length && p.resource) reasons.push(`${String(p.resource).replace(/_/g, " ").toLowerCase()} resource`);
+      return reasons.join(" · ");
+    }
+
     factionEconomy(fid) {
       const st = this.sim.factionState[fid];
       if (!st) return null;
@@ -223,6 +245,26 @@
       if (battleEdge > 0) return "attackers have the recent battle edge";
       if (battleEdge < 0) return "defenders have the recent battle edge";
       return "too close to call";
+    }
+
+    warOccupationSummary(war) {
+      const attackerHeld = this.sim.seed.provinces.filter((p) => {
+        const st = this.sim.provinceState[p.id];
+        return war.defSide.includes(st.controller) && st.occupier && war.atkSide.includes(st.occupier);
+      });
+      const defenderHeld = this.sim.seed.provinces.filter((p) => {
+        const st = this.sim.provinceState[p.id];
+        return war.atkSide.includes(st.controller) && st.occupier && war.defSide.includes(st.occupier);
+      });
+      const goal = war.goal && war.goal.province ? this.sim.provinceState[war.goal.province] : null;
+      const goalHeld = goal && goal.occupier
+        ? this.faction(goal.occupier).shortName || this.faction(goal.occupier).name
+        : goal ? this.faction(goal.controller).shortName || this.faction(goal.controller).name : "none";
+      return {
+        attackerHeld,
+        defenderHeld,
+        label: `attackers hold ${attackerHeld.length} · defenders hold ${defenderHeld.length} · goal held by ${goalHeld}`,
+      };
     }
 
     /* ---------- top bar ---------- */
@@ -311,6 +353,7 @@
       const warStatus = this.provinceWarStatus(p, st);
       const claims = this.sim.claims.filter((c) => c.target === pid && c.strength > 10);
       const armies = this.sim.armies.filter((a) => a.loc === pid);
+      const why = this.provinceImportance(p, st, river, armies, claims);
       const names = [
         [`Locally`, p.localName], [`In the old imperial rolls`, p.imperialName],
         [`To the faithful`, p.religiousName], [`To its enemies`, p.enemyName],
@@ -340,6 +383,7 @@
           <div class="row"><span>Terrain feature</span><b>${esc(feature.label)}</b></div>
           <div class="row"><span>Economy / value</span><b>${p.value} <span class="fine">roads ${p.roads}, port ${p.port || 0}</span></b></div>
           ${p.regionName ? `<div class="row"><span>Region</span><b>${esc(p.regionName)}</b></div>` : ""}
+          <div class="row"><span>Why it matters</span><b>${esc(why || "local holding")}</b></div>
         </div>
         ${riverRows ? `<h3>River data</h3><div class="stat-rows">${riverRows}</div>` : ""}
         ${armies.length ? `<h3>Armies present</h3>` + armies.map((a) =>
@@ -454,6 +498,7 @@
         <div class="stat-rows">
           <div class="row"><span>Held provinces</span><b>${provinces.length}</b></div>
           <div class="row"><span>Treasury</span><b>${s.treasury.toLocaleString()} silver</b></div>
+          ${f.goal ? `<div class="row"><span>Likely goal</span><b>${esc(f.goal.replace(/_/g, " "))}</b></div>` : ""}
           <div class="row"><span>Economy pressure</span><b class="${econ.net >= 0 ? "good" : "bad"}">${econ.net >= 0 ? "+" : ""}${econ.net.toLocaleString()} <span class="fine">income ${income}, upkeep ${upkeep}, court ${econ.court}</span></b></div>
           <div class="row"><span>Army strength</span><b>${this.sim.armyStrength(fid).toLocaleString()} levied</b></div>
           <div class="row"><span>Manpower</span><b>${s.manpower.toLocaleString()} / ${s.maxManpower.toLocaleString()}</b></div>
@@ -539,6 +584,10 @@
       const defenderStrength = w.defSide.reduce((sum, fid) => sum + this.sim.armyStrength(fid), 0);
       const attackerExhaustion = w.atkSide.reduce((sum, fid) => sum + (this.sim.factionState[fid]?.exhaustion || 0), 0);
       const defenderExhaustion = w.defSide.reduce((sum, fid) => sum + (this.sim.factionState[fid]?.exhaustion || 0), 0);
+      const occupation = this.warOccupationSummary(w);
+      const targetProvinces = [w.goal && w.goal.province, ...sieges.map(({ p }) => p.id)]
+        .filter(Boolean)
+        .filter((id, i, arr) => arr.indexOf(id) === i);
       this._openPanel(`
         <div class="panel-head">
           <h2>${esc(w.name)}</h2>
@@ -551,8 +600,10 @@
         </div>
         <div class="stat-rows">
           <div class="row"><span>War goal</span><b>${this.warGoalLabel(w)}</b></div>
+          <div class="row"><span>Target provinces</span><b>${targetProvinces.map((id) => this.provLink(id)).join(" · ") || "none"}</b></div>
           <div class="row"><span>Who is winning</span><b class="${w.score > 10 ? "bad" : w.score < -10 ? "good" : ""}">${esc(this.warWinnerSummary(w))}</b></div>
           <div class="row"><span>War score</span><b>${Math.round(w.score)}</b></div>
+          <div class="row"><span>Occupation score</span><b>${esc(occupation.label)}</b></div>
           <div class="row"><span>Armies in field</span><b>attackers ${attackerStrength.toLocaleString()} · defenders ${defenderStrength.toLocaleString()}</b></div>
           <div class="row"><span>Exhaustion</span><b>attackers ${Math.round(attackerExhaustion)} · defenders ${Math.round(defenderExhaustion)}</b></div>
           <div class="row"><span>Battles / casualties</span><b>${w.battles.length} / ${casualties.toLocaleString()}</b></div>

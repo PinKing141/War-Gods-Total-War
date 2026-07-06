@@ -618,6 +618,15 @@ window.WG_SEED = {
    "values": "land, honour, harvest, cavalry, marriage, saintly reputation",
    "military": "heavy cavalry, levy spearmen, banner retinues, seasonal campaigns",
    "contradiction": "They preach honour while treating marriage, inheritance and oath as weapons."
+  },
+  "multi_culture": {
+   "selfName": "Many Banners",
+   "name": "Mixed Banner Cultures",
+   "meaning": "war-camp peoples gathered under shared sacred banners",
+   "location": "Ninth Banner field camps, shrine markets and oath-host villages",
+   "values": "oath proof, battlefield memory, adoption, shrine service, shared command",
+   "military": "mixed retinues, shrine guards, oath companies, veteran instructors",
+   "contradiction": "They claim anyone can earn a place beneath the banners, but old shrine ranks still decide whose oath is trusted."
   }
  },
  "religions": {
