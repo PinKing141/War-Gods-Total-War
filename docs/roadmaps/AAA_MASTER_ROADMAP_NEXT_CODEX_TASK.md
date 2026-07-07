@@ -1,35 +1,35 @@
 # Next Codex task from the AAA master roadmap
 
-The validation, UI language, scenario foundation, world scale and faction AI priority gates are complete. The immediate next task is the internal politics slice.
+The validation, UI language, scenario foundation, world scale, faction AI priority, internal politics and revolt gates are complete. The immediate next task is succession and ruler death expansion.
 
 ## Next task
 
 ```text
-Begin Phase 6-B: internal politics first pass.
+Begin Phase 6-D: succession and ruler death expansion.
 ```
 
 ## Codex prompt
 
 ```text
-Begin Phase 6-B from docs/roadmaps/AAA_MASTER_ROADMAP_PHASE_06_CORE_SIMULATION_DETAIL.md: add internal politics first pass.
+Begin Phase 6-D from docs/roadmaps/AAA_MASTER_ROADMAP_PHASE_06_CORE_SIMULATION_DETAIL.md: add succession and ruler death expansion.
 
 Tasks:
-1. Add internal state values for court tension, succession tension, army influence, tax burden, faith tension, culture tension, regional autonomy, noble loyalty and merchant loyalty.
-2. Make internal state respond to ruler traits, wars, exhaustion, treasury pressure, occupied land, culture/faith mismatch and realm size.
-3. Make internal state affect war willingness, taxes, revolt risk and succession pressure.
-4. Show internal politics clearly in the realm inspector.
+1. Add inheritance law, heir legitimacy, regency, pretender claims, succession crisis, powerful generals backing claimants and court factions backing heirs.
+2. Make ruler death cause stable succession, regency or crisis based on heirs and internal politics.
+3. Update ruler, heir, claims, faction state and chronicle when succession resolves.
+4. Show succession state clearly in the realm and character UI.
 5. Keep map cosmetics unchanged.
 6. Do not add new factions or provinces in this slice.
 ```
 
 ## Closing gate
 
-Phase 6-B is closed only when:
+Phase 6-D is closed only when:
 
 ```text
-Strong factions can suffer internal instability.
-Internal state affects war willingness, taxes, revolt risk and succession.
-Realm inspector explains internal stress in player language.
+Ruler death can cause stable succession, regency or crisis.
+Succession results update ruler, heir, claims, faction state and chronicle.
+Succession state is visible in UI and validated.
 Existing balance and validation gates still pass.
 Existing tests still pass.
 ```
@@ -53,4 +53,6 @@ Phase 5-A: Faction tier support — DONE
 Phase 5-B: Add 8 new major or regional powers — DONE
 Phase 5-C: Regional balance pass — DONE
 Phase 6-A: Faction AI priorities — DONE
+Phase 6-B: Internal politics first pass — DONE
+Phase 6-C: Revolts and instability — DONE
 ```

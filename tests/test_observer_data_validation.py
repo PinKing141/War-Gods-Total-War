@@ -287,14 +287,29 @@ def test_runtime_validation_reports_bad_army_war_and_state_fields():
                 "score": "bad",
             },
         ],
+        "revolts": [
+            {
+                "id": "REVOLT_BAD",
+                "province": "PROV_MISSING",
+                "against": "FAC_MISSING",
+                "type": "peasant_revolt",
+                "status": "bad",
+                "strength": -5,
+                "progress": 2,
+                "causes": [],
+            }
+        ],
         "provinceState": {
             seed["provinces"][0]["id"]: {
                 "controller": "FAC_MISSING",
                 "occupier": "FAC_MISSING",
                 "siege": {"by": "FAC_MISSING", "progress": 0},
+                "revoltId": "REVOLT_MISSING",
                 "pop": -1,
                 "garrison": -1,
                 "devastation": -1,
+                "instability": -1,
+                "recentConquest": -1,
             }
         },
         "factionState": {
@@ -305,6 +320,19 @@ def test_runtime_validation_reports_bad_army_war_and_state_fields():
                 "maxManpower": -1,
                 "prestige": -1,
                 "exhaustion": -1,
+                "internal": {
+                    "courtTension": 101,
+                    "successionTension": 0,
+                    "armyInfluence": 0,
+                    "taxBurden": 0,
+                    "faithTension": 0,
+                    "cultureTension": 0,
+                    "regionalAutonomy": 0,
+                    "nobleLoyalty": 0,
+                    "merchantLoyalty": 0,
+                    "revoltRisk": 0,
+                    "successionPressure": 0,
+                },
             }
         },
     }
@@ -328,6 +356,13 @@ def test_runtime_validation_reports_bad_army_war_and_state_fields():
     assert "invalid_war_score" in codes
     assert "unknown_runtime_controller" in codes
     assert "unknown_runtime_ruler" in codes
+    assert "internal_politics_out_of_range" in codes
+    assert "unknown_province_revolt" in codes
+    assert "unknown_revolt_province" in codes
+    assert "unknown_revolt_target" in codes
+    assert "invalid_revolt_status" in codes
+    assert "negative_revolt_strength" in codes
+    assert "invalid_revolt_progress" in codes
     assert "runtime.armies[row 2" in report
     assert ".warId" in report
 
@@ -483,6 +518,7 @@ sim._declareWar('FAC_ROV_HALEN', 'FAC_NINE_BANNERS_HALLOW', null, false);
 for (let i = 0; i < 40; i++) sim.tick();
 fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
   wars: sim.wars,
+  revolts: sim.revolts,
   armies: sim.armies,
   characters: sim.characters,
   provinceState: sim.provinceState,
@@ -630,6 +666,7 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
   dailySupplyUse: army.dailySupplyUse,
   siegeOccupiedBy: occupiedBeforePeace,
   peaceSummary: war.peaceSummary,
+  revolts: sim.revolts,
   warOver: war.over,
   intentReason: war.intentReason,
   armyIntentReason: army.intentReason,

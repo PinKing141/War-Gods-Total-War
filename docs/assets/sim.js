@@ -58,6 +58,7 @@
       this.events = [];
       this.monthlyRecaps = [];
       this.wars = [];
+      this.revolts = [];
       this.armies = [];
       this.adjacency = null;   // provided by map after ownership raster
       this.fx = [];            // transient visual effects for the UI to drain
@@ -82,6 +83,7 @@
           manpower: 0, maxManpower: 0,
           prestige: this.rng.int(20, 80),
           exhaustion: 0,
+          internal: this._initialInternalState(f.id),
           rulerId: ruler ? ruler.id : null,
           truces: {}, tribute: {},
           warsWon: 0, warsLost: 0,
@@ -92,7 +94,7 @@
         this.provinceState[p.id] = {
           controller: p.controller, occupier: null,
           pop, devastation: 0, garrison: Math.round(200 + p.fort * 180),
-          siege: null,
+          siege: null, instability: 0, revoltId: null, recentConquest: 0,
         };
       }
       for (const f of seed.factions) this._refreshManpower(f.id, true);
@@ -167,6 +169,28 @@
       return f;
     }
 
+    _clampPolitics(value) {
+      return Math.max(0, Math.min(100, Math.round(value)));
+    }
+
+    _initialInternalState(fid) {
+      const f = this.faction(fid) || {};
+      const text = `${f.government || ""} ${f.identity || ""} ${f.pressure || ""}`.toLowerCase();
+      return {
+        courtTension: /council|charter|league|confederation|board/.test(text) ? 24 : 16,
+        successionTension: /crown|monarchy|khan|ring|hearth/.test(text) ? 22 : 14,
+        armyInfluence: /khan|horse|banner|war|march|pass/.test(text) ? 36 : 20,
+        taxBurden: /tax|debt|credit|toll|ledger|salt|canal/.test(text) ? 32 : 22,
+        faithTension: /temple|faith|sacred|protector|witness|hearth|banner/.test(text) ? 14 : 22,
+        cultureTension: f.species === "mixed" || f.species === "human_orc_mixed" ? 28 : 16,
+        regionalAutonomy: /confederation|league|freehold|compact|forest/.test(text) ? 38 : 22,
+        nobleLoyalty: /crown|duchy|court|khan|ring/.test(text) ? 58 : 50,
+        merchantLoyalty: /merchant|trade|credit|ledger|sea|canal|road|salt/.test(text) ? 64 : 46,
+        revoltRisk: 0,
+        successionPressure: 0,
+      };
+    }
+
     _tierWeight(fid) {
       const faction = this.faction(fid);
       return Math.max(0.45, Math.min(1.5, faction && faction.tierWeight ? faction.tierWeight : 0.88));
@@ -236,6 +260,8 @@
       const op = strongestNeighbour ? this.opinion(fid, strongestNeighbour) : 0;
       const manpowerRatio = st.maxManpower ? st.manpower / st.maxManpower : 0;
       const deficit = this.monthlyIncome(fid) - this.monthlyUpkeep(fid) - Math.max(0, Math.round(st.treasury * 0.02));
+      const internal = st.internal || this._initialInternalState(fid);
+      const stress = Math.max(internal.courtTension || 0, internal.successionTension || 0, internal.regionalAutonomy || 0, internal.taxBurden || 0);
       const ruler = this.rulerOf(fid);
       const traitWar = this._traitFactor(fid, "war");
       const base = this._priorityBaseProfile(fid);
@@ -252,6 +278,10 @@
         destroy_rival: base.destroy_rival * 12 + Math.max(0, -op) * 0.28 + Math.max(0, traitWar - 1) * 7,
         survive_economic_stress: base.survive_economic_stress * 12 + Math.max(0, 250 - st.treasury) / 16 + (deficit < 0 ? Math.min(14, -deficit / 12) : 0),
       };
+      score.avoid_war += stress * 0.16;
+      score.protect_homeland += (internal.regionalAutonomy || 0) * 0.08;
+      score.survive_economic_stress += (internal.taxBurden || 0) * 0.12;
+      score.raid_for_wealth += Math.max(0, 45 - (internal.merchantLoyalty || 50)) * 0.12;
       if (ruler && ruler.traits.some((t) => t.id === "cautious" || t.id === "patient")) {
         score.avoid_war += 5; score.protect_homeland += 3;
       }
@@ -287,12 +317,17 @@
 
     _priorityWarMultiplier(attacker, defender, claim, isRaid) {
       const priorities = Object.fromEntries(this.aiPriorityScores(attacker, defender).map((p) => [p.id, p.score]));
+      const internal = this.factionState[attacker] && this.factionState[attacker].internal;
       let m = 1;
       if (claim) m *= 1 + Math.min(0.55, (priorities.recover_old_claims || 0) / 80);
       if (isRaid) m *= 1 + Math.min(0.45, (priorities.raid_for_wealth || 0) / 90);
       m *= 1 + Math.min(0.25, (priorities.expand_territory || 0) / 180);
       m *= 1 + Math.min(0.2, (priorities.destroy_rival || 0) / 200);
       m *= 1 - Math.min(0.55, (priorities.avoid_war || 0) / 110);
+      if (internal) {
+        m *= 1 - Math.min(0.25, this.internalInstability(attacker) / 260);
+        if ((internal.armyInfluence || 0) > 55) m *= 1.08;
+      }
       return Math.max(0.35, Math.min(1.65, m));
     }
 
@@ -315,7 +350,99 @@
         income += (st.pop / 90) * (1 + p.roads * 0.15) * (1 - st.devastation / 120);
         income += p.port * 14;
       }
+      const internal = this.factionState[fid] && this.factionState[fid].internal;
+      if (internal) {
+        const taxMod = 1 + (internal.taxBurden - 25) / 190;
+        const loyaltyMod = 1 - Math.max(0, 45 - internal.merchantLoyalty) / 95;
+        income *= Math.max(0.68, Math.min(1.28, taxMod * loyaltyMod));
+      }
       return Math.round(income);
+    }
+
+    internalPoliticsSummary(fid) {
+      const st = this.factionState[fid];
+      const internal = st && st.internal;
+      if (!internal) return [];
+      const rows = [
+        ["Court tension", internal.courtTension, "court factions strain central rule"],
+        ["Succession tension", internal.successionTension, "the line of rule feels disputed"],
+        ["Army influence", internal.armyInfluence, "captains and musters shape policy"],
+        ["Tax burden", internal.taxBurden, "tax pressure strains towns and estates"],
+        ["Faith tension", internal.faithTension, "temples and law disagree"],
+        ["Culture tension", internal.cultureTension, "peoples inside the realm pull apart"],
+        ["Regional autonomy", internal.regionalAutonomy, "local powers resist the center"],
+        ["Noble loyalty", 100 - internal.nobleLoyalty, "nobles are losing confidence"],
+        ["Merchant loyalty", 100 - internal.merchantLoyalty, "merchants are losing confidence"],
+      ];
+      return rows
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([label, value, reason]) => ({ label, value: this._clampPolitics(value), reason }));
+    }
+
+    internalInstability(fid) {
+      const st = this.factionState[fid];
+      const internal = st && st.internal;
+      if (!internal) return 0;
+      return this._clampPolitics(
+        (internal.courtTension * 0.14) +
+        (internal.successionTension * 0.15) +
+        (internal.armyInfluence * 0.08) +
+        (internal.taxBurden * 0.12) +
+        (internal.faithTension * 0.10) +
+        (internal.cultureTension * 0.10) +
+        (internal.regionalAutonomy * 0.13) +
+        ((100 - internal.nobleLoyalty) * 0.10) +
+        ((100 - internal.merchantLoyalty) * 0.08)
+      );
+    }
+
+    _updateInternalPolitics(fid) {
+      const f = this.faction(fid);
+      const st = this.factionState[fid];
+      if (!f || !st) return;
+      if (!st.internal) st.internal = this._initialInternalState(fid);
+      const internal = st.internal;
+      const owned = this.ownedProvinces(fid);
+      const wars = this.warsOf(fid);
+      const occupied = owned.filter((p) => this.provinceState[p.id].occupier).length;
+      const sieged = owned.filter((p) => this.provinceState[p.id].siege).length;
+      const claimsHeldByOthers = this.claims.filter((c) => c.claimant === fid &&
+        this.provinceState[c.target] && this.provinceState[c.target].controller !== fid).length;
+      const activeArmies = this.armies.filter((a) => a.faction === fid).length;
+      const heir = this.heirOf(fid);
+      const ruler = this.rulerOf(fid);
+      const income = this.monthlyIncome(fid);
+      const net = income - this.monthlyUpkeep(fid) - Math.max(0, Math.round(st.treasury * 0.02));
+      const rulerWar = ruler ? this._traitFactor(fid, "war") : 1;
+      const drift = (value, target, step) => value + Math.sign(target - value) * Math.min(step, Math.abs(target - value));
+
+      internal.courtTension = drift(internal.courtTension, 12 + owned.length * 2 + wars.length * 4 + Math.max(0, -net) / 18, 4);
+      internal.successionTension = drift(internal.successionTension, (heir ? 14 : 48) + (ruler && ruler.age > 55 ? 12 : 0) + st.exhaustion * 0.10, 5);
+      internal.armyInfluence = drift(internal.armyInfluence, 16 + activeArmies * 14 + wars.length * 16 + Math.max(0, rulerWar - 1) * 18, 6);
+      internal.taxBurden = drift(internal.taxBurden, 22 + Math.max(0, -net) / 7 + Math.max(0, 250 - st.treasury) / 15 + st.exhaustion * 0.08, 5);
+      internal.faithTension = drift(internal.faithTension, 14 + wars.length * 2, 3);
+      internal.cultureTension = drift(internal.cultureTension, (f.species === "mixed" || f.species === "human_orc_mixed" ? 24 : 14) + owned.length * 1.5 + occupied * 7, 3);
+      internal.regionalAutonomy = drift(internal.regionalAutonomy, 18 + Math.max(0, owned.length - 1) * 8 + occupied * 10 + claimsHeldByOthers * 3, 4);
+      internal.nobleLoyalty = drift(internal.nobleLoyalty, 68 - internal.courtTension * 0.28 - internal.taxBurden * 0.18 - st.exhaustion * 0.18 + st.prestige * 0.04, 5);
+      internal.merchantLoyalty = drift(internal.merchantLoyalty, 68 - internal.taxBurden * 0.35 - occupied * 8 + Math.max(0, net) * 0.04, 5);
+      internal.revoltRisk = this._clampPolitics(
+        occupied * 10 + sieged * 8 + internal.taxBurden * 0.22 + internal.regionalAutonomy * 0.18 +
+        internal.cultureTension * 0.14 + internal.faithTension * 0.12 + Math.max(0, 45 - internal.nobleLoyalty) * 0.26
+      );
+      internal.successionPressure = this._clampPolitics(internal.successionTension * 0.75 + (heir ? 0 : 18) + (ruler && ruler.age > 60 ? 12 : 0));
+      for (const key of Object.keys(internal)) internal[key] = this._clampPolitics(internal[key]);
+
+      if (this.day > 0 && internal.revoltRisk >= 55 && this.rng.chance(0.08)) {
+        this.log(2, "politics",
+          `${f.name} faces dangerous internal unrest: tax strain, autonomy and court distrust are now feeding revolt talk.`,
+          { faction: fid });
+      }
+      if (this.day > 0 && internal.successionPressure >= 60 && this.rng.chance(0.06)) {
+        this.log(2, "politics",
+          `${f.name} whispers over succession grow louder; every council now asks who can hold the realm together.`,
+          { faction: fid, character: st.rulerId });
+      }
     }
 
     monthlyUpkeep(fid) {
@@ -339,6 +466,161 @@
         const st = this.provinceState[p.id];
         return st.controller === fid && (st.occupier || st.siege);
       });
+    }
+
+    provinceInstability(pid) {
+      const p = this.province(pid);
+      const st = this.provinceState[pid];
+      if (!p || !st) return { score: 0, causes: [] };
+      const controller = this.factionState[st.controller];
+      const internal = controller && controller.internal;
+      const causes = [];
+      let score = 0;
+      const add = (amount, cause) => {
+        if (amount <= 0) return;
+        score += amount;
+        causes.push(cause);
+      };
+      add(st.devastation * 0.45, "devastation");
+      add(st.occupier ? 22 : 0, "occupation");
+      add(st.recentConquest || 0, "recent conquest");
+      add(st.garrison < 160 ? 18 : st.garrison < 300 ? 8 : 0, "low garrison");
+      if (internal) {
+        add(internal.cultureTension * 0.16, "culture tension");
+        add(internal.faithTension * 0.15, "faith tension");
+        add(internal.taxBurden * 0.18, "high taxes");
+        add(internal.regionalAutonomy * 0.14, "regional autonomy");
+        add(Math.max(0, 45 - internal.nobleLoyalty) * 0.22, "weak noble loyalty");
+      }
+      add(st.riotLogged ? 16 : 0, "famine");
+      const ruler = controller && this.rulerOf(st.controller);
+      add(!ruler || !ruler.alive ? 16 : 0, "weak ruler");
+      add(this.claims.some((c) => c.target === pid && c.claimant !== st.controller && c.strength >= 60) ? 12 : 0, "foreign support");
+      return { score: this._clampPolitics(score), causes };
+    }
+
+    _revoltTypeFor(pid, causes) {
+      const p = this.province(pid);
+      const st = this.provinceState[pid];
+      const internal = this.factionState[st.controller] && this.factionState[st.controller].internal;
+      if (internal && internal.successionPressure >= 65) return "pretender_revolt";
+      if (causes.includes("regional autonomy") || causes.includes("foreign support")) return "separatist_revolt";
+      if (causes.includes("faith tension")) return "religious_uprising";
+      if (internal && internal.armyInfluence >= 62) return "military_coup";
+      if (causes.includes("weak noble loyalty")) return "noble_revolt";
+      if (p && /frontier|pass|steppe|oasis|dryland/i.test(`${p.terrain} ${p.terrainFeature || ""}`)) return "frontier_independence";
+      return "peasant_revolt";
+    }
+
+    _startRevolt(pid, forcedType) {
+      const p = this.province(pid);
+      const st = this.provinceState[pid];
+      if (!p || !st || st.revoltId) return null;
+      const instability = this.provinceInstability(pid);
+      const type = forcedType || this._revoltTypeFor(pid, instability.causes);
+      const revolt = {
+        id: uid("revolt"),
+        type,
+        province: pid,
+        against: st.controller,
+        causes: instability.causes,
+        strength: Math.max(120, Math.round(st.pop * (0.035 + instability.score / 2200))),
+        progress: 0.25,
+        startedDay: this.day,
+        startDate: this.formatDate(),
+        status: "active",
+      };
+      this.revolts.push(revolt);
+      st.revoltId = revolt.id;
+      st.instability = Math.max(st.instability || 0, instability.score);
+      this.log(3, "revolt",
+        `${p.name} erupts in ${type.replace(/_/g, " ")} against ${this.faction(st.controller).name}; causes: ${instability.causes.join(", ") || "local anger"}.`,
+        { province: pid, faction: st.controller, revolt: revolt.id });
+      return revolt;
+    }
+
+    _revoltPulse() {
+      for (const p of this.seed.provinces) {
+        const st = this.provinceState[p.id];
+        const instability = this.provinceInstability(p.id);
+        st.instability = instability.score;
+        if (st.recentConquest) st.recentConquest = Math.max(0, st.recentConquest - 2);
+        if (st.revoltId) continue;
+        const internal = this.factionState[st.controller] && this.factionState[st.controller].internal;
+        const realmRisk = internal ? internal.revoltRisk : 0;
+        if (instability.score < 55 && realmRisk < 60) continue;
+        const chance = Math.min(0.10, Math.max(0.01, (instability.score + realmRisk - 85) / 700));
+        if (this.rng.chance(chance)) this._startRevolt(p.id);
+      }
+
+      for (const revolt of this.revolts) {
+        if (revolt.status !== "active") continue;
+        const p = this.province(revolt.province);
+        const st = this.provinceState[revolt.province];
+        if (!p || !st) { revolt.status = "invalid"; continue; }
+        const controllerState = this.factionState[revolt.against];
+        const suppression = (st.garrison / Math.max(revolt.strength, 1)) * 0.13 +
+          (controllerState ? controllerState.manpower / Math.max(controllerState.maxManpower, 1) * 0.08 : 0);
+        const pressure = 0.07 + st.instability / 900 + st.devastation / 1300;
+        revolt.progress += pressure - suppression + this.rng.float(-0.025, 0.035);
+        revolt.progress = Math.max(0, Math.min(1, revolt.progress));
+        st.devastation = Math.min(100, st.devastation + 1.2);
+        st.garrison = Math.max(30, Math.round(st.garrison - revolt.strength * 0.01));
+        if (revolt.progress >= 0.55 && !revolt.clashLogged) {
+          revolt.clashLogged = true;
+          this.log(2, "revolt",
+            `${p.name}'s ${revolt.type.replace(/_/g, " ")} spreads into open fighting; the garrison is bleeding authority.`,
+            { province: p.id, faction: revolt.against, revolt: revolt.id });
+        }
+        if (revolt.progress >= 1) {
+          this._endRevolt(revolt, true, "rebel pressure overwhelmed the local garrison");
+        } else if (revolt.progress <= 0.02) {
+          this._endRevolt(revolt, false, "the garrison broke the revolt before it could spread");
+        }
+      }
+    }
+
+    _endRevolt(revolt, rebelsWin, reason) {
+      const p = this.province(revolt.province);
+      const st = this.provinceState[revolt.province];
+      if (!p || !st) return;
+      revolt.status = rebelsWin ? "won" : "suppressed";
+      revolt.endedDay = this.day;
+      revolt.endDate = this.formatDate();
+      revolt.outcome = reason;
+      st.revoltId = null;
+      if (rebelsWin) {
+        const claimant = this.claims
+          .filter((c) => c.target === p.id && c.claimant !== revolt.against)
+          .sort((a, b) => b.strength - a.strength)[0];
+        const oldController = st.controller;
+        if (claimant && this.factionState[claimant.claimant]) {
+          st.controller = claimant.claimant;
+          this._refreshManpower(claimant.claimant, true);
+        }
+        st.occupier = null;
+        st.siege = null;
+        st.devastation = Math.min(100, st.devastation + 14);
+        st.recentConquest = 22;
+        this.factionState[oldController].exhaustion += 10;
+        if (this.factionState[oldController].internal) {
+          this.factionState[oldController].internal.revoltRisk = Math.min(100, this.factionState[oldController].internal.revoltRisk + 8);
+        }
+        this.mapVersion++;
+        this.log(3, "revolt",
+          `${p.name}'s ${revolt.type.replace(/_/g, " ")} wins because ${reason}. ${st.controller !== oldController ? this.faction(st.controller).name + " takes control." : "The old order survives only in name."}`,
+          { province: p.id, faction: st.controller, revolt: revolt.id });
+      } else {
+        st.instability = Math.max(0, st.instability - 22);
+        st.garrison = Math.max(50, Math.round(st.garrison * 0.82));
+        if (this.factionState[revolt.against] && this.factionState[revolt.against].internal) {
+          this.factionState[revolt.against].internal.nobleLoyalty = Math.max(0, this.factionState[revolt.against].internal.nobleLoyalty - 3);
+          this.factionState[revolt.against].internal.taxBurden = Math.max(0, this.factionState[revolt.against].internal.taxBurden - 5);
+        }
+        this.log(3, "revolt",
+          `${p.name}'s ${revolt.type.replace(/_/g, " ")} is suppressed because ${reason}. The province is quiet, not healed.`,
+          { province: p.id, faction: revolt.against, revolt: revolt.id });
+      }
     }
 
     validateState() {
@@ -399,6 +681,17 @@
         for (const field of ["treasury", "manpower", "maxManpower", "prestige", "exhaustion"]) {
           if ((st[field] || 0) < 0) add("error", "negative_faction_number", `${loc}.${field}`, String(st[field]));
         }
+        if (!st.internal) add("error", "missing_internal_politics", `${loc}.internal`, "Faction has no internal politics state.");
+        if (st.internal) {
+          for (const field of [
+            "courtTension", "successionTension", "armyInfluence", "taxBurden", "faithTension",
+            "cultureTension", "regionalAutonomy", "nobleLoyalty", "merchantLoyalty",
+            "revoltRisk", "successionPressure",
+          ]) {
+            if (typeof st.internal[field] !== "number") add("error", "invalid_internal_politics_number", `${loc}.internal.${field}`, String(st.internal[field]));
+            else if (st.internal[field] < 0 || st.internal[field] > 100) add("error", "internal_politics_out_of_range", `${loc}.internal.${field}`, String(st.internal[field]));
+          }
+        }
       }
 
       for (const [pid, st] of Object.entries(this.provinceState)) {
@@ -407,7 +700,8 @@
         if (!factions.has(st.controller)) add("error", "unknown_runtime_controller", `${loc}.controller`, st.controller);
         if (st.occupier && !factions.has(st.occupier)) add("error", "unknown_occupier", `${loc}.occupier`, st.occupier);
         if (st.siege && !factions.has(st.siege.by)) add("error", "unknown_sieger", `${loc}.siege.by`, st.siege.by);
-        for (const field of ["pop", "garrison", "devastation"]) {
+        if (st.revoltId && !this.revolts.some((r) => r.id === st.revoltId)) add("error", "unknown_province_revolt", `${loc}.revoltId`, st.revoltId);
+        for (const field of ["pop", "garrison", "devastation", "instability", "recentConquest"]) {
           if ((st[field] || 0) < 0) add("error", "negative_province_state_number", `${loc}.${field}`, String(st[field]));
         }
       }
@@ -427,6 +721,15 @@
         for (const sideName of ["atkSide", "defSide"]) {
           for (const fid of (war[sideName] || [])) if (!factions.has(fid)) add("error", "unknown_war_side", `${loc}.${sideName}`, fid);
         }
+      }
+
+      for (const revolt of this.revolts) {
+        const loc = `revolt:${revolt.id}`;
+        if (!provinces.has(revolt.province)) add("error", "unknown_revolt_province", loc, revolt.province);
+        if (!factions.has(revolt.against)) add("error", "unknown_revolt_target", loc, revolt.against);
+        if (!["active", "won", "suppressed", "invalid"].includes(revolt.status)) add("error", "invalid_revolt_status", loc, String(revolt.status));
+        if ((revolt.strength || 0) < 0) add("error", "negative_revolt_strength", `${loc}.strength`, String(revolt.strength));
+        if (typeof revolt.progress !== "number" || revolt.progress < 0 || revolt.progress > 1) add("error", "invalid_revolt_progress", `${loc}.progress`, String(revolt.progress));
       }
 
       for (const army of this.armies) {
@@ -873,6 +1176,7 @@
     _monthlyPulse() {
       // economy — court expenses grow with the hoard, so treasuries plateau
       for (const f of this.seed.factions) {
+        this._updateInternalPolitics(f.id);
         const s = this.factionState[f.id];
         const court = Math.max(0, Math.round(s.treasury * 0.02));
         s.treasury += this.monthlyIncome(f.id) - this.monthlyUpkeep(f.id) - court;
@@ -916,6 +1220,7 @@
       this._diplomacyPulse();
       this._peacePulse();
       this._restorationPulse();
+      this._revoltPulse();
       this._omenPulse();
       // reinforcements
       for (const army of this.armies) {
@@ -1064,7 +1369,7 @@
           const isRaider = this.faction(agg).government === "seasonal_khan_ring";
           if (!claim && !isRaider && !this._factionsBorder(agg, def)) continue;
 
-          let p = (rel.warRisk / 100) * 0.045 * this._traitFactor(agg, "war") * this._tierWeight(agg);
+          let p = (rel.warRisk / 100) * 0.052 * this._traitFactor(agg, "war") * this._tierWeight(agg);
           if (claim) p *= 1 + claim.strength / 120;
           if (this.armyStrength(def) > 0) p *= 0.4;     // hesitant while target mobilized
           if (this.factionState[agg].treasury < 100) p *= 0.4;

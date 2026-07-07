@@ -119,6 +119,7 @@ if ({str(sample_war).lower()}) {{
 for (let i = 0; i < {runtime_days}; i++) sim.tick();
 fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
   wars: sim.wars,
+  revolts: sim.revolts,
   armies: sim.armies,
   characters: sim.characters,
   provinceState: sim.provinceState,

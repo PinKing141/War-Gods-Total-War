@@ -161,6 +161,10 @@
       if (st.siege) {
         return `under siege by ${this.faction(st.siege.by).shortName || this.faction(st.siege.by).name} (${Math.round(st.siege.progress * 100)}%)`;
       }
+      if (st.revoltId) {
+        const revolt = this.sim.revolts && this.sim.revolts.find((r) => r.id === st.revoltId);
+        return revolt ? `${revolt.type.replace(/_/g, " ")} (${Math.round(revolt.progress * 100)}%)` : "revolt reported";
+      }
       if (st.occupier) {
         return `occupied by ${this.faction(st.occupier).shortName || this.faction(st.occupier).name}`;
       }
@@ -187,6 +191,8 @@
         if (river.navigableRiver) reasons.push("river trade");
       }
       if (st.siege) reasons.push("active siege");
+      if (st.revoltId) reasons.push("active revolt");
+      if ((st.instability || 0) >= 45) reasons.push(`instability ${Math.round(st.instability)}`);
       if (st.occupier) reasons.push("occupied territory");
       if (armies.length) reasons.push("armies present");
       if (claims.length) reasons.push(`${claims.length} active claim${claims.length === 1 ? "" : "s"}`);
@@ -216,6 +222,9 @@
       if (st.treasury < 80) risks.push("low treasury");
       if (st.manpower < st.maxManpower * 0.25) risks.push("low manpower");
       if (st.exhaustion >= 30) risks.push(`war exhaustion ${Math.round(st.exhaustion)}`);
+      if (this.sim.internalInstability && this.sim.internalInstability(fid) >= 45) risks.push(`internal instability ${this.sim.internalInstability(fid)}`);
+      if (st.internal && st.internal.revoltRisk >= 45) risks.push(`revolt risk ${st.internal.revoltRisk}`);
+      if (st.internal && st.internal.successionPressure >= 55) risks.push(`succession pressure ${st.internal.successionPressure}`);
       if (occupied.length) risks.push(`${occupied.length} occupied`);
       if (sieged.length) risks.push(`${sieged.length} under siege`);
       if (!this.sim.heirOf(fid)) risks.push("no clear heir");
@@ -394,6 +403,8 @@
       const claims = this.sim.claims.filter((c) => c.target === pid && c.strength > 10);
       const armies = this.sim.armies.filter((a) => a.loc === pid);
       const why = this.provinceImportance(p, st, river, armies, claims);
+      const instability = this.sim.provinceInstability ? this.sim.provinceInstability(p.id) : { score: st.instability || 0, causes: [] };
+      const revolt = st.revoltId && this.sim.revolts ? this.sim.revolts.find((r) => r.id === st.revoltId) : null;
       const names = [
         [`Locally`, p.localName], [`In the old imperial rolls`, p.imperialName],
         [`To the faithful`, p.religiousName], [`To its enemies`, p.enemyName],
@@ -411,6 +422,7 @@
           ${this.debugEnabled && st.staticMapProvince ? `<div class="row"><span>Debug State</span><b class="fine">static map province</b></div>` : ""}
           ${st.occupier ? `<div class="row occupied"><span>Occupied By</span><b>${this.shieldChip(st.occupier)}</b></div>` : ""}
           ${st.siege ? `<div class="row occupied"><span>Under Siege</span><b>${this.shieldChip(st.siege.by)} — ${Math.round(st.siege.progress * 100)}%</b></div>` : ""}
+          ${revolt ? `<div class="row occupied"><span>Revolt</span><b>${esc(revolt.type.replace(/_/g, " "))} — ${Math.round(revolt.progress * 100)}%</b></div>` : ""}
           <div class="row"><span>Status</span><b class="${warStatus === "peaceful" ? "good" : "bad"}">${esc(warStatus)}</b></div>
           <div class="row"><span>Population</span><b>${st.pop.toLocaleString()}</b></div>
           <div class="row"><span>Garrison</span><b>${Math.round(st.garrison || 0).toLocaleString()}</b></div>
@@ -419,6 +431,7 @@
           ${p.port ? `<div class="row"><span>Harbour</span><b>${this.pips(p.port, 5)}</b></div>` : ""}
           ${p.manaSite ? `<div class="row"><span>Mana Site</span><b>${this.pips(p.manaSite, 3, "✦")}</b></div>` : ""}
           ${st.devastation > 4 ? `<div class="row"><span>Devastation</span><b class="bad">${Math.round(st.devastation)}%</b></div>` : ""}
+          ${instability.score > 10 ? `<div class="row"><span>Instability</span><b class="${instability.score >= 55 ? "bad" : ""}">${Math.round(instability.score)} <span class="fine">${esc(instability.causes.join(", ") || "local strain")}</span></b></div>` : ""}
           <div class="row"><span>Biome</span><b>${esc(biome.label)}</b></div>
           <div class="row"><span>Terrain Feature</span><b>${esc(feature.label)}</b></div>
           <div class="row"><span>Economy</span><b>${p.value} <span class="fine">roads ${p.roads}, port ${p.port || 0}</span></b></div>
@@ -517,8 +530,11 @@
       const income = econ.income, upkeep = econ.upkeep;
       const risks = this.factionRisks(fid);
       const priorities = this.sim.aiPriorityScores ? this.sim.aiPriorityScores(fid).slice(0, 4) : [];
+      const internalSummary = this.sim.internalPoliticsSummary ? this.sim.internalPoliticsSummary(fid) : [];
+      const instability = this.sim.internalInstability ? this.sim.internalInstability(fid) : 0;
       const occupied = provinces.filter((p) => this.sim.provinceState[p.id].occupier);
       const sieged = provinces.filter((p) => this.sim.provinceState[p.id].siege);
+      const revolting = provinces.filter((p) => this.sim.provinceState[p.id].revoltId);
 
       this._openPanel(`
         <div class="panel-head realm-head">
@@ -547,15 +563,21 @@
           <div class="row"><span>Army Strength</span><b>${this.sim.armyStrength(fid).toLocaleString()} levied</b></div>
           <div class="row"><span>Manpower</span><b>${s.manpower.toLocaleString()} / ${s.maxManpower.toLocaleString()}</b></div>
           <div class="row"><span>Prestige</span><b>${Math.round(s.prestige)}</b></div>
+          ${s.internal ? `<div class="row"><span>Internal Stability</span><b class="${instability >= 45 ? "bad" : instability <= 22 ? "good" : ""}">${100 - instability} <span class="fine">instability ${instability}</span></b></div>` : ""}
+          ${s.internal ? `<div class="row"><span>Revolt Risk</span><b class="${s.internal.revoltRisk >= 45 ? "bad" : ""}">${s.internal.revoltRisk}</b></div>` : ""}
+          ${s.internal ? `<div class="row"><span>Succession Pressure</span><b class="${s.internal.successionPressure >= 55 ? "bad" : ""}">${s.internal.successionPressure}</b></div>` : ""}
           ${s.exhaustion > 5 ? `<div class="row"><span>War Exhaustion</span><b class="bad">${Math.round(s.exhaustion)}</b></div>` : ""}
           ${occupied.length ? `<div class="row occupied"><span>Occupied Lands</span><b>${occupied.length}</b></div>` : ""}
           ${sieged.length ? `<div class="row occupied"><span>Under Siege</span><b>${sieged.length}</b></div>` : ""}
+          ${revolting.length ? `<div class="row occupied"><span>Revolts</span><b>${revolting.length}</b></div>` : ""}
           <div class="row"><span>Wars Won / Lost</span><b>${s.warsWon} / ${s.warsLost}</b></div>
           <div class="row"><span>Risk</span><b class="${risks.length ? "bad" : "good"}">${risks.length ? esc(risks.join(" · ")) : "stable for now"}</b></div>
         </div>
         ${f.pressure ? `<h3>Conflict</h3><div class="quote">${esc(f.pressure)}</div>` : ""}
         ${priorities.length ? `<h3>Priorities</h3>` + priorities.map((p) =>
           `<div class="row"><span>${esc(p.label)}</span><b>${p.score}</b><div class="fine">${esc(p.reason)}</div></div>`).join("") : ""}
+        ${internalSummary.length ? `<h3>Internal Politics</h3>` + internalSummary.map((p) =>
+          `<div class="row"><span>${esc(p.label)}</span><b class="${p.value >= 55 ? "bad" : ""}">${p.value}</b><div class="fine">${esc(p.reason)}</div></div>`).join("") : ""}
         <h3>Faith — ${esc(religion.name || f.religion)}</h3>
         <div class="quote">“${esc(religion.claim || "")}”</div>
         <h3>Culture — ${esc(culture.name || f.culture)} (${esc(culture.selfName || "")})</h3>

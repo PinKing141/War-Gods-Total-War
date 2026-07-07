@@ -279,7 +279,10 @@ def collect_runtime_validation_issues(snapshot: dict, seed: dict) -> list[Valida
             add("unknown_runtime_occupier", f"{loc}.occupier", state["occupier"])
         if state.get("siege") and state["siege"].get("by") not in factions:
             add("unknown_runtime_sieger", f"{loc}.siege.by", state["siege"].get("by"))
-        for field in ["pop", "garrison", "devastation"]:
+        revolt_ids = {revolt.get("id") for revolt in snapshot.get("revolts", [])}
+        if state.get("revoltId") and state["revoltId"] not in revolt_ids:
+            add("unknown_province_revolt", f"{loc}.revoltId", state["revoltId"])
+        for field in ["pop", "garrison", "devastation", "instability", "recentConquest"]:
             if state.get(field, 0) < 0:
                 add("negative_province_state_number", f"{loc}.{field}", str(state.get(field)))
 
@@ -292,5 +295,33 @@ def collect_runtime_validation_issues(snapshot: dict, seed: dict) -> list[Valida
         for field in ["treasury", "manpower", "maxManpower", "prestige", "exhaustion"]:
             if state.get(field, 0) < 0:
                 add("negative_faction_state_number", f"{loc}.{field}", str(state.get(field)))
+        internal = state.get("internal")
+        if not internal:
+            add("missing_internal_politics", f"{loc}.internal", "Faction has no internal politics state.")
+        else:
+            for field in [
+                "courtTension", "successionTension", "armyInfluence", "taxBurden", "faithTension",
+                "cultureTension", "regionalAutonomy", "nobleLoyalty", "merchantLoyalty",
+                "revoltRisk", "successionPressure",
+            ]:
+                value = internal.get(field)
+                if not isinstance(value, (int, float)):
+                    add("invalid_internal_politics_number", f"{loc}.internal.{field}", str(value))
+                elif value < 0 or value > 100:
+                    add("internal_politics_out_of_range", f"{loc}.internal.{field}", str(value))
+
+    for revolt in snapshot.get("revolts", []):
+        loc = f"runtime.revolts[id={revolt.get('id')}]"
+        if revolt.get("province") not in provinces:
+            add("unknown_revolt_province", f"{loc}.province", str(revolt.get("province")))
+        if revolt.get("against") not in factions:
+            add("unknown_revolt_target", f"{loc}.against", str(revolt.get("against")))
+        if revolt.get("status") not in {"active", "won", "suppressed", "invalid"}:
+            add("invalid_revolt_status", f"{loc}.status", str(revolt.get("status")))
+        if revolt.get("strength", 0) < 0:
+            add("negative_revolt_strength", f"{loc}.strength", str(revolt.get("strength")))
+        progress = revolt.get("progress")
+        if not isinstance(progress, (int, float)) or progress < 0 or progress > 1:
+            add("invalid_revolt_progress", f"{loc}.progress", str(progress))
 
     return issues

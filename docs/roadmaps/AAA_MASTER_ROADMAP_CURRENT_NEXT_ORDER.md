@@ -91,7 +91,9 @@ Phase 5: World Scale Gate 1 — DONE
 
 ```text
 Phase 6-A: Faction AI priorities — DONE
-Phase 6-B: Internal politics first pass — NEXT
+Phase 6-B: Internal politics first pass — DONE
+Phase 6-C: Revolts and instability — DONE
+Phase 6-D: Succession and ruler death expansion — NEXT
 ```
 
 ## Phase 6 notes
@@ -105,6 +107,29 @@ Phase 6-A closed with:
 - realm inspector shows top priorities and reasons
 - regression tests prove raider, trade, pass and faith archetypes score differently
 - runtime stress shifts priorities toward survival and war avoidance
+- 50-year balance validation passing
+- 25-year observer validation passing
+- full test suite passing
+
+Phase 6-B closed with:
+- internal politics state added to every runtime faction
+- monthly updates track court tension, succession tension, army influence, tax burden, faith tension, culture tension, regional autonomy, noble loyalty, merchant loyalty, revolt risk and succession pressure
+- internal politics responds to wars, deficits, exhaustion, occupations, sieges, manpower pressure, weak succession and realm structure
+- internal state affects monthly income and war willingness
+- realm inspector explains internal stability, revolt risk, succession pressure and stress causes
+- validation covers missing, invalid and out-of-range internal politics state
+- 50-year balance validation passing
+- 25-year observer validation passing
+- full test suite passing
+
+Phase 6-C closed with:
+- province instability scoring added from devastation, occupation, recent conquest, low garrison, internal politics, famine, weak ruler and foreign support
+- revolt type selection added for peasant revolt, noble revolt, separatist revolt, religious uprising, pretender revolt, military coup and frontier independence
+- revolts can start, spread, be suppressed or win as recorded runtime conflicts
+- winning revolts can transfer province control to a strong claimant and create recent conquest pressure
+- province inspector shows instability causes and active revolt progress
+- realm inspector shows active revolt count
+- validation covers broken revolt references and values
 - 50-year balance validation passing
 - 25-year observer validation passing
 - full test suite passing
