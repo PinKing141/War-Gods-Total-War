@@ -77,6 +77,7 @@ def test_validation_cli_outputs_clear_report():
     assert "Observer Data Validation" in output
     assert "Static seed/map data: OK" in output
     assert "Runtime sample (5 day(s), seed 123, with sample war): OK" in output
+    assert "Simulation self-check: OK" in output
     assert "Validation passed: no issues found." in output
 
 
@@ -232,6 +233,7 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
   provinceState: sim.provinceState,
   factionState: sim.factionState,
   monthlyRecaps: sim.monthlyRecaps,
+  simulationHealth: sim.validateState(),
 }}));
 """
     try:
@@ -255,6 +257,8 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
     assert snapshot["wars"]
     assert snapshot["armies"]
     assert snapshot["monthlyRecaps"]
+    assert snapshot["simulationHealth"]["ok"] is True
+    assert snapshot["simulationHealth"]["issues"] == []
 
     for war in snapshot["wars"]:
       assert war["attacker"] in factions
@@ -375,6 +379,7 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
   intentReason: war.intentReason,
   armyIntentReason: army.intentReason,
   siegeEventsLogged: sim.events.filter((ev) => ev.type === 'siege').map((ev) => ev.text),
+  simulationHealth: sim.validateState(),
 }}));
 """
     try:
@@ -401,3 +406,54 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
     assert "truce" in snapshot["peaceSummary"]["truce"]
     assert snapshot["intentReason"]
     assert snapshot["armyIntentReason"]
+    assert snapshot["simulationHealth"]["ok"] is True
+
+
+def test_simulation_self_check_reports_broken_runtime_references():
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        snapshot_path = Path(f.name)
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
+        runner_path = Path(f.name)
+    script = f"""
+const fs = require('fs');
+const vm = require('vm');
+global.window = global;
+global.WG = {{}};
+for (const file of {json.dumps([str(DATA_JS), str(RNG_JS), str(SIM_JS)])}) {{
+  vm.runInThisContext(fs.readFileSync(file, 'utf8'), {{ filename: file }});
+}}
+const sim = new WG.Simulation(WG_SEED, 222);
+sim.armies.push({{
+  id: 'ARMY_BAD',
+  faction: 'FAC_DOES_NOT_EXIST',
+  loc: 'PROV_MISSING',
+  commanderId: 'CHAR_MISSING',
+  warId: 'WAR_MISSING',
+  size: -10,
+  morale: 50,
+  supply: -1,
+  maxSupply: 0,
+  dailySupplyUse: -2,
+  undersupplied: true,
+}});
+sim.provinceState.PROV_ROV_HALEM.controller = 'FAC_MISSING';
+sim.claims.push({{ id: 'CLAIM_BAD', claimant: 'FAC_MISSING', target: 'PROV_MISSING', strength: -3 }});
+fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify(sim.validateState()));
+"""
+    try:
+        runner_path.write_text(script, encoding="utf-8")
+        exit_code = os.system(f'cd /d "{ROOT}" && node "{runner_path}" >NUL 2>NUL')
+        assert exit_code == 0
+        health = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    finally:
+        runner_path.unlink(missing_ok=True)
+        snapshot_path.unlink(missing_ok=True)
+
+    codes = {issue["code"] for issue in health["issues"]}
+    assert health["ok"] is False
+    assert "unknown_army_faction" in codes
+    assert "unknown_army_location" in codes
+    assert "unknown_army_commander" in codes
+    assert "negative_army_number" in codes
+    assert "unknown_runtime_controller" in codes
+    assert "unknown_claim_target" in codes

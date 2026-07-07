@@ -113,6 +113,7 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
   provinceState: sim.provinceState,
   factionState: sim.factionState,
   monthlyRecaps: sim.monthlyRecaps,
+  simulationHealth: sim.validateState(),
 }}));
 """
 
@@ -142,6 +143,16 @@ def print_group(title: str, issues: list[ValidationIssue]) -> None:
         print(f"  {issue.format()}")
 
 
+def simulation_health_issues(snapshot: dict) -> list[ValidationIssue]:
+    health = snapshot.get("simulationHealth") or {}
+    issues = []
+    for issue in health.get("issues", []):
+        severity = issue.get("severity", "error")
+        code = f"sim_{severity}_{issue.get('code', 'unknown')}"
+        issues.append(ValidationIssue(code, issue.get("location", "simulation"), issue.get("message", "")))
+    return issues
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate War Gods observer data.")
     parser.add_argument("--seed", type=int, default=123, help="Runtime sample RNG seed.")
@@ -153,6 +164,7 @@ def main() -> int:
     seed = load_seed()
     static_issues = collect_static(seed)
     runtime_issues: list[ValidationIssue] = []
+    health_issues: list[ValidationIssue] = []
 
     if not args.static_only:
         snapshot = runtime_snapshot(
@@ -161,6 +173,7 @@ def main() -> int:
             sample_war=not args.no_sample_war,
         )
         runtime_issues = collect_runtime_validation_issues(snapshot, seed)
+        health_issues = simulation_health_issues(snapshot)
 
     print("Observer Data Validation")
     print_group("Static seed/map data", static_issues)
@@ -169,8 +182,9 @@ def main() -> int:
     else:
         sample = "with sample war" if not args.no_sample_war else "without sample war"
         print_group(f"Runtime sample ({args.runtime_days} day(s), seed {args.seed}, {sample})", runtime_issues)
+        print_group("Simulation self-check", health_issues)
 
-    total = len(static_issues) + len(runtime_issues)
+    total = len(static_issues) + len(runtime_issues) + len(health_issues)
     if total:
         print(f"\nValidation failed: {total} issue(s) found.")
         return 1

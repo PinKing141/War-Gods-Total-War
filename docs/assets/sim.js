@@ -198,6 +198,132 @@
       });
     }
 
+    validateState() {
+      const issues = [];
+      const add = (severity, code, location, message) => issues.push({ severity, code, location, message });
+      const factions = new Set(this.seed.factions.map((f) => f.id));
+      const provinces = new Set(this.seed.provinces.map((p) => p.id));
+      const cultures = new Set(Object.keys(this.seed.cultures || {}));
+      const species = new Set(Object.keys(this.seed.species || {}));
+      const characterIds = new Set(this.characters.map((c) => c.id));
+      const activeWarIds = new Set(this.wars.filter((w) => !w.over).map((w) => w.id));
+      const seen = { factions: new Set(), provinces: new Set(), characters: new Set() };
+
+      for (const f of this.seed.factions) {
+        if (seen.factions.has(f.id)) add("error", "duplicate_faction_id", `faction:${f.id}`, "Faction IDs must be unique.");
+        seen.factions.add(f.id);
+        if (!this.factionState[f.id]) add("error", "missing_faction_state", `faction:${f.id}`, "Faction has no runtime state.");
+        if (f.culture && !cultures.has(f.culture)) add("error", "unknown_faction_culture", `faction:${f.id}`, f.culture);
+        if (f.species && !species.has(f.species)) add("error", "unknown_faction_species", `faction:${f.id}`, f.species);
+      }
+
+      for (const p of this.seed.provinces) {
+        if (seen.provinces.has(p.id)) add("error", "duplicate_province_id", `province:${p.id}`, "Province IDs must be unique.");
+        seen.provinces.add(p.id);
+        if (!factions.has(p.controller)) add("error", "unknown_seed_controller", `province:${p.id}`, p.controller);
+        if (!this.provinceState[p.id]) add("error", "missing_province_state", `province:${p.id}`, "Province has no runtime state.");
+        for (const field of ["value", "fort", "roads"]) {
+          if ((p[field] || 0) < 0) add("error", "negative_seed_province_number", `province:${p.id}.${field}`, String(p[field]));
+        }
+      }
+
+      for (const c of this.characters) {
+        if (seen.characters.has(c.id)) add("error", "duplicate_character_id", `character:${c.id}`, "Character IDs must be unique.");
+        seen.characters.add(c.id);
+        if (!factions.has(c.faction)) add("error", "unknown_character_faction", `character:${c.id}`, c.faction);
+        if (c.culture && !cultures.has(c.culture)) add("error", "unknown_character_culture", `character:${c.id}`, c.culture);
+        if (c.species && !species.has(c.species)) add("error", "unknown_character_species", `character:${c.id}`, c.species);
+        if ((c.age || 0) < 0) add("error", "negative_character_age", `character:${c.id}.age`, String(c.age));
+      }
+
+      for (const mage of this.mages) {
+        const loc = `mage:${mage.id}`;
+        if (!characterIds.has(mage.character)) add("error", "unknown_mage_character", loc, mage.character);
+        if (!factions.has(mage.patron)) add("error", "unknown_mage_patron", loc, mage.patron);
+        if (mage.species && !species.has(mage.species)) add("error", "unknown_mage_species", loc, mage.species);
+        for (const field of ["capacity", "control", "strain", "risk"]) {
+          if ((mage[field] || 0) < 0) add("error", "negative_mage_number", `${loc}.${field}`, String(mage[field]));
+        }
+      }
+
+      for (const [fid, st] of Object.entries(this.factionState)) {
+        const loc = `faction_state:${fid}`;
+        if (!factions.has(fid)) add("error", "unknown_faction_state", loc, "Runtime state belongs to no seed faction.");
+        if (st.rulerId && !characterIds.has(st.rulerId)) add("error", "unknown_ruler", `${loc}.rulerId`, st.rulerId);
+        for (const field of ["treasury", "manpower", "maxManpower", "prestige", "exhaustion"]) {
+          if ((st[field] || 0) < 0) add("error", "negative_faction_number", `${loc}.${field}`, String(st[field]));
+        }
+      }
+
+      for (const [pid, st] of Object.entries(this.provinceState)) {
+        const loc = `province_state:${pid}`;
+        if (!provinces.has(pid)) add("error", "unknown_runtime_province", loc, "Runtime state belongs to no seed province.");
+        if (!factions.has(st.controller)) add("error", "unknown_runtime_controller", `${loc}.controller`, st.controller);
+        if (st.occupier && !factions.has(st.occupier)) add("error", "unknown_occupier", `${loc}.occupier`, st.occupier);
+        if (st.siege && !factions.has(st.siege.by)) add("error", "unknown_sieger", `${loc}.siege.by`, st.siege.by);
+        for (const field of ["pop", "garrison", "devastation"]) {
+          if ((st[field] || 0) < 0) add("error", "negative_province_state_number", `${loc}.${field}`, String(st[field]));
+        }
+      }
+
+      for (const claim of this.claims) {
+        const loc = `claim:${claim.id}`;
+        if (!factions.has(claim.claimant)) add("error", "unknown_claimant", loc, claim.claimant);
+        if (!provinces.has(claim.target)) add("error", "unknown_claim_target", loc, claim.target);
+        if ((claim.strength || 0) < 0) add("error", "negative_claim_strength", `${loc}.strength`, String(claim.strength));
+      }
+
+      for (const war of this.wars) {
+        const loc = `war:${war.id}`;
+        if (!factions.has(war.attacker)) add("error", "unknown_war_attacker", loc, war.attacker);
+        if (!factions.has(war.defender)) add("error", "unknown_war_defender", loc, war.defender);
+        if (war.goal && war.goal.province && !provinces.has(war.goal.province)) add("error", "unknown_war_goal", `${loc}.goal`, war.goal.province);
+        for (const sideName of ["atkSide", "defSide"]) {
+          for (const fid of (war[sideName] || [])) if (!factions.has(fid)) add("error", "unknown_war_side", `${loc}.${sideName}`, fid);
+        }
+      }
+
+      for (const army of this.armies) {
+        const loc = `army:${army.id}`;
+        if (!factions.has(army.faction)) add("error", "unknown_army_faction", loc, army.faction);
+        if (!provinces.has(army.loc)) add("error", "unknown_army_location", `${loc}.loc`, army.loc);
+        if (army.nextLoc && !provinces.has(army.nextLoc)) add("error", "unknown_army_next_location", `${loc}.nextLoc`, army.nextLoc);
+        if (army.dest && !provinces.has(army.dest)) add("error", "unknown_army_destination", `${loc}.dest`, army.dest);
+        if (!characterIds.has(army.commanderId)) add("error", "unknown_army_commander", `${loc}.commanderId`, army.commanderId);
+        if (!army.warId || !activeWarIds.has(army.warId)) add("warning", "army_without_active_war", `${loc}.warId`, army.warId || "none");
+        for (const field of ["size", "morale", "supply", "maxSupply", "dailySupplyUse"]) {
+          if ((army[field] || 0) < 0) add("error", "negative_army_number", `${loc}.${field}`, String(army[field]));
+        }
+        if ((army.supply || 0) > (army.maxSupply || 0) + 0.1) add("warning", "army_supply_over_cap", loc, `${Math.round(army.supply)} / ${Math.round(army.maxSupply || 0)}`);
+      }
+
+      if (this.adjacency) {
+        for (const [pid, links] of Object.entries(this.adjacency)) {
+          if (!provinces.has(pid)) add("error", "unknown_adjacency_source", `adjacency:${pid}`, "Adjacency source is not a seed province.");
+          for (const other of links || []) {
+            if (!provinces.has(other)) add("error", "unknown_adjacency_target", `adjacency:${pid}`, other);
+            if (other === pid) add("error", "self_adjacency", `adjacency:${pid}`, "A province cannot be adjacent to itself.");
+            if (this.adjacency[other] && !this.adjacency[other].includes(pid)) {
+              add("warning", "asymmetric_adjacency", `adjacency:${pid}->${other}`, "Reverse link is missing.");
+            }
+          }
+        }
+      }
+
+      return {
+        ok: !issues.some((issue) => issue.severity === "error"),
+        checkedAt: this.formatDate(),
+        issues,
+        counts: {
+          factions: this.seed.factions.length,
+          provinces: this.seed.provinces.length,
+          characters: this.characters.length,
+          armies: this.armies.length,
+          activeWars: this.wars.filter((w) => !w.over).length,
+        },
+      };
+    }
+
     /* ------------------------------------------------ main tick */
 
     tick() {

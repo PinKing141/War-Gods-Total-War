@@ -717,7 +717,33 @@
 
     renderRecapTab() {
       const recaps = [...(this.sim.monthlyRecaps || [])].reverse();
-      this.el.events.innerHTML = recaps.length ? "" : "<div class='fine center pad'>No month has closed yet.</div>";
+      this.el.events.innerHTML = "";
+      if (typeof this.sim.validateState === "function") {
+        const health = this.sim.validateState();
+        const issues = health.issues || [];
+        const errors = issues.filter((issue) => issue.severity === "error");
+        const warnings = issues.filter((issue) => issue.severity !== "error");
+        const div = document.createElement("div");
+        div.className = "event recap-card";
+        const shownIssues = issues.slice(0, 5).map((issue) =>
+          `<div class="fine ${issue.severity === "error" ? "bad" : ""}">${esc(issue.severity || "issue")}: ${esc(issue.code)} at ${esc(issue.location)} — ${esc(issue.message)}</div>`
+        ).join("");
+        div.innerHTML = `<span class="ev-icon">${errors.length ? "!" : "OK"}</span>
+          <div>
+            <div class="ev-date">Simulation health · ${esc(health.checkedAt || this.sim.formatDate())}</div>
+            <div class="ev-text">${errors.length ? `${errors.length} validation error(s)` : warnings.length ? `${warnings.length} warning(s)` : "No validation issues detected."}</div>
+            <div class="fine">factions ${health.counts.factions} · provinces ${health.counts.provinces} · characters ${health.counts.characters} · armies ${health.counts.armies} · active wars ${health.counts.activeWars}</div>
+            ${shownIssues || "<div class='fine good'>Runtime IDs, controllers, armies, wars, claims, mages and non-negative fields all check out.</div>"}
+          </div>`;
+        this.el.events.appendChild(div);
+      }
+      if (!recaps.length) {
+        const empty = document.createElement("div");
+        empty.className = "fine center pad";
+        empty.textContent = "No month has closed yet.";
+        this.el.events.appendChild(empty);
+        return;
+      }
       for (const recap of recaps.slice(0, 36)) {
         const div = document.createElement("div");
         div.className = "event recap-card";
