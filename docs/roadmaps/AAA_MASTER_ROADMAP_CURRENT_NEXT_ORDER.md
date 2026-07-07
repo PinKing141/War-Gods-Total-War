@@ -6,8 +6,8 @@ This is the order to follow right now.
 1. Phase 2: Data validation and technical quality — DONE
 2. Phase 3: UI copy, SPAG and presentation language — DONE
 3. Phase 4: Data architecture and scenario foundation — DONE
-4. Phase 5: World Scale Gate 1 — 16-20 serious powers — CURRENT
-5. Phase 6: Core simulation depth Phase 2
+4. Phase 5: World Scale Gate 1 — 16-20 serious powers — DONE
+5. Phase 6: Core simulation depth Phase 2 — CURRENT
 ```
 
 ## Why this order
@@ -69,10 +69,43 @@ Phase 5-B closed with:
 - no new provinces, terrain masks, river art or map cosmetics added
 - 25-year observer validation passing
 - full test suite passing
+
+Phase 5-C closed with:
+- rulers, claims and relationship hooks added for the 8 new powers
+- web seed regenerated so expanded powers participate in the observer sim
+- repeatable 50-year multi-seed balance gate added
+- balance gate checks no-war silence, unresolved chaos, snowballing, collapse and passive expanded powers
+- seeds 101, 202, 303, 404 and 505 passed 50-year samples
+- no new provinces, terrain masks, river art or map cosmetics added
+- 25-year observer validation passing
+- full test suite passing
 ```
 
 ## Current Phase 5 substep
 
 ```text
-Phase 5-C: Regional balance pass — NEXT
+Phase 5: World Scale Gate 1 — DONE
+```
+
+## Current Phase 6 substep
+
+```text
+Phase 6-A: Faction AI priorities — DONE
+Phase 6-B: Internal politics first pass — NEXT
+```
+
+## Phase 6 notes
+
+```text
+Phase 6-A closed with:
+- live faction AI priority scoring added
+- priorities consider faction profile, ruler traits, claims, relations, army strength, treasury, manpower, wars, exhaustion, strategic holdings, ports and passes
+- war declaration chance now uses attacker priorities
+- war cause text names the court priority behind major decisions
+- realm inspector shows top priorities and reasons
+- regression tests prove raider, trade, pass and faith archetypes score differently
+- runtime stress shifts priorities toward survival and war avoidance
+- 50-year balance validation passing
+- 25-year observer validation passing
+- full test suite passing
 ```

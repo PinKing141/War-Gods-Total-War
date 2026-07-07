@@ -4,3 +4,11 @@ CLAIM_GHARU_RECOGNITION,FAC_GHARU_OPEN_GATE,PROV_OPEN_GATE,freehold_self_rule,pu
 CLAIM_NALARI_CHARTER_ROV,FAC_NALARI_THIRD_CHARTER,PROV_THIRD_CHARTER,ancient_charter,Pale Witness Ward Three charter,90,-2,documented,REL_LONG_ACCOUNT
 CLAIM_KAERN_IRON_TAX,FAC_KAERN_RED_BOG,PROV_RED_BOG,hearth_right,ancestor cairn and winter defense,80,0,sacred_memory,REL_HEARTH_BELOW
 CLAIM_KAVARI_PASS_CHARTER,FAC_KAVARI_WEST_GEAR,PROV_WEST_GEAR,compact_pass_charter,Broken Charter Period compact,88,-1,vault_record,REL_INNER_STONE
+CLAIM_LANTER_BLUE_CHAIN,FAC_LANTER_SEA_LEAGUE,PROV_BLUE_CHAIN,sea_credit_writ,Lanter convoy toll and lighthouse debt record,68,-1,documented,REL_BELL_RETURN
+CLAIM_NORTHGREY_RED_BOG,FAC_NORTHGREY_HIGHLANDS,PROV_RED_BOG,highland_hearth_oath,Northgrey winter cairn oath over the bog iron road,64,0,sacred_memory,REL_HEARTH_BELOW
+CLAIM_QERESH_WHITE_MARE,FAC_QERESH_SALT_ROAD,PROV_WHITE_MARE,salt_road_well_right,Qeresh well-court contract over eastern caravan wells,66,-1,contested_record,REL_SALT_WITNESS
+CLAIM_REED_OPEN_GATE,FAC_EASTERN_REED_CONFED,PROV_OPEN_GATE,reed_pasture_compact,old reed-town grazing and ferry compact,58,-1,living_memory,REL_NINE_BANNERS
+CLAIM_OSTREN_OPEN_GATE,FAC_OSTREN_BANNERFIELDS,PROV_OPEN_GATE,bannerfield_march_right,Ostren saintly border roll and grain levy right,62,-1,documented,REL_MEASURE_ROADS
+CLAIM_SALT_WITNESS_SEVRIN,FAC_SALT_WITNESS_PROTECTORATE,PROV_SEVRIN_CANAL,sacred_contract_guardianship,Salt Witness pledge over canal toll contracts,60,-1,documented,REL_SALT_WITNESS
+CLAIM_GREEN_CROWN_RED_BOG,FAC_GREEN_CROWN_COURT,PROV_RED_BOG,forest_refuge_oath,Green Crown refuge path and timber oath,57,0,living_memory,REL_HEARTH_BELOW
+CLAIM_DEEP_LEDGER_WEST_GEAR,FAC_DEEP_LEDGER_HOLD,PROV_WEST_GEAR,vault_engineering_lien,Deep Ledger lien on pass engines and stone roads,70,-1,vault_record,REL_INNER_STONE

@@ -516,6 +516,7 @@
       const econ = this.factionEconomy(fid);
       const income = econ.income, upkeep = econ.upkeep;
       const risks = this.factionRisks(fid);
+      const priorities = this.sim.aiPriorityScores ? this.sim.aiPriorityScores(fid).slice(0, 4) : [];
       const occupied = provinces.filter((p) => this.sim.provinceState[p.id].occupier);
       const sieged = provinces.filter((p) => this.sim.provinceState[p.id].siege);
 
@@ -553,6 +554,8 @@
           <div class="row"><span>Risk</span><b class="${risks.length ? "bad" : "good"}">${risks.length ? esc(risks.join(" · ")) : "stable for now"}</b></div>
         </div>
         ${f.pressure ? `<h3>Conflict</h3><div class="quote">${esc(f.pressure)}</div>` : ""}
+        ${priorities.length ? `<h3>Priorities</h3>` + priorities.map((p) =>
+          `<div class="row"><span>${esc(p.label)}</span><b>${p.score}</b><div class="fine">${esc(p.reason)}</div></div>`).join("") : ""}
         <h3>Faith — ${esc(religion.name || f.religion)}</h3>
         <div class="quote">“${esc(religion.claim || "")}”</div>
         <h3>Culture — ${esc(culture.name || f.culture)} (${esc(culture.selfName || "")})</h3>

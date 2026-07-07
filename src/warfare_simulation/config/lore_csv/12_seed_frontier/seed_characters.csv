@@ -7,3 +7,11 @@ CHAR_NALARI_001,Saela of the Third Charter,elf,CULT_NALARI,FAC_NALARI_THIRD_CHAR
 CHAR_MAREN_001,Tessel of Blue Chain,human,CULT_MAREN,FAC_MAREN_BLUE_CHAIN,counting_house_admiral,46,must turn war loans into river access
 CHAR_TALUUN_001,Kessa Nine-Reed,human,CULT_TALUUN,FAC_TALUUN_WHITE_MARE,ring_speaker,35,must secure pasture without losing riders in sieges
 CHAR_BANNER_001,Oru of Open Gate,orc,CULT_GHARU,FAC_NINE_BANNERS_HALLOW,banner_priest,59,must control oath legitimacy and mage legality disputes
+CHAR_LANTER_001,Vael Bellwake,human,CULT_MAREN,FAC_LANTER_SEA_LEAGUE,sea_reeve,49,must keep convoy law stronger than private war
+CHAR_NORTHGREY_001,Harka Northcairn,human,CULT_KAERN,FAC_NORTHGREY_HIGHLANDS,hearth_crown,57,must bind the highland cairns before lowland taxes return
+CHAR_QERESH_001,Samet Salt-Eye,human,CULT_QERESH,FAC_QERESH_SALT_ROAD,well_court_judge,43,must secure the wells before caravan credit fails
+CHAR_REED_001,Tavu Reed-Knot,human,CULT_TALUUN,FAC_EASTERN_REED_CONFED,river_confederate,41,must keep reed towns and riders from splitting apart
+CHAR_OSTREN_001,Alren Bannerfield,human,CULT_OSTREN,FAC_OSTREN_BANNERFIELDS,march_duke,46,must turn border grain into recognised honour
+CHAR_SALT_WITNESS_001,Nehra Contract-Saint,human,CULT_QERESH,FAC_SALT_WITNESS_PROTECTORATE,protector_judge,62,must guard sacred contracts without starving the wells
+CHAR_GREEN_CROWN_001,Maera Greenbough,human,CULT_KAERN,FAC_GREEN_CROWN_COURT,forest_oath_queen,52,must keep timber oaths from becoming border raids
+CHAR_DEEP_LEDGER_001,Dorun Vaultline,dwarf,CULT_KAVARI,FAC_DEEP_LEDGER_HOLD,ledger_thanemark,111,must defend stone credit and pass engineering secrets

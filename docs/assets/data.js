@@ -523,6 +523,76 @@ window.WG_SEED = {
    "score": -30,
    "tension": "border raids and winter grazing",
    "warRisk": 45
+  },
+  {
+   "a": "FAC_LANTER_SEA_LEAGUE",
+   "b": "FAC_MAREN_BLUE_CHAIN",
+   "score": -35,
+   "tension": "convoy law vs counting house debt",
+   "warRisk": 46
+  },
+  {
+   "a": "FAC_NORTHGREY_HIGHLANDS",
+   "b": "FAC_KAERN_RED_BOG",
+   "score": -28,
+   "tension": "highland cairn oaths vs bog iron taxes",
+   "warRisk": 38
+  },
+  {
+   "a": "FAC_QERESH_SALT_ROAD",
+   "b": "FAC_TALUUN_WHITE_MARE",
+   "score": -42,
+   "tension": "well contracts vs steppe pasture raids",
+   "warRisk": 52
+  },
+  {
+   "a": "FAC_EASTERN_REED_CONFED",
+   "b": "FAC_GHARU_OPEN_GATE",
+   "score": -26,
+   "tension": "ferry compacts vs freehold land rights",
+   "warRisk": 34
+  },
+  {
+   "a": "FAC_OSTREN_BANNERFIELDS",
+   "b": "FAC_GHARU_OPEN_GATE",
+   "score": -32,
+   "tension": "march honour vs freehold recognition",
+   "warRisk": 42
+  },
+  {
+   "a": "FAC_SALT_WITNESS_PROTECTORATE",
+   "b": "FAC_ROV_HALEN",
+   "score": -24,
+   "tension": "sacred contracts vs canal monopoly",
+   "warRisk": 32
+  },
+  {
+   "a": "FAC_GREEN_CROWN_COURT",
+   "b": "FAC_KAERN_RED_BOG",
+   "score": -30,
+   "tension": "forest refuge oaths vs bog iron claims",
+   "warRisk": 39
+  },
+  {
+   "a": "FAC_DEEP_LEDGER_HOLD",
+   "b": "FAC_KAVARI_WEST_GEAR",
+   "score": -36,
+   "tension": "vault lien vs pass compact independence",
+   "warRisk": 44
+  },
+  {
+   "a": "FAC_LANTER_SEA_LEAGUE",
+   "b": "FAC_ROV_HALEN",
+   "score": -18,
+   "tension": "sea tolls vs canal road authority",
+   "warRisk": 26
+  },
+  {
+   "a": "FAC_SALT_WITNESS_PROTECTORATE",
+   "b": "FAC_QERESH_SALT_ROAD",
+   "score": 22,
+   "tension": "shared well law but rival contract courts",
+   "warRisk": 18
   }
  ],
  "characters": [
@@ -605,6 +675,86 @@ window.WG_SEED = {
    "role": "banner priest",
    "age": 59,
    "pressure": "must control oath legitimacy and mage legality disputes"
+  },
+  {
+   "id": "CHAR_LANTER_001",
+   "name": "Vael Bellwake",
+   "species": "human",
+   "culture": "CULT_MAREN",
+   "faction": "FAC_LANTER_SEA_LEAGUE",
+   "role": "sea reeve",
+   "age": 49,
+   "pressure": "must keep convoy law stronger than private war"
+  },
+  {
+   "id": "CHAR_NORTHGREY_001",
+   "name": "Harka Northcairn",
+   "species": "human",
+   "culture": "CULT_KAERN",
+   "faction": "FAC_NORTHGREY_HIGHLANDS",
+   "role": "hearth crown",
+   "age": 57,
+   "pressure": "must bind the highland cairns before lowland taxes return"
+  },
+  {
+   "id": "CHAR_QERESH_001",
+   "name": "Samet Salt-Eye",
+   "species": "human",
+   "culture": "CULT_QERESH",
+   "faction": "FAC_QERESH_SALT_ROAD",
+   "role": "well court judge",
+   "age": 43,
+   "pressure": "must secure the wells before caravan credit fails"
+  },
+  {
+   "id": "CHAR_REED_001",
+   "name": "Tavu Reed-Knot",
+   "species": "human",
+   "culture": "CULT_TALUUN",
+   "faction": "FAC_EASTERN_REED_CONFED",
+   "role": "river confederate",
+   "age": 41,
+   "pressure": "must keep reed towns and riders from splitting apart"
+  },
+  {
+   "id": "CHAR_OSTREN_001",
+   "name": "Alren Bannerfield",
+   "species": "human",
+   "culture": "CULT_OSTREN",
+   "faction": "FAC_OSTREN_BANNERFIELDS",
+   "role": "march duke",
+   "age": 46,
+   "pressure": "must turn border grain into recognised honour"
+  },
+  {
+   "id": "CHAR_SALT_WITNESS_001",
+   "name": "Nehra Contract-Saint",
+   "species": "human",
+   "culture": "CULT_QERESH",
+   "faction": "FAC_SALT_WITNESS_PROTECTORATE",
+   "role": "protector judge",
+   "age": 62,
+   "pressure": "must guard sacred contracts without starving the wells"
+  },
+  {
+   "id": "CHAR_GREEN_CROWN_001",
+   "name": "Maera Greenbough",
+   "species": "human",
+   "culture": "CULT_KAERN",
+   "faction": "FAC_GREEN_CROWN_COURT",
+   "role": "forest oath queen",
+   "age": 52,
+   "pressure": "must keep timber oaths from becoming border raids"
+  },
+  {
+   "id": "CHAR_DEEP_LEDGER_001",
+   "name": "Dorun Vaultline",
+   "species": "dwarf",
+   "culture": "CULT_KAVARI",
+   "faction": "FAC_DEEP_LEDGER_HOLD",
+   "role": "ledger thanemark",
+   "age": 111,
+   "pressure": "must defend stone credit and pass engineering secrets"
   }
  ],
  "claims": [
@@ -655,6 +805,86 @@ window.WG_SEED = {
    "type": "compact pass charter",
    "source": "Broken Charter Period compact",
    "strength": 88,
+   "myth": "vault record",
+   "recognizedBy": "REL_INNER_STONE"
+  },
+  {
+   "id": "CLAIM_LANTER_BLUE_CHAIN",
+   "claimant": "FAC_LANTER_SEA_LEAGUE",
+   "target": "PROV_BLUE_CHAIN",
+   "type": "sea credit writ",
+   "source": "Lanter convoy toll and lighthouse debt record",
+   "strength": 68,
+   "myth": "documented",
+   "recognizedBy": "REL_BELL_RETURN"
+  },
+  {
+   "id": "CLAIM_NORTHGREY_RED_BOG",
+   "claimant": "FAC_NORTHGREY_HIGHLANDS",
+   "target": "PROV_RED_BOG",
+   "type": "highland hearth oath",
+   "source": "Northgrey winter cairn oath over the bog iron road",
+   "strength": 64,
+   "myth": "sacred memory",
+   "recognizedBy": "REL_HEARTH_BELOW"
+  },
+  {
+   "id": "CLAIM_QERESH_WHITE_MARE",
+   "claimant": "FAC_QERESH_SALT_ROAD",
+   "target": "PROV_WHITE_MARE",
+   "type": "salt road well right",
+   "source": "Qeresh well-court contract over eastern caravan wells",
+   "strength": 66,
+   "myth": "contested record",
+   "recognizedBy": "REL_SALT_WITNESS"
+  },
+  {
+   "id": "CLAIM_REED_OPEN_GATE",
+   "claimant": "FAC_EASTERN_REED_CONFED",
+   "target": "PROV_OPEN_GATE",
+   "type": "reed pasture compact",
+   "source": "old reed-town grazing and ferry compact",
+   "strength": 58,
+   "myth": "living memory",
+   "recognizedBy": "REL_NINE_BANNERS"
+  },
+  {
+   "id": "CLAIM_OSTREN_OPEN_GATE",
+   "claimant": "FAC_OSTREN_BANNERFIELDS",
+   "target": "PROV_OPEN_GATE",
+   "type": "bannerfield march right",
+   "source": "Ostren saintly border roll and grain levy right",
+   "strength": 62,
+   "myth": "documented",
+   "recognizedBy": "REL_MEASURE_ROADS"
+  },
+  {
+   "id": "CLAIM_SALT_WITNESS_SEVRIN",
+   "claimant": "FAC_SALT_WITNESS_PROTECTORATE",
+   "target": "PROV_SEVRIN_CANAL",
+   "type": "sacred contract guardianship",
+   "source": "Salt Witness pledge over canal toll contracts",
+   "strength": 60,
+   "myth": "documented",
+   "recognizedBy": "REL_SALT_WITNESS"
+  },
+  {
+   "id": "CLAIM_GREEN_CROWN_RED_BOG",
+   "claimant": "FAC_GREEN_CROWN_COURT",
+   "target": "PROV_RED_BOG",
+   "type": "forest refuge oath",
+   "source": "Green Crown refuge path and timber oath",
+   "strength": 57,
+   "myth": "living memory",
+   "recognizedBy": "REL_HEARTH_BELOW"
+  },
+  {
+   "id": "CLAIM_DEEP_LEDGER_WEST_GEAR",
+   "claimant": "FAC_DEEP_LEDGER_HOLD",
+   "target": "PROV_WEST_GEAR",
+   "type": "vault engineering lien",
+   "source": "Deep Ledger lien on pass engines and stone roads",
+   "strength": 70,
    "myth": "vault record",
    "recognizedBy": "REL_INNER_STONE"
   }

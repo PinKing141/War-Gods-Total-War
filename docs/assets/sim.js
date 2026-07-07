@@ -30,6 +30,20 @@
     "must quiet the councils that doubt the new reign",
   ];
 
+  const AI_PRIORITY_INFO = {
+    expand_territory: "Expand territory",
+    protect_homeland: "Protect homeland",
+    recover_old_claims: "Recover old claims",
+    raid_for_wealth: "Raid for wealth",
+    avoid_war: "Avoid war",
+    secure_trade_routes: "Secure trade routes",
+    hold_mountain_passes: "Hold mountain passes",
+    control_ports: "Control ports",
+    defend_faith: "Defend faith",
+    destroy_rival: "Destroy rival",
+    survive_economic_stress: "Survive economic stress",
+  };
+
   let nextId = 1000;
   function uid(prefix) { return prefix + "_" + (nextId++); }
 
@@ -156,6 +170,130 @@
     _tierWeight(fid) {
       const faction = this.faction(fid);
       return Math.max(0.45, Math.min(1.5, faction && faction.tierWeight ? faction.tierWeight : 0.88));
+    }
+
+    _priorityBaseProfile(fid) {
+      const f = this.faction(fid) || {};
+      const text = `${f.government || ""} ${f.identity || ""} ${f.goal || ""} ${f.pressure || ""}`.toLowerCase();
+      const weights = {
+        expand_territory: 1.0,
+        protect_homeland: 1.0,
+        recover_old_claims: 1.0,
+        raid_for_wealth: 0.65,
+        avoid_war: 0.9,
+        secure_trade_routes: 0.8,
+        hold_mountain_passes: 0.65,
+        control_ports: 0.55,
+        defend_faith: 0.7,
+        destroy_rival: 0.75,
+        survive_economic_stress: 0.8,
+      };
+      const boost = (key, amount) => { weights[key] = (weights[key] || 0) + amount; };
+      if (/merchant|trade|counting|credit|admiralty|naval|sea|convoy/.test(text)) {
+        boost("secure_trade_routes", 1.15); boost("control_ports", 0.8); boost("survive_economic_stress", 0.35);
+      }
+      if (/canal|road|route|salt|well|caravan|toll/.test(text)) {
+        boost("secure_trade_routes", 0.75); boost("expand_territory", 0.2);
+      }
+      if (/pass|mountain|highland|stone|vault|gear|hold/.test(text)) {
+        boost("hold_mountain_passes", 1.2); boost("protect_homeland", 0.45);
+      }
+      if (/khan|horse|raid|pasture|ring|nomad/.test(text)) {
+        boost("raid_for_wealth", 1.4); boost("avoid_war", -0.35); boost("expand_territory", 0.3);
+      }
+      if (/temple|faith|sacred|protector|witness|hearth|oath|banner/.test(text)) {
+        boost("defend_faith", 1.0); boost("recover_old_claims", 0.25);
+      }
+      if (/charter|claim|legitimacy|restore|recognition|grievance/.test(text)) {
+        boost("recover_old_claims", 0.9); boost("destroy_rival", 0.25);
+      }
+      if (/forest|refuge|freehold|council/.test(text)) {
+        boost("protect_homeland", 0.7); boost("avoid_war", 0.25);
+      }
+      return weights;
+    }
+
+    aiPriorityScores(fid, opponentId) {
+      const f = this.faction(fid);
+      const st = this.factionState[fid];
+      if (!f || !st) return [];
+      const owned = this.ownedProvinces(fid);
+      const wars = this.warsOf(fid);
+      const claims = this.claims.filter((c) => c.claimant === fid && this.provinceState[c.target]);
+      const ownedClaims = claims.filter((c) => this.provinceState[c.target].controller === fid);
+      const externalClaims = claims.filter((c) => this.provinceState[c.target].controller !== fid);
+      const contested = this.contestedProvinces(fid);
+      const ports = owned.filter((p) => p.port > 0).length;
+      const passes = owned.filter((p) => this._terrainFlags(p).mountain || /pass|gear|mountain|highland/i.test(p.terrain || "")).length;
+      const tradeValue = owned.reduce((sum, p) => sum + p.roads + p.port * 2 + (p.value >= 80 ? 1 : 0), 0);
+      const highValue = owned.reduce((sum, p) => sum + (p.value >= 85 ? 1 : 0), 0);
+      const strongestNeighbour = opponentId
+        ? opponentId
+        : this.seed.factions
+          .map((other) => other.id)
+          .filter((other) => other !== fid)
+          .sort((a, b) => this.armyStrength(b) + this.ownedProvinces(b).length * 500 - (this.armyStrength(a) + this.ownedProvinces(a).length * 500))[0];
+      const op = strongestNeighbour ? this.opinion(fid, strongestNeighbour) : 0;
+      const manpowerRatio = st.maxManpower ? st.manpower / st.maxManpower : 0;
+      const deficit = this.monthlyIncome(fid) - this.monthlyUpkeep(fid) - Math.max(0, Math.round(st.treasury * 0.02));
+      const ruler = this.rulerOf(fid);
+      const traitWar = this._traitFactor(fid, "war");
+      const base = this._priorityBaseProfile(fid);
+      const score = {
+        expand_territory: base.expand_territory * 12 + highValue * 1.5 + Math.max(0, manpowerRatio - 0.45) * 12 - wars.length * 5 - st.exhaustion * 0.15,
+        protect_homeland: base.protect_homeland * 12 + contested.length * 9 + Math.max(0, 0.45 - manpowerRatio) * 12 + st.exhaustion * 0.18 + owned.length * 0.8,
+        recover_old_claims: base.recover_old_claims * 12 + externalClaims.length * 9 + externalClaims.reduce((sum, c) => sum + c.strength / 18, 0),
+        raid_for_wealth: base.raid_for_wealth * 12 + Math.max(0, 180 - st.treasury) / 18 + (deficit < 0 ? 8 : 0) + Math.max(0, traitWar - 1) * 8,
+        avoid_war: base.avoid_war * 12 + st.exhaustion * 0.35 + wars.length * 8 + Math.max(0, 0.35 - manpowerRatio) * 18 + (st.treasury < 120 ? 5 : 0),
+        secure_trade_routes: base.secure_trade_routes * 12 + tradeValue * 1.4 + (deficit < 0 ? 3 : 0),
+        hold_mountain_passes: base.hold_mountain_passes * 12 + passes * 8,
+        control_ports: base.control_ports * 12 + ports * 10,
+        defend_faith: base.defend_faith * 12 + this.seed.factions.filter((other) => other.id !== fid && other.religion === f.religion).length * 0.8,
+        destroy_rival: base.destroy_rival * 12 + Math.max(0, -op) * 0.28 + Math.max(0, traitWar - 1) * 7,
+        survive_economic_stress: base.survive_economic_stress * 12 + Math.max(0, 250 - st.treasury) / 16 + (deficit < 0 ? Math.min(14, -deficit / 12) : 0),
+      };
+      if (ruler && ruler.traits.some((t) => t.id === "cautious" || t.id === "patient")) {
+        score.avoid_war += 5; score.protect_homeland += 3;
+      }
+      if (ruler && ruler.traits.some((t) => t.id === "bold" || t.id === "vengeful" || t.id === "ironhanded")) {
+        score.expand_territory += 4; score.destroy_rival += 4;
+      }
+      if (ownedClaims.length) score.protect_homeland += ownedClaims.length * 3;
+
+      const reason = {
+        expand_territory: owned.length ? `${owned.length} held province${owned.length === 1 ? "" : "s"} and usable manpower` : "needs land before it can expand",
+        protect_homeland: contested.length ? `${contested.length} contested holding${contested.length === 1 ? "" : "s"}` : "holding the core together",
+        recover_old_claims: externalClaims.length ? `${externalClaims.length} active external claim${externalClaims.length === 1 ? "" : "s"}` : "few active claims to press",
+        raid_for_wealth: deficit < 0 ? "monthly costs outrun income" : "wealth can be taken faster than taxed",
+        avoid_war: st.exhaustion > 10 ? `war exhaustion ${Math.round(st.exhaustion)}` : "avoiding unnecessary losses",
+        secure_trade_routes: tradeValue ? `roads, ports and valuable provinces matter` : "trade network is thin",
+        hold_mountain_passes: passes ? `${passes} pass or highland holding${passes === 1 ? "" : "s"}` : "few pass holdings",
+        control_ports: ports ? `${ports} port holding${ports === 1 ? "" : "s"}` : "no controlled port",
+        defend_faith: `faith ties through ${this.seed.religions[f.religion]?.name || f.religion}`,
+        destroy_rival: strongestNeighbour ? `${this.faction(strongestNeighbour).shortName || this.faction(strongestNeighbour).name} is the sharpest rival` : "no clear rival",
+        survive_economic_stress: st.treasury < 250 || deficit < 0 ? "treasury pressure is visible" : "keeping reserves healthy",
+      };
+      return Object.keys(AI_PRIORITY_INFO)
+        .map((id) => ({ id, label: AI_PRIORITY_INFO[id], score: Math.max(0, Math.round(score[id])), reason: reason[id] }))
+        .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
+    }
+
+    aiPrioritySummary(fid, opponentId, count) {
+      return this.aiPriorityScores(fid, opponentId)
+        .slice(0, count || 3)
+        .map((p) => `${p.label} (${p.reason})`)
+        .join("; ");
+    }
+
+    _priorityWarMultiplier(attacker, defender, claim, isRaid) {
+      const priorities = Object.fromEntries(this.aiPriorityScores(attacker, defender).map((p) => [p.id, p.score]));
+      let m = 1;
+      if (claim) m *= 1 + Math.min(0.55, (priorities.recover_old_claims || 0) / 80);
+      if (isRaid) m *= 1 + Math.min(0.45, (priorities.raid_for_wealth || 0) / 90);
+      m *= 1 + Math.min(0.25, (priorities.expand_territory || 0) / 180);
+      m *= 1 + Math.min(0.2, (priorities.destroy_rival || 0) / 200);
+      m *= 1 - Math.min(0.55, (priorities.avoid_war || 0) / 110);
+      return Math.max(0.35, Math.min(1.65, m));
     }
 
     _refreshManpower(fid, initial) {
@@ -930,6 +1068,7 @@
           if (claim) p *= 1 + claim.strength / 120;
           if (this.armyStrength(def) > 0) p *= 0.4;     // hesitant while target mobilized
           if (this.factionState[agg].treasury < 100) p *= 0.4;
+          p *= this._priorityWarMultiplier(agg, def, claim, isRaider && !claim);
           // sprawling realms draw wary coalitions of excuses — expansion slows
           p *= 1 / (1 + Math.max(0, this.ownedProvinces(agg).length - 2) * 0.8);
           if (this.rng.chance(Math.min(0.5, p))) {
@@ -944,13 +1083,15 @@
     _warIntentReason(attacker, defender, claim, isRaid, relation, chance) {
       const attackerName = this.faction(attacker).shortName || this.faction(attacker).name;
       const defenderName = this.faction(defender).shortName || this.faction(defender).name;
+      const priority = this.aiPriorityScores(attacker, defender)[0];
+      const motive = priority ? ` The court priority is ${priority.label.toLowerCase()}: ${priority.reason}.` : "";
       if (claim) {
-        return `${attackerName} goes to war to press a ${claim.type} claim on ${this.province(claim.target).name}.`;
+        return `${attackerName} goes to war to press a ${claim.type} claim on ${this.province(claim.target).name}.${motive}`;
       }
       if (isRaid) {
-        return `${attackerName} rides for plunder because ${defenderName} is close enough to raid.`;
+        return `${attackerName} rides for plunder because ${defenderName} is close enough to raid.${motive}`;
       }
-      return `${attackerName} escalates a frontier quarrel with ${defenderName}.`;
+      return `${attackerName} escalates a frontier quarrel with ${defenderName}.${motive}`;
     }
 
     _declareWar(attacker, defender, claim, isRaid, intentReason) {

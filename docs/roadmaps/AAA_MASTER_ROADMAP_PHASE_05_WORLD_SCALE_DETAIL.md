@@ -71,7 +71,7 @@ Completed with:
 - full test suite passing
 ```
 
-## 5C. Regional balance pass
+## 5C. Regional balance pass — DONE
 
 Run 25-50 years and check:
 
@@ -87,4 +87,25 @@ Closing gate:
 
 ```text
 50-year run produces believable politics without total chaos or total silence.
+```
+
+Completed with:
+
+```text
+- added rulers, claims and relationship pressure hooks for the 8 new powers
+- regenerated the web seed so the expanded powers participate in the observer sim
+- added scripts/validate_observer_balance.py as a repeatable 50-year multi-seed balance gate
+- balance gate checks no-war silence, unresolved chaos, snowballing, collapse and passive expanded powers
+- tested seeds 101, 202, 303, 404 and 505 for 50 years each
+- all balance samples passed with resolved wars, restored powers, active holders and chronicle activity
+- no new provinces, terrain masks, river art or map cosmetics added
+- 25-year observer validation passes
+- full test suite passing
+```
+
+## Phase 5 closing gate — DONE
+
+```text
+World has 16-20 serious powers, each power has a distinct role and valid data,
+and 50-year balance samples avoid total chaos, total silence and runaway snowballing.
 ```
