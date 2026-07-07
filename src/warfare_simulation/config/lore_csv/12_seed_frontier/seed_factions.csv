@@ -1,9 +1,17 @@
-faction_id,name,identity,dominant_culture,dominant_species,religion_id,government,conflict_pressure,primary_goal
-FAC_ROV_HALEN,Crown of Rov Halem,Rovant canal kingdom,CULT_ROVANT,human,REL_MEASURE_ROADS,canal_monarchy,Claims old imperial legitimacy and wants road control.,restore_road_order
-FAC_KAERN_RED_BOG,Red Bog Hearth League,Kaern hearthhold league,CULT_KAERN,human_orc_mixed,REL_HEARTH_BELOW,oath_council,Controls iron and resists canal taxation.,defend_hearth_and_iron
-FAC_GHARU_OPEN_GATE,Open Gate Freehold,Gharu freehold republic,CULT_GHARU,orc,REL_NINE_BANNERS,freehold_republic,"Wants recognition, land security and an end to service-yoke claims.",legal_recognition
-FAC_KAVARI_WEST_GEAR,West Gear Compact,Kavari pass compact,CULT_KAVARI,dwarf,REL_INNER_STONE,pass_compact,Controls iron passes and sells engineering to rivals.,protect_pass_tolls
-FAC_NALARI_THIRD_CHARTER,Third Charter House,Nalari charter enclave,CULT_NALARI,elf,REL_LONG_ACCOUNT,charter_court,Holds ancient contracts everyone disputes.,enforce_charters
-FAC_MAREN_BLUE_CHAIN,Blue Chain Counting House,Maren trade league outpost,CULT_MAREN,mixed,REL_BELL_RETURN,merchant_board,"Funds wars, manipulates debt and wants river access.",secure_river_credit
-FAC_TALUUN_WHITE_MARE,White Mare Ring,Taluun horse ring,CULT_TALUUN,human_orc_mixed,REL_NINE_BANNERS,seasonal_khan_ring,"Raids, trades horses and pressures settled states.",pasture_and_tribute
-FAC_NINE_BANNERS_HALLOW,Hallow of the Ninth Banner,Nine Banners temple order,multi_culture,mixed,REL_NINE_BANNERS,temple_order,Controls a sacred battlefield and mage legality disputes.,control_oath_war_legitimacy
+faction_id,name,identity,dominant_culture,dominant_species,religion_id,government,tier,conflict_pressure,primary_goal
+FAC_ROV_HALEN,Crown of Rov Halem,Rovant canal kingdom,CULT_ROVANT,human,REL_MEASURE_ROADS,canal_monarchy,tier_2,Claims old imperial legitimacy and wants road control.,restore_road_order
+FAC_KAERN_RED_BOG,Red Bog Hearth League,Kaern hearthhold league,CULT_KAERN,human_orc_mixed,REL_HEARTH_BELOW,oath_council,tier_3,Controls iron and resists canal taxation.,defend_hearth_and_iron
+FAC_GHARU_OPEN_GATE,Open Gate Freehold,Gharu freehold republic,CULT_GHARU,orc,REL_NINE_BANNERS,freehold_republic,tier_3,"Wants recognition, land security and an end to service-yoke claims.",legal_recognition
+FAC_KAVARI_WEST_GEAR,West Gear Compact,Kavari pass compact,CULT_KAVARI,dwarf,REL_INNER_STONE,pass_compact,tier_2,Controls iron passes and sells engineering to rivals.,protect_pass_tolls
+FAC_NALARI_THIRD_CHARTER,Third Charter House,Nalari charter enclave,CULT_NALARI,elf,REL_LONG_ACCOUNT,charter_court,tier_3,Holds ancient contracts everyone disputes.,enforce_charters
+FAC_MAREN_BLUE_CHAIN,Blue Chain Counting House,Maren trade league outpost,CULT_MAREN,mixed,REL_BELL_RETURN,merchant_board,tier_3,"Funds wars, manipulates debt and wants river access.",secure_river_credit
+FAC_TALUUN_WHITE_MARE,White Mare Ring,Taluun horse ring,CULT_TALUUN,human_orc_mixed,REL_NINE_BANNERS,seasonal_khan_ring,tier_2,"Raids, trades horses and pressures settled states.",pasture_and_tribute
+FAC_NINE_BANNERS_HALLOW,Hallow of the Ninth Banner,Nine Banners temple order,multi_culture,mixed,REL_NINE_BANNERS,temple_order,tier_2,Controls a sacred battlefield and mage legality disputes.,control_oath_war_legitimacy
+FAC_LANTER_SEA_LEAGUE,Lanter Sea League,Maren naval trade league,CULT_MAREN,mixed,REL_BELL_RETURN,admiralty_league,tier_2,"Controls sea credit, convoy law and lighthouse tolls.",secure_lanter_sea_lanes
+FAC_NORTHGREY_HIGHLANDS,Northgrey Hearth Crown,Kaern highland realm,CULT_KAERN,human_orc_mixed,REL_HEARTH_BELOW,highland_crown,tier_2,"Guards upland graves and resists lowland tax collectors.",hold_highland_oaths
+FAC_QERESH_SALT_ROAD,Qeresh Salt Road Court,Qeresh salt-road realm,CULT_QERESH,human,REL_SALT_WITNESS,oasis_court,tier_2,"Controls wells, caravan debt and desert toll justice.",control_salt_road_wells
+FAC_EASTERN_REED_CONFED,Eastern Reed Confederation,Taluun river confederation,CULT_TALUUN,human_orc_mixed,REL_NINE_BANNERS,river_clan_confederation,tier_2,"Balances reed towns, horse clans and river tribute.",bind_reed_and_pasture
+FAC_OSTREN_BANNERFIELDS,Ostren Bannerfields,Ostren marcher realm,CULT_OSTREN,human,REL_MEASURE_ROADS,banner_duchy,tier_2,"Turns grain cavalry and saintly lineages into border claims.",expand_banner_honour
+FAC_SALT_WITNESS_PROTECTORATE,Protectorate of the Salt Witness,Qeresh religious protectorate,CULT_QERESH,human,REL_SALT_WITNESS,protectorate_court,tier_2,"Claims sacred duty over wells, contracts and pilgrim roads.",guard_sacred_contracts
+FAC_GREEN_CROWN_COURT,Green Crown Court,forest court of oath and kin,CULT_KAERN,human_orc_mixed,REL_HEARTH_BELOW,forest_court,tier_2,"Controls deep forest law, timber oaths and refuge paths.",keep_forest_oaths
+FAC_DEEP_LEDGER_HOLD,Deep Ledger Hold,Kavari stone hold,CULT_KAVARI,dwarf,REL_INNER_STONE,vault_hold,tier_2,"Holds vault credit, stone roads and pass engineering secrets.",secure_stone_ledger

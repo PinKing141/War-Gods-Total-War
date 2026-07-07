@@ -153,6 +153,11 @@
       return f;
     }
 
+    _tierWeight(fid) {
+      const faction = this.faction(fid);
+      return Math.max(0.45, Math.min(1.5, faction && faction.tierWeight ? faction.tierWeight : 0.88));
+    }
+
     _refreshManpower(fid, initial) {
       const s = this.factionState[fid];
       let max = 0;
@@ -205,6 +210,7 @@
       const provinces = new Set(this.seed.provinces.map((p) => p.id));
       const cultures = new Set(Object.keys(this.seed.cultures || {}));
       const species = new Set(Object.keys(this.seed.species || {}));
+      const validTiers = new Set(["tier_1", "tier_2", "tier_3", "tier_4"]);
       const characterIds = new Set(this.characters.map((c) => c.id));
       const activeWarIds = new Set(this.wars.filter((w) => !w.over).map((w) => w.id));
       const seen = { factions: new Set(), provinces: new Set(), characters: new Set() };
@@ -215,6 +221,8 @@
         if (!this.factionState[f.id]) add("error", "missing_faction_state", `faction:${f.id}`, "Faction has no runtime state.");
         if (f.culture && !cultures.has(f.culture)) add("error", "unknown_faction_culture", `faction:${f.id}`, f.culture);
         if (f.species && !species.has(f.species)) add("error", "unknown_faction_species", `faction:${f.id}`, f.species);
+        if (!validTiers.has(f.tier)) add("error", "invalid_faction_tier", `faction:${f.id}.tier`, String(f.tier));
+        if ((f.tierWeight || 0) <= 0) add("error", "invalid_faction_tier_weight", `faction:${f.id}.tierWeight`, String(f.tierWeight));
       }
 
       for (const p of this.seed.provinces) {
@@ -918,7 +926,7 @@
           const isRaider = this.faction(agg).government === "seasonal_khan_ring";
           if (!claim && !isRaider && !this._factionsBorder(agg, def)) continue;
 
-          let p = (rel.warRisk / 100) * 0.045 * this._traitFactor(agg, "war");
+          let p = (rel.warRisk / 100) * 0.045 * this._traitFactor(agg, "war") * this._tierWeight(agg);
           if (claim) p *= 1 + claim.strength / 120;
           if (this.armyStrength(def) > 0) p *= 0.4;     // hesitant while target mobilized
           if (this.factionState[agg].treasury < 100) p *= 0.4;
@@ -936,15 +944,13 @@
     _warIntentReason(attacker, defender, claim, isRaid, relation, chance) {
       const attackerName = this.faction(attacker).shortName || this.faction(attacker).name;
       const defenderName = this.faction(defender).shortName || this.faction(defender).name;
-      const risk = relation ? ` seeded risk ${relation.warRisk}` : "";
-      const odds = chance !== undefined ? ` current chance ${(Math.min(0.5, chance) * 100).toFixed(1)}%` : "";
       if (claim) {
-        return `${attackerName} sees a usable ${claim.type} claim on ${this.province(claim.target).name}; opinion with ${defenderName} is ${Math.round(this.opinion(attacker, defender))}.${risk}${odds}`;
+        return `${attackerName} goes to war to press a ${claim.type} claim on ${this.province(claim.target).name}.`;
       }
       if (isRaid) {
-        return `${attackerName} chooses a raid because its government rewards plunder and ${defenderName} is reachable.${risk}${odds}`;
+        return `${attackerName} rides for plunder because ${defenderName} is close enough to raid.`;
       }
-      return `${attackerName} escalates a border quarrel with ${defenderName}; hostile opinion and adjacency make war plausible.${risk}${odds}`;
+      return `${attackerName} escalates a frontier quarrel with ${defenderName}.`;
     }
 
     _declareWar(attacker, defender, claim, isRaid, intentReason) {
@@ -970,7 +976,7 @@
         : isRaid ? "riding for plunder and tribute"
           : "pressing a border quarrel into open war";
       this.log(3, "war",
-        `${this.faction(attacker).name} declares war on ${this.faction(defender).name}, ${reason}. The prize: ${prizeName}. Intent: ${war.intentReason}.`,
+        `${this.faction(attacker).name} declares war on ${this.faction(defender).name}, ${reason}. The prize: ${prizeName}. Cause: ${war.intentReason}.`,
         { war: war.id, faction: attacker, province: goal.province });
       this._bumpOpinion(attacker, defender, -25);
       this._raiseArmy(attacker, war);

@@ -3,6 +3,7 @@
 Usage:
     python scripts/validate_observer_data.py
     python scripts/validate_observer_data.py --runtime-days 120 --seed 777
+    python scripts/validate_observer_data.py --years 25
     python scripts/validate_observer_data.py --static-only
 """
 
@@ -35,6 +36,7 @@ MAP_LAYERS_JS = ROOT / "docs" / "assets" / "map_layers.js"
 PROVINCE_DEFINITIONS = ROOT / "docs" / "assets" / "provinces" / "world_province_definitions.csv"
 PROVINCE_ADJACENCY = ROOT / "docs" / "assets" / "provinces" / "world_province_adjacency.csv"
 PROVINCE_RIVER_FEATURES = ROOT / "docs" / "assets" / "rivers" / "province_river_features.csv"
+SCENARIO_DIR = ROOT / "docs" / "assets" / "scenarios"
 
 
 def load_seed() -> dict:
@@ -62,6 +64,13 @@ def local_map_faction_ids() -> set[str]:
     return set(re.findall(r"\bid: \"([^\"]+)\"", match.group(1)))
 
 
+def scenario_docs() -> list[tuple[str, dict]]:
+    docs = []
+    for path in sorted(SCENARIO_DIR.glob("*.json")):
+        docs.append((str(path.relative_to(ROOT)).replace("\\", "/"), json.loads(path.read_text(encoding="utf-8"))))
+    return docs
+
+
 def collect_static(seed: dict) -> list[ValidationIssue]:
     return collect_static_validation_issues(
         seed,
@@ -69,6 +78,8 @@ def collect_static(seed: dict) -> list[ValidationIssue]:
         csv_rows(PROVINCE_ADJACENCY),
         csv_rows(PROVINCE_RIVER_FEATURES),
         local_map_faction_ids(),
+        scenario_docs(),
+        ROOT,
     )
 
 
@@ -157,9 +168,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Validate War Gods observer data.")
     parser.add_argument("--seed", type=int, default=123, help="Runtime sample RNG seed.")
     parser.add_argument("--runtime-days", type=int, default=40, help="Days to tick in the runtime sample.")
+    parser.add_argument("--years", type=int, default=None, help="Run a year-based smoke sample; overrides --runtime-days.")
     parser.add_argument("--static-only", action="store_true", help="Only validate static seed/map CSV data.")
     parser.add_argument("--no-sample-war", action="store_true", help="Do not create a deterministic sample war before ticking.")
     args = parser.parse_args()
+    runtime_days = max(0, args.years * 360 if args.years is not None else args.runtime_days)
 
     seed = load_seed()
     static_issues = collect_static(seed)
@@ -169,7 +182,7 @@ def main() -> int:
     if not args.static_only:
         snapshot = runtime_snapshot(
             seed=args.seed,
-            runtime_days=max(0, args.runtime_days),
+            runtime_days=runtime_days,
             sample_war=not args.no_sample_war,
         )
         runtime_issues = collect_runtime_validation_issues(snapshot, seed)
@@ -181,7 +194,8 @@ def main() -> int:
         print("Runtime sample: skipped")
     else:
         sample = "with sample war" if not args.no_sample_war else "without sample war"
-        print_group(f"Runtime sample ({args.runtime_days} day(s), seed {args.seed}, {sample})", runtime_issues)
+        duration = f"{args.years} year(s)" if args.years is not None else f"{runtime_days} day(s)"
+        print_group(f"Runtime sample ({duration}, seed {args.seed}, {sample})", runtime_issues)
         print_group("Simulation self-check", health_issues)
 
     total = len(static_issues) + len(runtime_issues) + len(health_issues)

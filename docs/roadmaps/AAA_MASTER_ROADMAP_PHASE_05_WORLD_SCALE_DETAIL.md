@@ -2,7 +2,7 @@
 
 This is the first safe country expansion gate.
 
-## 5A. Faction tier support
+## 5A. Faction tier support — DONE
 
 Add tiers:
 
@@ -19,7 +19,20 @@ Closing gate:
 Every faction has a valid tier and the tier affects simulation depth safely.
 ```
 
-## 5B. Add 8-12 new major or regional powers
+Completed with:
+
+```text
+- tier field added to authored seed factions
+- tier exported into docs/assets/data.js
+- tier preserved in SQLite seed and runtime faction rows
+- tier validation added to static and runtime checks
+- polished tier labels shown in world and realm UI
+- faction tier gently affects war-declaration ambition
+- no new factions or provinces added
+- full test suite passing
+```
+
+## 5B. Add 8-12 new major or regional powers — DONE
 
 Potential slots:
 
@@ -42,6 +55,20 @@ Closing gate:
 
 ```text
 World has 16-20 serious powers, each with a distinct role and valid data.
+```
+
+Completed with:
+
+```text
+- 8 new regional powers added to the authored seed faction CSV
+- expanded world now has 16 serious powers
+- every new power has valid tier, culture, faith, government, role and pressure
+- web seed export supports presentation style for every new power
+- default frontier scenario includes the expanded active faction list
+- validation tests assert the 16-20 faction gate
+- no new provinces, terrain masks, river art or map cosmetics added
+- 25-year observer validation passes
+- full test suite passing
 ```
 
 ## 5C. Regional balance pass

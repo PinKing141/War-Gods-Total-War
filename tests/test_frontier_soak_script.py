@@ -16,7 +16,7 @@ def test_frontier_soak_runner_reports_real_metrics(tmp_path):
     assert metrics.seed == 123
     assert metrics.years_simulated == 1
     assert metrics.months_simulated == 12
-    assert metrics.factions == 8
+    assert 16 <= metrics.factions <= 20
     assert metrics.claims_pressed > 0
     assert metrics.treaty_crises > 0
     assert metrics.historical_actions > 0

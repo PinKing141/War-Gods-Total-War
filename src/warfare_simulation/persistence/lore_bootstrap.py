@@ -269,8 +269,8 @@ class LoreBootstrap:
                 """
                 INSERT OR IGNORE INTO seed_faction (
                     faction_id, name, identity, dominant_culture, dominant_species,
-                    religion_id, government, conflict_pressure, primary_goal
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    religion_id, government, tier, conflict_pressure, primary_goal
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     data["faction_id"],
@@ -280,6 +280,7 @@ class LoreBootstrap:
                     data["dominant_species"],
                     data["religion_id"],
                     data["government"],
+                    data.get("tier", "tier_3"),
                     data["conflict_pressure"],
                     data["primary_goal"],
                 ),

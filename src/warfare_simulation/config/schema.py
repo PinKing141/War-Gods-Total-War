@@ -343,6 +343,7 @@ class SeedFactionCsvSchema(LoreCsvSchema):
     dominant_species: str = ""
     religion_id: str = ""
     government: str = ""
+    tier: str = "tier_3"
     conflict_pressure: str = ""
     primary_goal: str = ""
 

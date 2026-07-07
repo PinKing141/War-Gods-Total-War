@@ -23,6 +23,7 @@
       };
       const params = new URLSearchParams(location.search);
       this.debugMapEnabled = params.get("debug") === "map" || params.has("mapDebug");
+      this.debugEnabled = params.has("debug") || params.has("mapDebug");
       this.chronMode = "chronicle";
       this._wireDelegates();
       this._wireChronicleTabs();
@@ -46,6 +47,12 @@
       return this.sim.faction(fid) ||
         (this.map && this.map.faction && this.map.faction(fid)) ||
         { id: fid, name: fid || "Unknown", shortName: fid || "Unknown", color: "#888070", charge: "peak" };
+    }
+
+    factionTierLabel(faction) {
+      return faction && faction.tierLabel
+        ? faction.tierLabel
+        : { tier_1: "Great Power", tier_2: "Regional Power", tier_3: "Minor State", tier_4: "Background Power" }[(faction && faction.tier) || "tier_3"] || "Minor State";
     }
 
     terrainInfo(id) {
@@ -289,12 +296,12 @@
         .map((p) => `${esc(this.faction(p.faction).shortName || this.faction(p.faction).name)}: ${esc(p.reason)}`)
         .join(" · ") || "none";
       return `
-        <h3>Peace summary</h3>
+        <h3>Peace Summary</h3>
         <div class="stat-rows">
-          <div class="row"><span>Why it ended</span><b>${esc(summary.reason || "unknown")}</b></div>
-          <div class="row"><span>Changed hands</span><b>${changed}</b></div>
-          <div class="row"><span>Prestige gained</span><b>${prestige}</b></div>
-          <div class="row"><span>Standing lost</span><b>${losses}</b></div>
+          <div class="row"><span>Cause</span><b>${esc(summary.reason || "unknown")}</b></div>
+          <div class="row"><span>Changed Hands</span><b>${changed}</b></div>
+          <div class="row"><span>Prestige Gained</span><b>${prestige}</b></div>
+          <div class="row"><span>Standing Lost</span><b>${losses}</b></div>
           <div class="row"><span>Truce</span><b>${esc(summary.truce || "none")}</b></div>
         </div>
       `;
@@ -365,7 +372,7 @@
             ${WG.shieldSVG(f, 22)}
             <div class="rank-body">
               <div>${esc(f.name)}${provs === 0 ? ' <span class="bad fine">landless</span>' : ""}</div>
-              <div class="fine">${ruler ? esc(ruler.name) : "—"} · ${provs} land${provs === 1 ? "" : "s"} · ${s.armyStrength(f.id).toLocaleString()} levied</div>
+              <div class="fine">${ruler ? esc(ruler.name) : "—"} · ${esc(this.factionTierLabel(f))} · ${provs} land${provs === 1 ? "" : "s"} · ${s.armyStrength(f.id).toLocaleString()} levied</div>
             </div>
             <b>${Math.round(st.prestige)}</b>
           </div>`;
@@ -401,27 +408,27 @@
         ${names}
         <div class="stat-rows">
           <div class="row"><span>Controller</span><b>${this.shieldChip(st.controller)}</b></div>
-          ${st.staticMapProvince ? `<div class="row"><span>Simulation</span><b class="fine">world-map province</b></div>` : ""}
-          ${st.occupier ? `<div class="row occupied"><span>Occupied by</span><b>${this.shieldChip(st.occupier)}</b></div>` : ""}
-          ${st.siege ? `<div class="row occupied"><span>Under siege</span><b>${this.shieldChip(st.siege.by)} — ${Math.round(st.siege.progress * 100)}%</b></div>` : ""}
-          <div class="row"><span>Current status</span><b class="${warStatus === "peaceful" ? "good" : "bad"}">${esc(warStatus)}</b></div>
+          ${this.debugEnabled && st.staticMapProvince ? `<div class="row"><span>Debug State</span><b class="fine">static map province</b></div>` : ""}
+          ${st.occupier ? `<div class="row occupied"><span>Occupied By</span><b>${this.shieldChip(st.occupier)}</b></div>` : ""}
+          ${st.siege ? `<div class="row occupied"><span>Under Siege</span><b>${this.shieldChip(st.siege.by)} — ${Math.round(st.siege.progress * 100)}%</b></div>` : ""}
+          <div class="row"><span>Status</span><b class="${warStatus === "peaceful" ? "good" : "bad"}">${esc(warStatus)}</b></div>
           <div class="row"><span>Population</span><b>${st.pop.toLocaleString()}</b></div>
           <div class="row"><span>Garrison</span><b>${Math.round(st.garrison || 0).toLocaleString()}</b></div>
-          <div class="row"><span>Fort level</span><b>${this.pips(p.fort, 5, "▲")}</b></div>
+          <div class="row"><span>Fort Level</span><b>${this.pips(p.fort, 5, "▲")}</b></div>
           <div class="row"><span>Roads</span><b>${this.pips(p.roads, 5)}</b></div>
           ${p.port ? `<div class="row"><span>Harbour</span><b>${this.pips(p.port, 5)}</b></div>` : ""}
-          ${p.manaSite ? `<div class="row"><span>Mana site</span><b>${this.pips(p.manaSite, 3, "✦")}</b></div>` : ""}
+          ${p.manaSite ? `<div class="row"><span>Mana Site</span><b>${this.pips(p.manaSite, 3, "✦")}</b></div>` : ""}
           ${st.devastation > 4 ? `<div class="row"><span>Devastation</span><b class="bad">${Math.round(st.devastation)}%</b></div>` : ""}
           <div class="row"><span>Biome</span><b>${esc(biome.label)}</b></div>
-          <div class="row"><span>Terrain feature</span><b>${esc(feature.label)}</b></div>
-          <div class="row"><span>Economy / value</span><b>${p.value} <span class="fine">roads ${p.roads}, port ${p.port || 0}</span></b></div>
+          <div class="row"><span>Terrain Feature</span><b>${esc(feature.label)}</b></div>
+          <div class="row"><span>Economy</span><b>${p.value} <span class="fine">roads ${p.roads}, port ${p.port || 0}</span></b></div>
           ${p.regionName ? `<div class="row"><span>Region</span><b>${esc(p.regionName)}</b></div>` : ""}
-          <div class="row"><span>Why it matters</span><b>${esc(why || "local holding")}</b></div>
+          <div class="row"><span>Strategic Value</span><b>${esc(why || "local holding")}</b></div>
         </div>
-        ${riverRows ? `<h3>River data</h3><div class="stat-rows">${riverRows}</div>` : ""}
-        ${armies.length ? `<h3>Armies present</h3>` + armies.map((a) =>
-          `<div class="row">${this.shieldChip(a.faction)}<b>${a.size.toLocaleString()} under ${this.charLink(a.commanderId)} <span class="fine">${a.undersupplied ? "undersupplied" : "supply"} ${Math.round(a.supply || 0)} / ${Math.round(a.maxSupply || 0)} · ${esc(a.intentReason || "holding position")}</span></b></div>`).join("") : ""}
-        ${claims.length ? `<h3>Claims on this land</h3>` + claims.map((c) =>
+        ${riverRows ? `<h3>Rivers</h3><div class="stat-rows">${riverRows}</div>` : ""}
+        ${armies.length ? `<h3>Armies Present</h3>` + armies.map((a) =>
+          `<div class="row">${this.shieldChip(a.faction)}<b>${a.size.toLocaleString()} under ${this.charLink(a.commanderId)} <span class="fine">${a.undersupplied ? "undersupplied" : "supply"} ${Math.round(a.supply || 0)} / ${Math.round(a.maxSupply || 0)}${this.debugEnabled ? ` · ${esc(a.intentReason || "holding position")}` : ""}</span></b></div>`).join("") : ""}
+        ${claims.length ? `<h3>Claims</h3>` + claims.map((c) =>
           `<div class="claim"><b>${this.shieldChip(c.claimant)}</b> — ${esc(c.type)} (${Math.round(c.strength)}) <div class="fine">${esc(c.source)} · ${esc(c.myth)}</div></div>`).join("") : ""}
       `);
     }
@@ -466,13 +473,15 @@
             ${WG.shieldSVG(f, 52)}
             <div>
               <h2>${esc(f.name)}</h2>
-              <div class="subtitle">${esc(f.identity || "mapped local power")} · ${esc((f.government || "local_rule").replace(/_/g, " "))}</div>
+              <div class="subtitle">${esc(this.factionTierLabel(f))} · ${esc(f.identity || "frontier power")} · ${esc((f.government || "local_rule").replace(/_/g, " "))}</div>
             </div>
           </div>
           <div class="stat-rows">
-            <div class="row"><span>Mapped provinces</span><b>${provinces.length}</b></div>
-            <div class="row"><span>Observer state</span><b class="fine">mapped placeholder, not active in the war loop</b></div>
-            ${f.pressure ? `<div class="row"><span>Pressure</span><b>${esc(f.pressure)}</b></div>` : ""}
+            <div class="row"><span>Lands</span><b>${provinces.length}</b></div>
+            <div class="row"><span>Tier</span><b>${esc(this.factionTierLabel(f))}</b></div>
+            <div class="row"><span>Status</span><b class="fine">surveyed frontier realm</b></div>
+            ${this.debugEnabled ? `<div class="row"><span>Debug State</span><b class="fine">not active in the war loop</b></div>` : ""}
+            ${f.pressure ? `<div class="row"><span>Conflict</span><b>${esc(f.pressure)}</b></div>` : ""}
             ${topRegions ? `<div class="row"><span>Regions</span><b>${topRegions}</b></div>` : ""}
             ${topBiomes ? `<div class="row"><span>Biomes</span><b>${topBiomes}</b></div>` : ""}
             ${topFeatures ? `<div class="row"><span>Terrain features</span><b>${topFeatures}</b></div>` : ""}
@@ -515,7 +524,7 @@
           ${WG.shieldSVG(f, 52)}
           <div>
             <h2>${esc(f.name)}</h2>
-            <div class="subtitle">${esc(f.identity)} · ${esc(f.government.replace(/_/g, " "))}</div>
+            <div class="subtitle">${esc(this.factionTierLabel(f))} · ${esc(f.identity)} · ${esc(f.government.replace(/_/g, " "))}</div>
           </div>
         </div>
         ${ruler ? `<div class="ruler-card" data-open-char="${ruler.id}">
@@ -529,20 +538,21 @@
             : `<div class="row"><span>Heir</span><b class="fine"><i>the line hangs by a thread</i></b></div>`;
         })()}
         <div class="stat-rows">
-          <div class="row"><span>Held provinces</span><b>${provinces.length}</b></div>
+          <div class="row"><span>Held Provinces</span><b>${provinces.length}</b></div>
+          <div class="row"><span>Tier</span><b>${esc(this.factionTierLabel(f))}</b></div>
           <div class="row"><span>Treasury</span><b>${s.treasury.toLocaleString()} silver</b></div>
-          ${f.goal ? `<div class="row"><span>Likely goal</span><b>${esc(f.goal.replace(/_/g, " "))}</b></div>` : ""}
-          <div class="row"><span>Economy pressure</span><b class="${econ.net >= 0 ? "good" : "bad"}">${econ.net >= 0 ? "+" : ""}${econ.net.toLocaleString()} <span class="fine">income ${income}, upkeep ${upkeep}, court ${econ.court}</span></b></div>
-          <div class="row"><span>Army strength</span><b>${this.sim.armyStrength(fid).toLocaleString()} levied</b></div>
+          ${f.goal ? `<div class="row"><span>Goal</span><b>${esc(f.goal.replace(/_/g, " "))}</b></div>` : ""}
+          <div class="row"><span>Economy</span><b class="${econ.net >= 0 ? "good" : "bad"}">${econ.net >= 0 ? "+" : ""}${econ.net.toLocaleString()} <span class="fine">income ${income}, upkeep ${upkeep}, court ${econ.court}</span></b></div>
+          <div class="row"><span>Army Strength</span><b>${this.sim.armyStrength(fid).toLocaleString()} levied</b></div>
           <div class="row"><span>Manpower</span><b>${s.manpower.toLocaleString()} / ${s.maxManpower.toLocaleString()}</b></div>
           <div class="row"><span>Prestige</span><b>${Math.round(s.prestige)}</b></div>
-          ${s.exhaustion > 5 ? `<div class="row"><span>War exhaustion</span><b class="bad">${Math.round(s.exhaustion)}</b></div>` : ""}
-          ${occupied.length ? `<div class="row occupied"><span>Occupied lands</span><b>${occupied.length}</b></div>` : ""}
-          ${sieged.length ? `<div class="row occupied"><span>Under siege</span><b>${sieged.length}</b></div>` : ""}
-          <div class="row"><span>Wars won / lost</span><b>${s.warsWon} / ${s.warsLost}</b></div>
-          <div class="row"><span>Instability / crisis</span><b class="${risks.length ? "bad" : "good"}">${risks.length ? esc(risks.join(" · ")) : "stable for now"}</b></div>
+          ${s.exhaustion > 5 ? `<div class="row"><span>War Exhaustion</span><b class="bad">${Math.round(s.exhaustion)}</b></div>` : ""}
+          ${occupied.length ? `<div class="row occupied"><span>Occupied Lands</span><b>${occupied.length}</b></div>` : ""}
+          ${sieged.length ? `<div class="row occupied"><span>Under Siege</span><b>${sieged.length}</b></div>` : ""}
+          <div class="row"><span>Wars Won / Lost</span><b>${s.warsWon} / ${s.warsLost}</b></div>
+          <div class="row"><span>Risk</span><b class="${risks.length ? "bad" : "good"}">${risks.length ? esc(risks.join(" · ")) : "stable for now"}</b></div>
         </div>
-        ${f.pressure ? `<h3>Political pressure</h3><div class="quote">${esc(f.pressure)}</div>` : ""}
+        ${f.pressure ? `<h3>Conflict</h3><div class="quote">${esc(f.pressure)}</div>` : ""}
         <h3>Faith — ${esc(religion.name || f.religion)}</h3>
         <div class="quote">“${esc(religion.claim || "")}”</div>
         <h3>Culture — ${esc(culture.name || f.culture)} (${esc(culture.selfName || "")})</h3>
@@ -632,16 +642,16 @@
           <div><div class="fine">Defenders</div>${w.defSide.map((fid) => this.shieldChip(fid, 24)).join("<br>")}</div>
         </div>
         <div class="stat-rows">
-          <div class="row"><span>War goal</span><b>${this.warGoalLabel(w)}</b></div>
-          ${w.intentReason ? `<div class="row"><span>War intent</span><b>${esc(w.intentReason)}</b></div>` : ""}
-          <div class="row"><span>Target provinces</span><b>${targetProvinces.map((id) => this.provLink(id)).join(" · ") || "none"}</b></div>
-          <div class="row"><span>Who is winning</span><b class="${w.score > 10 ? "bad" : w.score < -10 ? "good" : ""}">${esc(this.warWinnerSummary(w))}</b></div>
-          <div class="row"><span>War score</span><b>${Math.round(w.score)}</b></div>
-          <div class="row"><span>Occupation score</span><b>${esc(occupation.label)}</b></div>
-          <div class="row"><span>Armies in field</span><b>attackers ${attackerStrength.toLocaleString()} · defenders ${defenderStrength.toLocaleString()}</b></div>
+          <div class="row"><span>War Goal</span><b>${this.warGoalLabel(w)}</b></div>
+          ${w.intentReason ? `<div class="row"><span>Cause</span><b>${esc(w.intentReason)}</b></div>` : ""}
+          <div class="row"><span>Target Provinces</span><b>${targetProvinces.map((id) => this.provLink(id)).join(" · ") || "none"}</b></div>
+          <div class="row"><span>Balance</span><b class="${w.score > 10 ? "bad" : w.score < -10 ? "good" : ""}">${esc(this.warWinnerSummary(w))}</b></div>
+          <div class="row"><span>War Score</span><b>${Math.round(w.score)}</b></div>
+          <div class="row"><span>Occupation</span><b>${esc(occupation.label)}</b></div>
+          <div class="row"><span>Armies in Field</span><b>attackers ${attackerStrength.toLocaleString()} · defenders ${defenderStrength.toLocaleString()}</b></div>
           <div class="row"><span>Exhaustion</span><b>attackers ${Math.round(attackerExhaustion)} · defenders ${Math.round(defenderExhaustion)}</b></div>
-          <div class="row"><span>Battles / casualties</span><b>${w.battles.length} / ${casualties.toLocaleString()}</b></div>
-          <div class="row"><span>Active sieges</span><b>${sieges.length}</b></div>
+          <div class="row"><span>Battles / Casualties</span><b>${w.battles.length} / ${casualties.toLocaleString()}</b></div>
+          <div class="row"><span>Active Sieges</span><b>${sieges.length}</b></div>
         </div>
         ${w.over ? "" : `
           <h3>Fortunes of war</h3>
@@ -718,7 +728,7 @@
     renderRecapTab() {
       const recaps = [...(this.sim.monthlyRecaps || [])].reverse();
       this.el.events.innerHTML = "";
-      if (typeof this.sim.validateState === "function") {
+      if (this.debugEnabled && typeof this.sim.validateState === "function") {
         const health = this.sim.validateState();
         const issues = health.issues || [];
         const errors = issues.filter((issue) => issue.severity === "error");
@@ -821,7 +831,7 @@
               el.dataset.openChar = a.commanderId;
               el.style.pointerEvents = "auto";
             }
-            el.title = `${f.name} — ${a.size.toLocaleString()} under ${(this.sim.character(a.commanderId) || {}).name || "?"}; ${a.undersupplied ? "undersupplied" : "supply"} ${Math.round(a.supply || 0)}/${Math.round(a.maxSupply || 0)}; ${a.intentReason || "holding position"}`;
+            el.title = `${f.name} — ${a.size.toLocaleString()} under ${(this.sim.character(a.commanderId) || {}).name || "?"}; ${a.undersupplied ? "undersupplied" : "supply"} ${Math.round(a.supply || 0)}/${Math.round(a.maxSupply || 0)}${this.debugEnabled ? `; ${a.intentReason || "holding position"}` : ""}`;
             el.querySelector("span").textContent = (a.size / 1000).toFixed(1) + "k";
             el.style.left = (x + (i - (group.length - 1) / 2) * 40) + "px";
             el.style.top = (y - 34) + "px";

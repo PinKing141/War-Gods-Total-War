@@ -38,6 +38,7 @@ def test_lore_csv_loader_validates_core_files():
     assert {row.resource_id for row in resources} >= {"GRAIN", "IRON"}
     assert all(style.culture_id.startswith("CULT_") for style in naming_styles)
     assert any(faction.faction_id == "FAC_ROV_HALEN" for faction in seed_factions)
+    assert {faction.tier for faction in seed_factions} <= {"tier_1", "tier_2", "tier_3", "tier_4"}
     assert seed_provinces[0].road_level == 5
     assert seed_relations[0].score < 0
     assert seed_characters[0].age > 0
@@ -93,6 +94,12 @@ def test_lore_bootstrap_seeds_reference_tables_idempotently(tmp_path):
         ("PROV_ROV_HALEM",),
     ).fetchone()
     assert province == (5, 2, 3, 1, 95)
+
+    rov_tier = db.execute(
+        "SELECT tier FROM seed_faction WHERE faction_id = ?",
+        ("FAC_ROV_HALEN",),
+    ).fetchone()[0]
+    assert rov_tier == "tier_2"
 
     config_mgr = ConfigManager(str(CONFIG_DIR))
     kingdom_id = CampaignBootstrap.seed_from_config(config_mgr, db)

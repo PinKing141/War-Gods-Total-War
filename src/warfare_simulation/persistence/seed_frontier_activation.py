@@ -123,8 +123,8 @@ class SeedFrontierActivation:
                 INSERT INTO faction (
                     name, faction_type, government_type, power_level, wealth,
                     stability, personality_traits, seed_faction_id, dominant_culture,
-                    dominant_species, religion_id, primary_goal, conflict_pressure
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    dominant_species, religion_id, tier, primary_goal, conflict_pressure
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     row["name"],
@@ -138,6 +138,7 @@ class SeedFrontierActivation:
                     row["dominant_culture"],
                     row["dominant_species"],
                     row["religion_id"],
+                    row.get("tier", "tier_3"),
                     row["primary_goal"],
                     row["conflict_pressure"],
                 ),

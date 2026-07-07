@@ -25,6 +25,7 @@ MAP_LAYERS_JS = ROOT / "docs" / "assets" / "map_layers.js"
 PROVINCE_DEFINITIONS = ROOT / "docs" / "assets" / "provinces" / "world_province_definitions.csv"
 PROVINCE_ADJACENCY = ROOT / "docs" / "assets" / "provinces" / "world_province_adjacency.csv"
 PROVINCE_RIVER_FEATURES = ROOT / "docs" / "assets" / "rivers" / "province_river_features.csv"
+SCENARIO_DIR = ROOT / "docs" / "assets" / "scenarios"
 
 
 def _load_seed() -> dict:
@@ -47,6 +48,13 @@ def _local_map_faction_ids() -> set[str]:
     return set(re.findall(r"\bid: \"([^\"]+)\"", match.group(1)))
 
 
+def _scenario_docs() -> list[tuple[str, dict]]:
+    return [
+        (str(path.relative_to(ROOT)).replace("\\", "/"), json.loads(path.read_text(encoding="utf-8")))
+        for path in sorted(SCENARIO_DIR.glob("*.json"))
+    ]
+
+
 def test_validation_module_reports_clear_static_output():
     issues = collect_static_validation_issues(
         _load_seed(),
@@ -54,8 +62,37 @@ def test_validation_module_reports_clear_static_output():
         _csv_rows(PROVINCE_ADJACENCY),
         _csv_rows(PROVINCE_RIVER_FEATURES),
         _local_map_faction_ids(),
+        _scenario_docs(),
+        ROOT,
     )
     assert not issues, format_issues(issues)
+
+
+def test_normal_ui_copy_avoids_debug_language():
+    ui_text = (ROOT / "docs" / "assets" / "ui.js").read_text(encoding="utf-8")
+    sim_text = (ROOT / "docs" / "assets" / "sim.js").read_text(encoding="utf-8")
+    normal_ui_text = re.sub(
+        r"debugMapPanel\(info\).*?\n    \/\* ---------- events ---------- \*\/",
+        "",
+        ui_text,
+        flags=re.S,
+    )
+    banned_ui_phrases = [
+        "Why it matters",
+        "Likely goal",
+        "Economy pressure",
+        "Political pressure",
+        "River data",
+        "Current status",
+        "War intent",
+        "mapped placeholder",
+        "world-map province",
+    ]
+    for phrase in banned_ui_phrases:
+        assert phrase not in normal_ui_text
+    assert "seeded risk" not in sim_text
+    assert "current chance" not in sim_text
+    assert "Intent:" not in sim_text
 
 
 def test_validation_cli_outputs_clear_report():
@@ -81,6 +118,220 @@ def test_validation_cli_outputs_clear_report():
     assert "Validation passed: no issues found." in output
 
 
+def test_validation_cli_supports_25_year_smoke_gate():
+    with tempfile.NamedTemporaryFile("w", suffix=".out", delete=False) as f:
+        stdout_path = Path(f.name)
+    with tempfile.NamedTemporaryFile("w", suffix=".err", delete=False) as f:
+        stderr_path = Path(f.name)
+    try:
+        script = ROOT / "scripts" / "validate_observer_data.py"
+        exit_code = os.system(
+            f'cd /d "{ROOT}" && "{sys.executable}" "{script}" --years 25 --seed 123 '
+            f'> "{stdout_path}" 2> "{stderr_path}"'
+        )
+        output = stdout_path.read_text(encoding="utf-8") + stderr_path.read_text(encoding="utf-8")
+    finally:
+        stdout_path.unlink(missing_ok=True)
+        stderr_path.unlink(missing_ok=True)
+    assert exit_code == 0, output
+    assert "Runtime sample (25 year(s), seed 123, with sample war): OK" in output
+    assert "Simulation self-check: OK" in output
+
+
+def test_static_validation_reports_exact_broken_rows_and_fields():
+    seed = json.loads(json.dumps(_load_seed()))
+    seed["factions"][1]["id"] = seed["factions"][0]["id"]
+    seed["factions"][2]["tier"] = "tier_missing"
+    seed["factions"][3]["tierWeight"] = 0
+    seed["provinces"][0]["controller"] = "FAC_MISSING"
+    seed["provinces"][1]["fort"] = -1
+    seed["claims"][0]["target"] = "PROV_MISSING"
+    seed["mages"][0]["patron"] = "FAC_MISSING"
+    province_rows = _csv_rows(PROVINCE_DEFINITIONS)
+    province_rows[0] = {**province_rows[0], "controller": "FAC_MISSING", "road_level": "-1"}
+    adjacency_rows = _csv_rows(PROVINCE_ADJACENCY)
+    adjacency_rows[0] = {**adjacency_rows[0], "province_b": "PROV_MISSING"}
+    river_rows = _csv_rows(PROVINCE_RIVER_FEATURES)
+    river_rows[0] = {**river_rows[0], "province_id": "PROV_MISSING", "river_trade_value": "-1"}
+
+    issues = collect_static_validation_issues(
+        seed,
+        province_rows,
+        adjacency_rows,
+        river_rows,
+        _local_map_faction_ids(),
+        _scenario_docs(),
+        ROOT,
+    )
+    report = format_issues(issues)
+    codes = {issue.code for issue in issues}
+
+    assert "duplicate_id" in codes
+    assert "invalid_faction_tier" in codes
+    assert "invalid_faction_tier_weight" in codes
+    assert "unknown_controller" in codes
+    assert "negative_province_number" in codes
+    assert "unknown_claim_target" in codes
+    assert "unknown_mage_patron" in codes
+    assert "unknown_map_controller" in codes
+    assert "unknown_adjacency_province" in codes
+    assert "unknown_river_feature_province" in codes
+    assert "negative_river_feature_number" in codes
+    assert "docs/assets/data.js:seed.factions:row 3.id" in report
+    assert "docs/assets/provinces/world_province_definitions.csv:row 2" in report
+    assert ".controller" in report
+
+
+def test_default_scenario_manifest_validates_references():
+    scenarios = _scenario_docs()
+    assert [scenario["scenario_id"] for _, scenario in scenarios] == ["SCN_FRONTIER_CHRONICLE"]
+    assert 16 <= len(scenarios[0][1]["active_factions"]) <= 20
+    issues = collect_static_validation_issues(
+        _load_seed(),
+        _csv_rows(PROVINCE_DEFINITIONS),
+        _csv_rows(PROVINCE_ADJACENCY),
+        _csv_rows(PROVINCE_RIVER_FEATURES),
+        _local_map_faction_ids(),
+        scenarios,
+        ROOT,
+    )
+    assert not issues, format_issues(issues)
+
+
+def test_scenario_validation_reports_bad_references_and_paths():
+    scenario = json.loads((SCENARIO_DIR / "default_frontier.json").read_text(encoding="utf-8"))
+    scenario["scenario_id"] = ""
+    scenario["start_year"] = -1
+    scenario["data_sources"]["web_seed"] = "docs/assets/missing_seed.js"
+    scenario["active_factions"].append("FAC_MISSING")
+    scenario["focus_provinces"].append("PROV_MISSING")
+    scenario["starting_wars"] = [{
+        "attacker": "FAC_MISSING",
+        "defender": "FAC_ROV_HALEN",
+        "goal_province": "PROV_MISSING",
+    }]
+    issues = collect_static_validation_issues(
+        _load_seed(),
+        _csv_rows(PROVINCE_DEFINITIONS),
+        _csv_rows(PROVINCE_ADJACENCY),
+        _csv_rows(PROVINCE_RIVER_FEATURES),
+        _local_map_faction_ids(),
+        [("docs/assets/scenarios/broken.json", scenario)],
+        ROOT,
+    )
+    codes = {issue.code for issue in issues}
+    report = format_issues(issues)
+    assert "missing_scenario_id" in codes
+    assert "negative_scenario_start_year" in codes
+    assert "missing_scenario_data_source" in codes
+    assert "unknown_scenario_faction" in codes
+    assert "unknown_scenario_province" in codes
+    assert "unknown_scenario_war_attacker" in codes
+    assert "unknown_scenario_war_goal" in codes
+    assert "docs/assets/scenarios/broken.json:data_sources.web_seed" in report
+
+
+def test_runtime_validation_reports_bad_army_war_and_state_fields():
+    seed = _load_seed()
+    snapshot = {
+        "characters": [
+            {**seed["characters"][0]},
+            {**seed["characters"][0]},
+            {**seed["characters"][1], "faction": "FAC_MISSING", "age": -2},
+        ],
+        "armies": [
+            {
+                "id": "ARMY_BAD",
+                "faction": "FAC_MISSING",
+                "loc": "PROV_MISSING",
+                "nextLoc": "PROV_MISSING_NEXT",
+                "dest": "PROV_MISSING_DEST",
+                "commanderId": "CHAR_MISSING",
+                "warId": "WAR_MISSING",
+                "size": -1,
+                "morale": -1,
+                "supply": 8,
+                "maxSupply": 3,
+                "dailySupplyUse": -1,
+            },
+            {
+                "id": "ARMY_BAD",
+                "faction": seed["factions"][0]["id"],
+                "loc": seed["provinces"][0]["id"],
+                "commanderId": seed["characters"][0]["id"],
+                "warId": "WAR_BAD",
+                "size": 1,
+                "morale": 1,
+                "supply": 1,
+                "maxSupply": 2,
+                "dailySupplyUse": 0,
+            },
+        ],
+        "wars": [
+            {
+                "id": "WAR_BAD",
+                "attacker": "FAC_MISSING",
+                "defender": seed["factions"][1]["id"],
+                "goal": {"province": "PROV_MISSING"},
+                "atkSide": ["FAC_MISSING"],
+                "defSide": [seed["factions"][1]["id"]],
+                "score": 0,
+            },
+            {
+                "id": "WAR_BAD",
+                "attacker": seed["factions"][0]["id"],
+                "defender": "FAC_MISSING",
+                "goal": {"province": seed["provinces"][0]["id"]},
+                "atkSide": [seed["factions"][0]["id"]],
+                "defSide": ["FAC_MISSING"],
+                "score": "bad",
+            },
+        ],
+        "provinceState": {
+            seed["provinces"][0]["id"]: {
+                "controller": "FAC_MISSING",
+                "occupier": "FAC_MISSING",
+                "siege": {"by": "FAC_MISSING", "progress": 0},
+                "pop": -1,
+                "garrison": -1,
+                "devastation": -1,
+            }
+        },
+        "factionState": {
+            seed["factions"][0]["id"]: {
+                "rulerId": "CHAR_MISSING",
+                "treasury": -1,
+                "manpower": -1,
+                "maxManpower": -1,
+                "prestige": -1,
+                "exhaustion": -1,
+            }
+        },
+    }
+
+    issues = collect_runtime_validation_issues(snapshot, seed)
+    codes = {issue.code for issue in issues}
+    report = format_issues(issues)
+
+    assert "duplicate_id" in codes
+    assert "unknown_army_faction" in codes
+    assert "unknown_army_location" in codes
+    assert "unknown_army_next_location" in codes
+    assert "unknown_army_destination" in codes
+    assert "unknown_army_commander" in codes
+    assert "unknown_army_war" in codes
+    assert "negative_army_number" in codes
+    assert "army_supply_over_cap" in codes
+    assert "unknown_war_attacker" in codes
+    assert "unknown_war_defender" in codes
+    assert "unknown_war_goal" in codes
+    assert "invalid_war_score" in codes
+    assert "unknown_runtime_controller" in codes
+    assert "unknown_runtime_ruler" in codes
+    assert "runtime.armies[row 2" in report
+    assert ".warId" in report
+
+
 def test_seed_observer_ids_are_consistent():
     seed = _load_seed()
     factions = {f["id"] for f in seed["factions"]}
@@ -91,8 +342,12 @@ def test_seed_observer_ids_are_consistent():
     characters = {c["id"] for c in seed["characters"]}
 
     assert len(factions) == len(seed["factions"])
+    assert 16 <= len(factions) <= 20
     assert len(provinces) == len(seed["provinces"])
     assert len(characters) == len(seed["characters"])
+    assert {f["tier"] for f in seed["factions"]} <= {"tier_1", "tier_2", "tier_3", "tier_4"}
+    assert all(f["tierLabel"] for f in seed["factions"])
+    assert all(f["tierWeight"] > 0 for f in seed["factions"])
 
     for faction in seed["factions"]:
       assert faction["culture"] in cultures

@@ -55,7 +55,7 @@ def test_seed_frontier_activation_creates_runtime_rows_idempotently(tmp_path):
 
     rov = db.execute(
         """
-        SELECT id, dominant_culture, religion_id, personality_traits
+        SELECT id, dominant_culture, religion_id, tier, personality_traits
         FROM faction
         WHERE seed_faction_id = ?
         """,
@@ -64,8 +64,9 @@ def test_seed_frontier_activation_creates_runtime_rows_idempotently(tmp_path):
     assert rov is not None
     assert rov[1] == "CULT_ROVANT"
     assert rov[2] == "REL_MEASURE_ROADS"
-    assert "road_control_priority:95" in rov[3]
-    assert "lawful_claim_weight:20" in rov[3]
+    assert rov[3] == "tier_2"
+    assert "road_control_priority:95" in rov[4]
+    assert "lawful_claim_weight:20" in rov[4]
 
     halem = db.execute(
         """

@@ -1,0 +1,44 @@
+{
+  "scenario_id": "SCN_FRONTIER_CHRONICLE",
+  "name": "The Frontier Chronicle",
+  "status": "prototype_baseline",
+  "start_year": 1,
+  "description": "The current observer baseline for the Rov Basin north-east frontier.",
+  "data_sources": {
+    "web_seed": "docs/assets/data.js",
+    "province_definitions": "docs/assets/provinces/world_province_definitions.csv",
+    "province_adjacency": "docs/assets/provinces/world_province_adjacency.csv",
+    "province_river_features": "docs/assets/rivers/province_river_features.csv"
+  },
+  "active_factions": [
+    "FAC_ROV_HALEN",
+    "FAC_KAERN_RED_BOG",
+    "FAC_GHARU_OPEN_GATE",
+    "FAC_KAVARI_WEST_GEAR",
+    "FAC_NALARI_THIRD_CHARTER",
+    "FAC_MAREN_BLUE_CHAIN",
+    "FAC_TALUUN_WHITE_MARE",
+    "FAC_NINE_BANNERS_HALLOW",
+    "FAC_LANTER_SEA_LEAGUE",
+    "FAC_NORTHGREY_HIGHLANDS",
+    "FAC_QERESH_SALT_ROAD",
+    "FAC_EASTERN_REED_CONFED",
+    "FAC_OSTREN_BANNERFIELDS",
+    "FAC_SALT_WITNESS_PROTECTORATE",
+    "FAC_GREEN_CROWN_COURT",
+    "FAC_DEEP_LEDGER_HOLD"
+  ],
+  "focus_provinces": [
+    "PROV_ROV_HALEM",
+    "PROV_SEVRIN_CANAL",
+    "PROV_RED_BOG",
+    "PROV_OPEN_GATE",
+    "PROV_WEST_GEAR",
+    "PROV_THIRD_CHARTER",
+    "PROV_BLUE_CHAIN",
+    "PROV_WHITE_MARE",
+    "PROV_NINTH_BANNER"
+  ],
+  "starting_wars": [],
+  "notes": "Foundation manifest with Phase 5-B serious powers enabled. It does not add new provinces, rivers or map art."
+}

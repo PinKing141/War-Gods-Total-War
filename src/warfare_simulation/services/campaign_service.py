@@ -449,7 +449,7 @@ class CampaignService:
     def get_seed_factions(self) -> list[Dict[str, Any]]:
         return self._query_rows(
             "seed_faction",
-            ["faction_id", "name", "identity", "dominant_culture", "dominant_species", "religion_id", "government", "primary_goal"],
+            ["faction_id", "name", "identity", "dominant_culture", "dominant_species", "religion_id", "government", "tier", "primary_goal"],
             order_by="name",
         )
 

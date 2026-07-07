@@ -253,12 +253,14 @@ class DatabaseManager:
                 dominant_species TEXT DEFAULT '',
                 religion_id TEXT DEFAULT '',
                 government TEXT DEFAULT '',
+                tier TEXT DEFAULT 'tier_3',
                 conflict_pressure TEXT DEFAULT '',
                 primary_goal TEXT DEFAULT '',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        self._ensure_column("seed_faction", "tier", "TEXT DEFAULT 'tier_3'")
 
         self.execute("""
             CREATE TABLE IF NOT EXISTS seed_province (
@@ -360,6 +362,7 @@ class DatabaseManager:
             ("dominant_culture", "TEXT DEFAULT ''"),
             ("dominant_species", "TEXT DEFAULT ''"),
             ("religion_id", "TEXT DEFAULT ''"),
+            ("tier", "TEXT DEFAULT 'tier_3'"),
             ("primary_goal", "TEXT DEFAULT ''"),
             ("conflict_pressure", "TEXT DEFAULT ''"),
         ):

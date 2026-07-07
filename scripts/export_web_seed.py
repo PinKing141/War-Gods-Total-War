@@ -43,6 +43,14 @@ FACTION_STYLE = {
     "FAC_MAREN_BLUE_CHAIN":   {"color": "#2e9aa0", "charge": "bell", "short": "Blue Chain"},
     "FAC_TALUUN_WHITE_MARE":  {"color": "#c08a34", "charge": "horseshoe", "short": "White Mare"},
     "FAC_NINE_BANNERS_HALLOW": {"color": "#a03058", "charge": "banners", "short": "Nine Banners"},
+    "FAC_LANTER_SEA_LEAGUE":  {"color": "#1f7f93", "charge": "bell", "short": "Lanter Sea"},
+    "FAC_NORTHGREY_HIGHLANDS": {"color": "#7c4a36", "charge": "cairn", "short": "Northgrey"},
+    "FAC_QERESH_SALT_ROAD":   {"color": "#b99a35", "charge": "horseshoe", "short": "Qeresh Road"},
+    "FAC_EASTERN_REED_CONFED": {"color": "#6f8f4e", "charge": "gate", "short": "Eastern Reed"},
+    "FAC_OSTREN_BANNERFIELDS": {"color": "#9f8f45", "charge": "banners", "short": "Ostren"},
+    "FAC_SALT_WITNESS_PROTECTORATE": {"color": "#c0a24a", "charge": "scroll", "short": "Salt Witness"},
+    "FAC_GREEN_CROWN_COURT":  {"color": "#3f7a45", "charge": "cairn", "short": "Green Crown"},
+    "FAC_DEEP_LEDGER_HOLD":   {"color": "#6d6a60", "charge": "peak", "short": "Deep Ledger"},
 }
 
 CULTURE_COLORS = {
@@ -57,6 +65,13 @@ RELIGION_COLORS = {
     "REL_HEARTH_BELOW": "#a05a32", "REL_INNER_STONE": "#8d8578",
     "REL_LONG_ACCOUNT": "#7f5ca8", "REL_BELL_RETURN": "#2e9aa0",
     "REL_SALT_WITNESS": "#c2a14a",
+}
+
+FACTION_TIERS = {
+    "tier_1": {"label": "Great Power", "weight": 1.35},
+    "tier_2": {"label": "Regional Power", "weight": 1.10},
+    "tier_3": {"label": "Minor State", "weight": 0.88},
+    "tier_4": {"label": "Background Power", "weight": 0.55},
 }
 
 # Rivers as polylines in world space (mountains -> Rov Halem -> sea).
@@ -113,6 +128,9 @@ def build_seed() -> dict:
             "species": row["dominant_species"],
             "religion": row["religion_id"],
             "government": row["government"],
+            "tier": row.get("tier") or "tier_3",
+            "tierLabel": FACTION_TIERS.get(row.get("tier") or "tier_3", FACTION_TIERS["tier_3"])["label"],
+            "tierWeight": FACTION_TIERS.get(row.get("tier") or "tier_3", FACTION_TIERS["tier_3"])["weight"],
             "pressure": row["conflict_pressure"],
             "goal": row["primary_goal"],
             "color": style["color"],
