@@ -192,7 +192,7 @@
     async _loadLayers() {
       const [
         heightImg, provinceImg, definitionsText, adjacencyText,
-        riverPaths, riverFeaturesText, maskImages,
+        riverPaths, riverFeaturesText, maskData,
       ] = await Promise.all([
         this._loadImage(HEIGHTMAP_URL),
         this._loadImage(PROVINCE_MAP_URL),
@@ -224,7 +224,9 @@
         .getImageData(0, 0, this.heightMapWidth, this.heightMapHeight).data;
       this._provinceData = provinceCanvas.getContext("2d", { willReadFrequently: true })
         .getImageData(0, 0, this.provinceMapWidth, this.provinceMapHeight).data;
-      this._buildMaskData(maskImages);
+      heightCanvas.width = heightCanvas.height = 1;
+      provinceCanvas.width = provinceCanvas.height = 1;
+      this._maskData = maskData || {};
     }
 
     _loadImage(src) {
@@ -265,27 +267,22 @@
     }
 
     async _loadTerrainMasks() {
-      const entries = await Promise.all(TERRAIN_MASKS.map(async (name) => [
-        name,
-        await this._loadImage(`${MASK_BASE_URL}${name}_mask.png`),
-      ]));
-      return Object.fromEntries(entries);
-    }
-
-    _buildMaskData(maskImages) {
-      this._maskData = {};
+      const masks = {};
       const c = document.createElement("canvas");
       c.width = RENDER_W;
       c.height = RENDER_H;
       const ctx = c.getContext("2d", { willReadFrequently: true });
-      for (const [name, img] of Object.entries(maskImages || {})) {
+      for (const name of TERRAIN_MASKS) {
+        const img = await this._loadImage(`${MASK_BASE_URL}${name}_mask.png`);
         ctx.clearRect(0, 0, RENDER_W, RENDER_H);
         ctx.drawImage(img, 0, 0, RENDER_W, RENDER_H);
         const src = ctx.getImageData(0, 0, RENDER_W, RENDER_H).data;
-        const out = new Float32Array(RENDER_W * RENDER_H);
-        for (let i = 0; i < out.length; i++) out[i] = src[i * 4] / 255;
-        this._maskData[name] = out;
+        const out = new Uint8Array(RENDER_W * RENDER_H);
+        for (let i = 0; i < out.length; i++) out[i] = src[i * 4];
+        masks[name] = out;
       }
+      c.width = c.height = 1;
+      return masks;
     }
 
     _parseRiverPaths(data) {
@@ -785,7 +782,7 @@
 
     _mask(name, i) {
       const data = this._maskData && this._maskData[name];
-      return data ? data[i] : 0;
+      return data ? data[i] / 255 : 0;
     }
 
     _clamp01(v) {
@@ -1322,7 +1319,7 @@
       const img = ctx.createImageData(RENDER_W, RENDER_H);
       const data = img.data;
       for (let i = 0; i < mask.length; i++) {
-        const strength = Math.pow(this._clamp01(mask[i]), 0.82);
+        const strength = Math.pow(this._clamp01(mask[i] / 255), 0.82);
         const off = i * 4;
         data[off] = color[0];
         data[off + 1] = color[1];

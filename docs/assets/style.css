@@ -240,7 +240,7 @@ a:hover { text-decoration: underline; }
   transition: left 0.5s linear, top 0.5s linear;
 }
 #overlay.no-anim * { transition: none !important; }
-.army-marker span {
+.army-marker .army-count {
   font-size: 10px;
   font-weight: 700;
   color: #fff;
@@ -323,7 +323,30 @@ a:hover { text-decoration: underline; }
   letter-spacing: 1px;
   font-weight: 600;
 }
-.realm-head { display: flex; gap: 12px; align-items: center; }
+.realm-head { display: flex; gap: 14px; align-items: center; }
+.realm-head > div:not(.faction-shield-wrapper) {
+  min-width: 0;
+  flex: 1;
+}
+.faction-shield-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 144px;
+  width: 144px;
+  height: 176px;
+  border: none;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, rgba(232,201,106,0.12), rgba(7,5,3,0) 68%);
+}
+.armoria-iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+}
 .subtitle {
   font-size: 11.5px;
   color: var(--ink-dim);
@@ -380,8 +403,8 @@ h3 {
   cursor: pointer;
   color: var(--gold-bright);
 }
-.chip:hover span { text-decoration: underline; }
-.chip svg { flex: none; }
+.chip:hover .chip-label { text-decoration: underline; }
+.chip .wg-shield { flex: none; }
 
 .trait {
   display: inline-block;
@@ -431,6 +454,281 @@ h3 {
   overflow: hidden;
 }
 .score-fill { height: 100%; background: linear-gradient(#b3543f, #8c3c2c); }
+
+/* ---------- CK-style character inspector ---------- */
+
+.ck-character {
+  color: var(--ink);
+}
+
+.ck-char-top {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 9px;
+  background:
+    linear-gradient(rgba(218, 188, 116, 0.12), rgba(35, 24, 12, 0.36)),
+    radial-gradient(circle at 18% 15%, rgba(233, 211, 153, 0.18), transparent 48%);
+  border: 1px solid #5d4829;
+  outline: 1px solid rgba(9, 6, 3, 0.65);
+  outline-offset: -4px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.28);
+}
+
+.ck-portrait-column {
+  min-width: 0;
+  text-align: center;
+}
+
+.ck-nameplate h2 {
+  margin-top: 7px;
+  color: var(--gold-bright);
+  font-size: 18px;
+  line-height: 1.08;
+  font-weight: 600;
+}
+
+.ck-identity-scroll {
+  min-width: 0;
+  padding: 7px 8px;
+  background: rgba(214, 183, 116, 0.08);
+  border: 1px solid rgba(93, 72, 41, 0.82);
+  border-radius: 4px;
+}
+
+.ck-realm-line {
+  margin-bottom: 6px;
+}
+
+.ck-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 7px;
+}
+
+.ck-stat-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.ck-stat {
+  min-width: 0;
+  padding: 5px 6px;
+  text-align: center;
+  background: linear-gradient(#2a1f12, #1b130a);
+  border: 1px solid rgba(93, 72, 41, 0.9);
+  border-radius: 3px;
+}
+
+.ck-stat span {
+  display: block;
+  color: var(--ink-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ck-stat b {
+  display: block;
+  color: var(--gold-bright);
+  font-size: 14px;
+}
+
+.ck-ledger {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ck-card {
+  padding: 7px 8px 8px;
+  background: rgba(214, 183, 116, 0.055);
+  border: 1px solid rgba(93, 72, 41, 0.78);
+  border-radius: 4px;
+}
+
+.ck-card h3,
+.ck-family-book + h3 {
+  margin-top: 0;
+}
+
+.ck-family-book {
+  background: #121717;
+  border: 1px solid #4d3820;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.55);
+}
+
+.ck-family-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  min-height: 54px;
+  border-bottom: 1px solid rgba(93, 72, 41, 0.72);
+}
+
+.ck-family-row:last-child {
+  border-bottom: 0;
+}
+
+.ck-row-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  color: #e2c979;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  background: linear-gradient(#4d241e, #25130f);
+  border-right: 1px solid rgba(93, 72, 41, 0.9);
+}
+
+.ck-family-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 7px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-edge) transparent;
+}
+
+.ck-relations-strip {
+  border: 1px solid rgba(93, 72, 41, 0.78);
+  border-radius: 4px;
+  background: rgba(6, 10, 11, 0.72);
+}
+
+.ck-portrait {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid #6a542f;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 36%, #d5c296 0 29%, #8c7350 30% 56%, #352316 57% 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(0,0,0,0.48),
+    0 2px 6px rgba(0,0,0,0.55);
+  color: var(--ink);
+  cursor: pointer;
+  overflow: visible;
+}
+
+.ck-portrait:hover {
+  border-color: var(--gold-bright);
+  box-shadow:
+    inset 0 0 0 2px rgba(0,0,0,0.62),
+    0 0 0 2px rgba(229, 196, 88, 0.16),
+    0 3px 9px rgba(0,0,0,0.72);
+}
+
+.ck-portrait-large {
+  width: 96px;
+  height: 96px;
+  border-width: 3px;
+}
+
+.ck-portrait-small {
+  width: 42px;
+  height: 42px;
+}
+
+.ck-portrait.is-ruler::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 30px;
+  height: 10px;
+  transform: translateX(-50%);
+  background: linear-gradient(#d9b64a, #7e5a1f);
+  clip-path: polygon(0 100%, 10% 30%, 25% 78%, 50% 0, 75% 78%, 90% 30%, 100% 100%);
+  filter: drop-shadow(0 1px 1px #000);
+}
+
+.ck-portrait.is-dead {
+  filter: grayscale(0.75);
+  opacity: 0.72;
+}
+
+.ck-portrait-label {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 17px;
+  max-width: 54px;
+  padding: 1px 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ead98f;
+  background: rgba(17, 11, 5, 0.92);
+  border: 1px solid #6a542f;
+  border-radius: 8px;
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.ck-silhouette {
+  position: relative;
+  width: 52%;
+  height: 66%;
+}
+
+.ck-silhouette::before,
+.ck-silhouette::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #302416;
+  transition: background .12s ease, transform .12s ease;
+}
+
+.ck-silhouette::before {
+  top: 7%;
+  width: 42%;
+  height: 32%;
+  border-radius: 50%;
+}
+
+.ck-silhouette::after {
+  bottom: 6%;
+  width: 78%;
+  height: 45%;
+  border-radius: 48% 48% 35% 35%;
+}
+
+.ck-portrait:hover .ck-silhouette::before,
+.ck-portrait:hover .ck-silhouette::after {
+  background: #030303;
+}
+
+.ck-empty {
+  color: var(--ink-dim);
+  font-size: 11.5px;
+  font-style: italic;
+}
+
+.ck-more {
+  align-self: center;
+  color: var(--gold-bright);
+  font-size: 11px;
+}
 
 /* ---------- chronicle ---------- */
 
@@ -519,7 +817,29 @@ h3 {
 
 /* ---------- misc ---------- */
 
-.wg-shield { display: inline-block; vertical-align: middle; }
+.wg-shield {
+  display: inline-block;
+  width: var(--wg-shield-w, 30px);
+  height: var(--wg-shield-h, 33px);
+  flex: 0 0 auto;
+  vertical-align: middle;
+  overflow: hidden;
+  pointer-events: none;
+}
+.wg-armoria-shield {
+  background: transparent;
+}
+.wg-kingdom-shield {
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.55));
+}
+.wg-armoria-badge-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+}
 
 #hint {
   position: absolute;

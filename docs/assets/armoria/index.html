@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>War Gods Armoria Shield</title>
+  <link rel="stylesheet" href="global.css">
+</head>
+<body>
+  <svg id="wg-armoria-symbols" aria-hidden="true" focusable="false">
+    <defs id="patterns"></defs>
+    <defs id="charges"></defs>
+  </svg>
+  <script>
+    (function () {
+      var defaultColors = {
+        argent: "#fafafa",
+        or: "#ffe066",
+        gules: "#d7374a",
+        sable: "#333333",
+        azure: "#377cd7",
+        vert: "#26c061",
+        purpure: "#522d5b",
+        carnation: "#eabfa2",
+        celeste: "#96c8fa",
+        "cendr\u00e9e": "#777777",
+        murrey: "#85185b",
+        sanguine: "#b63a3a",
+        "tenn\u00e9": "#cc7f19"
+      };
+      var params = new URLSearchParams(window.location.search);
+      var customColors = params.get("colors");
+      if (customColors) {
+        try {
+          var existing = localStorage.getItem("colors");
+          var palette = defaultColors;
+          if (existing) {
+            try {
+              palette = JSON.parse(existing);
+            } catch (error) {
+              palette = defaultColors;
+            }
+          }
+          localStorage.setItem("colors", JSON.stringify(Object.assign({}, defaultColors, palette, JSON.parse(customColors))));
+        } catch (error) {
+          console.error("Could not register War Gods Armoria colors.", error);
+        }
+      }
+    })();
+
+    window.addEventListener("unhandledrejection", function (event) {
+      var message = String(event.reason && event.reason.message || event.reason || "");
+      if (message.indexOf("sw.js") !== -1 || message.indexOf("serviceWorker") !== -1) {
+        event.preventDefault();
+      }
+    });
+
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.getRegistrations && navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        registrations.forEach(function (registration) {
+          registration.unregister();
+        });
+      });
+      navigator.serviceWorker.register = function () {
+        return Promise.resolve({ unregister: function () { return Promise.resolve(true); } });
+      };
+    }
+  </script>
+  <script src="bundle.js"></script>
+</body>
+</html>

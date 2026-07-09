@@ -58,8 +58,8 @@ def test_world_adjacency_references_defined_provinces():
             assert row["province_b"] in defined_ids
 
 
-def test_normal_app_uses_layered_map_without_procedural_fallback():
-    """Normal gameplay must not load or silently fall back to the old procedural ownership grid."""
+def test_normal_app_uses_layered_map_with_memory_only_procedural_fallback():
+    """Normal gameplay starts layered, with the old map reserved for explicit or memory-fallback boot."""
     html = INDEX_HTML.read_text(encoding="utf-8")
     scripts = re.findall(r'<script src="([^"]+)"></script>', html)
 
@@ -74,7 +74,13 @@ def test_normal_app_uses_layered_map_without_procedural_fallback():
     archive = PROCEDURAL_ARCHIVE.read_text(encoding="utf-8")
 
     assert "WG.LayeredWorldMap || WG.WorldMap" not in main
-    assert "useOldMap ? WG.ProceduralWorldMap : WG.LayeredWorldMap" in main
+    assert "new WG.LayeredWorldMap(canvas, seed)" in main
+    assert "isMemoryStartupError(err)" in main
+    assert "function proceduralMapCtor()" in main
+    assert "return WG.ProceduralWorldMap || WG.WorldMap || null" in main
+    assert "function loadProceduralMap()" in main
+    assert 'loadScript("assets/map_procedural_old.js")' in main
+    assert 'loadScript("assets/map.js")' in main
     assert "class LayeredWorldMap extends WG.MapBase" in layers
     assert "using generated map fallback" not in layers
     assert "super.provinceAt" not in layers

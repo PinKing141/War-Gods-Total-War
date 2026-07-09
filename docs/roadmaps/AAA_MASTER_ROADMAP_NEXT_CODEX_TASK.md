@@ -1,46 +1,56 @@
 # Next Codex task from the AAA master roadmap
 
-The validation, UI language, scenario foundation, world scale, faction AI priority, internal politics and revolt gates are complete. The immediate next task is succession and ruler death expansion.
+The validation, UI language, scenario foundation, world scale, core simulation depth, character-life gates, dynasty/inheritance gates and first-pass court office gate are complete. The immediate next task is province social groups.
 
 ## Next task
 
 ```text
-Begin Phase 6-D: succession and ruler death expansion.
+Begin Phase 9-B: Social groups inside provinces.
 ```
 
 ## Codex prompt
 
 ```text
-Begin Phase 6-D from docs/roadmaps/AAA_MASTER_ROADMAP_PHASE_06_CORE_SIMULATION_DETAIL.md: add succession and ruler death expansion.
+Begin Phase 9-B from docs/roadmaps/AAA_MASTER_ROADMAP_V1.md: add first-pass social groups inside provinces.
 
 Tasks:
-1. Add inheritance law, heir legitimacy, regency, pretender claims, succession crisis, powerful generals backing claimants and court factions backing heirs.
-2. Make ruler death cause stable succession, regency or crisis based on heirs and internal politics.
-3. Update ruler, heir, claims, faction state and chronicle when succession resolves.
-4. Show succession state clearly in the realm and character UI.
-5. Keep map cosmetics unchanged.
-6. Do not add new factions or provinces in this slice.
+1. Add province social group state for:
+   - nobles
+   - clergy
+   - merchants
+   - peasants
+   - craftsmen
+   - soldiers
+   - mages
+   - scholars
+   - minorities
+   - tribes
+   - foreign settlers
+   - refugees
+   - urban poor
+2. Each group should track:
+   - size
+   - loyalty
+   - unrest
+   - needs
+   - wealth
+   - influence
+3. Make social groups affect tax, unrest, recruitment, culture tension and faith tension at a first-pass level.
+4. Show readable social summaries in the province inspector.
+5. Add validation/tests for missing groups, invalid values and broken province social state.
+6. Keep map cosmetics unchanged.
+7. Do not add new factions or provinces in this slice.
 ```
 
 ## Closing gate
 
-Phase 6-D is closed only when:
+Phase 9-B is closed only when:
 
 ```text
-Ruler death can cause stable succession, regency or crisis.
-Succession results update ruler, heir, claims, faction state and chronicle.
-Succession state is visible in UI and validated.
+Province society affects tax, unrest, recruitment, culture and faith tension.
+Province UI shows readable summaries, not raw spreadsheets.
 Existing balance and validation gates still pass.
 Existing tests still pass.
-```
-
-Phase 5 is closed only when:
-
-```text
-the world has 16-20 serious powers
-each power has a distinct role and valid data
-a 50-year balance smoke run avoids total chaos and total silence
-existing tests still pass
 ```
 
 ## Completed
@@ -55,4 +65,14 @@ Phase 5-C: Regional balance pass — DONE
 Phase 6-A: Faction AI priorities — DONE
 Phase 6-B: Internal politics first pass — DONE
 Phase 6-C: Revolts and instability — DONE
+Phase 6-D: Succession and ruler death expansion — DONE
+Phase 6-E: Simple survival economy — DONE
+Phase 7-A: Character schema expansion — DONE
+Phase 7-B: Ambitions and fears — DONE
+Phase 7-C: Relationship system — DONE
+Phase 7-D: Personal memories and military record — DONE
+Phase 8-A: Family tree data — DONE
+Phase 8-B: Dynasty and house system — DONE
+Phase 8-C: Cadet branches, bastards and legitimacy — DONE
+Phase 9-A: Court and office system — DONE
 ```

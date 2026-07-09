@@ -19,11 +19,29 @@
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = src;
+      const cacheSep = src.includes("?") ? "&" : "?";
+      script.src = `${src}${cacheSep}v=old-map-debug-20260708`;
       script.onload = resolve;
       script.onerror = () => reject(new Error(`Unable to load ${src}`));
       document.body.appendChild(script);
     });
+  }
+
+  function proceduralMapCtor() {
+    return WG.ProceduralWorldMap || WG.WorldMap || null;
+  }
+
+  async function loadProceduralMap() {
+    await loadScript("assets/map_procedural_old.js");
+    let Ctor = proceduralMapCtor();
+    if (!Ctor) {
+      await loadScript("assets/map.js");
+      Ctor = proceduralMapCtor();
+    }
+    if (!Ctor) {
+      throw new Error("Debug old map constructor is unavailable.");
+    }
+    return new Ctor(canvas, seed);
   }
 
   function showMapBootError(err) {
@@ -53,17 +71,35 @@
     ctx.restore();
   }
 
+  function isMemoryStartupError(err) {
+    const text = String((err && (err.message || err.name)) || err || "").toLowerCase();
+    return text.includes("out of memory") ||
+      text.includes("allocation") ||
+      text.includes("array buffer") ||
+      text.includes("canvas");
+  }
+
+  async function createMap() {
+    if (useOldMap) {
+      return loadProceduralMap();
+    }
+
+    try {
+      const layered = new WG.LayeredWorldMap(canvas, seed);
+      if (layered.ready) await layered.ready;
+      return layered;
+    } catch (err) {
+      if (!isMemoryStartupError(err)) throw err;
+      console.warn("Layered map ran out of memory; falling back to the procedural map.", err);
+      const fallback = await loadProceduralMap();
+      fallback.layerFallbackReason = err;
+      return fallback;
+    }
+  }
+
   let map;
   try {
-    if (useOldMap) await loadScript("assets/map_procedural_old.js");
-    const MapClass = useOldMap ? WG.ProceduralWorldMap : WG.LayeredWorldMap;
-    if (!MapClass) {
-      throw new Error(useOldMap
-        ? "Old procedural debug map is unavailable."
-        : "LayeredWorldMap is required for normal gameplay.");
-    }
-    map = new MapClass(canvas, seed);
-    if (map.ready) await map.ready;
+    map = await createMap();
   } catch (err) {
     console.error("Map startup failed.", err);
     showMapBootError(err);

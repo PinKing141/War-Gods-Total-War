@@ -137,7 +137,7 @@ Completed with:
 - full test suite passing
 ```
 
-## 6D. Succession and ruler death expansion
+## 6D. Succession and ruler death expansion — DONE
 
 Build:
 
@@ -159,7 +159,25 @@ Ruler death can cause stable succession, regency or crisis.
 Succession results update ruler, heir, claims, faction state and chronicle.
 ```
 
-## 6E. Simple survival economy
+Completed with:
+
+```text
+- succession state added to every runtime faction
+- inheritance law, heir legitimacy, regency, crisis state, pretenders and last transition are tracked
+- heir legitimacy considers bloodline, age, prestige, internal politics and succession law
+- ruler death can now produce stable succession, regency or succession crisis
+- succession crisis records pretenders, backing factions, pretender claims and chronicle events
+- severe succession pressure can trigger a pretender revolt in the capital
+- succession results update ruler, faction succession state, claims, internal politics and event logs
+- realm inspector shows succession law, heir legitimacy, crisis risk, regency, crisis and pretenders
+- validation checks succession law, heir legitimacy and pretender references
+- tests cover stable succession, regency, succession crisis, pretender claims and broken succession validation
+- 50-year balance validation passing
+- 25-year observer validation passing
+- full test suite passing
+```
+
+## 6E. Simple survival economy — DONE
 
 Build:
 
@@ -193,4 +211,28 @@ Closing gate:
 ```text
 Economy affects war decisions, unrest, peace desire and faction survival.
 UI labels stay polished: Economy, Treasury, Taxation, Food.
+```
+
+Completed with:
+
+```text
+- explicit runtime economy state added to every faction
+- tracked war debt, food stress, trade value, devastation loss, tribute due and last survival decision
+- economy snapshots expose treasury, income, upkeep, court costs, debt service, tax burden, food stress, trade, devastation loss and tribute
+- monthly survival decisions can raise taxes, lower taxes, borrow money, sell privileges, dismiss armies and squeeze conquered land
+- survival decisions affect tax burden, loyalty, debt, treasury, devastation, unrest and revolt risk
+- war debt and unaffordable war economy can push factions toward peace
+- realm inspector uses polished Economy, Treasury, Taxation, Food, Trade, War Debt and Tribute labels
+- validation checks missing, invalid and negative economy state
+- tests cover economy tracking, survival decisions, debt pressure, peace pressure and broken economy validation
+- 50-year balance validation passing
+- 25-year observer validation passing
+- full test suite passing
+```
+
+## Phase 6 closing gate — DONE
+
+```text
+Core simulation depth Phase 2 is complete: faction priorities, internal politics,
+revolts, succession and survival economy now interact and remain validated.
 ```

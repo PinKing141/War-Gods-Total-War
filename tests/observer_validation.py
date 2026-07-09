@@ -7,6 +7,95 @@ from pathlib import Path
 from typing import Iterable
 
 
+VALID_AMBITIONS = {
+    "become ruler",
+    "protect dynasty",
+    "win glory",
+    "secure wealth",
+    "defend faith",
+    "restore old claims",
+    "keep peace",
+    "master the court",
+}
+
+VALID_FEARS = {
+    "dying forgotten",
+    "losing legitimacy",
+    "court betrayal",
+    "dynasty failure",
+    "poverty",
+    "magical scandal",
+    "foreign conquest",
+    "open revolt",
+}
+
+VALID_RELATIONSHIP_TYPES = {
+    "parent",
+    "child",
+    "sibling",
+    "spouse",
+    "lover",
+    "friend",
+    "rival",
+    "enemy",
+    "mentor",
+    "student",
+    "commander",
+    "vassal",
+    "patron",
+    "hostage",
+    "betrayer",
+    "rescuer",
+}
+
+RECIPROCAL_RELATIONSHIP = {
+    "parent": "child",
+    "child": "parent",
+    "sibling": "sibling",
+    "spouse": "spouse",
+    "lover": "lover",
+    "friend": "friend",
+    "rival": "rival",
+    "enemy": "enemy",
+    "mentor": "student",
+    "student": "mentor",
+    "commander": "vassal",
+    "vassal": "commander",
+    "patron": "vassal",
+    "hostage": "hostage",
+    "betrayer": "enemy",
+    "rescuer": "friend",
+}
+
+COURT_OFFICES = {
+    "ruler",
+    "heir",
+    "chancellor",
+    "marshal",
+    "steward",
+    "spymaster",
+    "court_mage",
+    "high_priest",
+    "captain_of_guard",
+    "governor",
+    "regent",
+}
+
+VALID_MEMORY_TYPES = {
+    "family death",
+    "battle victory",
+    "battle defeat",
+    "promotion",
+    "betrayal",
+    "humiliation",
+    "wound",
+    "lost province",
+    "saved life",
+    "first command",
+    "exile",
+}
+
+
 @dataclass(frozen=True)
 class ValidationIssue:
     code: str
@@ -212,6 +301,7 @@ def collect_runtime_validation_issues(snapshot: dict, seed: dict) -> list[Valida
     factions = {f["id"] for f in seed["factions"]}
     provinces = {p["id"] for p in seed["provinces"]}
     cultures = set(seed["cultures"])
+    religions = set(seed["religions"])
     species = set(seed["species"])
     characters, id_issues = _ids_by_row(snapshot["characters"], "id", "runtime.characters")
     issues.extend(id_issues)
@@ -219,9 +309,28 @@ def collect_runtime_validation_issues(snapshot: dict, seed: dict) -> list[Valida
     issues.extend(id_issues)
     war_ids, id_issues = _ids_by_row(snapshot["wars"], "id", "runtime.wars")
     issues.extend(id_issues)
+    characters_by_id = {character.get("id"): character for character in snapshot["characters"]}
+    dynasty_ids, id_issues = _ids_by_row(snapshot.get("dynasties", []), "id", "runtime.dynasties")
+    issues.extend(id_issues)
+    house_ids, id_issues = _ids_by_row(snapshot.get("houses", []), "id", "runtime.houses")
+    issues.extend(id_issues)
 
     def add(code: str, location: str, message: str) -> None:
         issues.append(ValidationIssue(code, location, message))
+
+    def parent_ids(character: dict) -> list[str]:
+        family = character.get("family") or {}
+        return [pid for pid in [character.get("parentId"), family.get("father"), family.get("mother")] if pid]
+
+    def has_parent_loop(character_id: str, path: set[str] | None = None) -> bool:
+        path = set(path or set())
+        if character_id in path:
+            return True
+        character = characters_by_id.get(character_id)
+        if not character:
+            return False
+        path.add(character_id)
+        return any(has_parent_loop(parent_id, path) for parent_id in parent_ids(character))
 
     for idx, army in enumerate(snapshot["armies"], start=2):
         loc = f"runtime.armies[row {idx}, id={army.get('id')}]"
@@ -268,6 +377,214 @@ def collect_runtime_validation_issues(snapshot: dict, seed: dict) -> list[Valida
             add("unknown_character_species", f"{loc}.species", character["species"])
         if character.get("age", 0) < 0:
             add("negative_character_age", f"{loc}.age", str(character.get("age")))
+        if character.get("faith") and character["faith"] not in religions:
+            add("unknown_character_faith", f"{loc}.faith", character["faith"])
+        if not isinstance(character.get("birthYear"), (int, float)):
+            add("missing_character_birth_year", f"{loc}.birthYear", str(character.get("birthYear")))
+        death_year = character.get("deathYear")
+        if death_year is not None and not isinstance(death_year, (int, float)):
+            add("invalid_character_death_year", f"{loc}.deathYear", str(death_year))
+        for field in ["stress", "health", "wealth", "legitimacy", "reputation"]:
+            value = character.get(field)
+            if not isinstance(value, (int, float)):
+                add("invalid_character_state_number", f"{loc}.{field}", str(value))
+            elif value < 0:
+                add("negative_character_state_number", f"{loc}.{field}", str(value))
+        for field in ["stress", "health", "legitimacy", "reputation"]:
+            value = character.get(field)
+            if isinstance(value, (int, float)) and value > 100:
+                add("character_state_out_of_range", f"{loc}.{field}", str(value))
+        if not character.get("ambition"):
+            add("missing_character_ambition", f"{loc}.ambition", "Character needs an ambition.")
+        elif character["ambition"] not in VALID_AMBITIONS:
+            add("invalid_character_ambition", f"{loc}.ambition", str(character["ambition"]))
+        if not character.get("fear"):
+            add("missing_character_fear", f"{loc}.fear", "Character needs a fear.")
+        elif character["fear"] not in VALID_FEARS:
+            add("invalid_character_fear", f"{loc}.fear", str(character["fear"]))
+        if not character.get("loyalties") or not character["loyalties"].get("faction"):
+            add("missing_character_loyalties", f"{loc}.loyalties", "Character needs loyalties.")
+        memories = character.get("memories")
+        if not isinstance(memories, list):
+            add("invalid_character_memories", f"{loc}.memories", "Character memories must be an array.")
+            memories = []
+        for memory in memories:
+            mem_loc = f"{loc}.memory:{memory.get('id')}"
+            if not memory.get("id"):
+                add("missing_memory_id", mem_loc, "Memory needs an ID.")
+            if memory.get("type") not in VALID_MEMORY_TYPES:
+                add("invalid_memory_type", f"{mem_loc}.type", str(memory.get("type")))
+            if not memory.get("text"):
+                add("missing_memory_text", f"{mem_loc}.text", "Memory needs readable text.")
+            if not isinstance(memory.get("day"), (int, float)) or memory.get("day") < 0:
+                add("invalid_memory_day", f"{mem_loc}.day", str(memory.get("day")))
+            refs = memory.get("refs") or {}
+            if refs.get("character") and refs["character"] not in characters:
+                add("unknown_memory_character", f"{mem_loc}.refs.character", refs["character"])
+            if refs.get("faction") and refs["faction"] not in factions:
+                add("unknown_memory_faction", f"{mem_loc}.refs.faction", refs["faction"])
+            if refs.get("province") and refs["province"] not in provinces:
+                add("unknown_memory_province", f"{mem_loc}.refs.province", refs["province"])
+            if refs.get("war") and refs["war"] not in war_ids:
+                add("unknown_memory_war", f"{mem_loc}.refs.war", refs["war"])
+        record = character.get("militaryRecord")
+        if not record:
+            add("missing_military_record", f"{loc}.militaryRecord", "Character needs a military record.")
+        else:
+            for field in ["battlesFought", "battlesWon", "battlesLost", "siegesLed", "wounds"]:
+                value = record.get(field)
+                if not isinstance(value, (int, float)):
+                    add("invalid_military_record_number", f"{loc}.militaryRecord.{field}", str(value))
+                elif value < 0:
+                    add("negative_military_record_number", f"{loc}.militaryRecord.{field}", str(value))
+            if record.get("battlesWon", 0) + record.get("battlesLost", 0) > record.get("battlesFought", 0):
+                add("invalid_military_record_totals", f"{loc}.militaryRecord", "Wins and losses cannot exceed battles fought.")
+            for field in ["notableVictories", "notableDefeats"]:
+                if not isinstance(record.get(field), list):
+                    add("invalid_military_record_list", f"{loc}.militaryRecord.{field}", "Notable records must be arrays.")
+        family = character.get("family")
+        if not family:
+            add("missing_family_state", f"{loc}.family", "Character needs family state.")
+        else:
+            for field in ["father", "mother"]:
+                value = family.get(field)
+                if value and value not in characters:
+                    add("unknown_family_parent", f"{loc}.family.{field}", value)
+                if value == character.get("id"):
+                    add("self_family_parent", f"{loc}.family.{field}", "Character cannot be their own parent.")
+            for field in ["spouses", "lovers", "children", "siblings"]:
+                values = family.get(field)
+                if not isinstance(values, list):
+                    add("invalid_family_list", f"{loc}.family.{field}", "Family links must be arrays.")
+                    values = []
+                for value in values:
+                    if value not in characters:
+                        add("unknown_family_link", f"{loc}.family.{field}", value)
+                    if value == character.get("id"):
+                        add("self_family_link", f"{loc}.family.{field}", "Character cannot link to themselves.")
+            if not family.get("dynasty"):
+                add("missing_family_dynasty", f"{loc}.family.dynasty", "Dynasty is required.")
+            if not family.get("house"):
+                add("missing_family_house", f"{loc}.family.house", "House is required.")
+            if family.get("dynastyId") and family["dynastyId"] not in dynasty_ids:
+                add("unknown_character_dynasty", f"{loc}.family.dynastyId", family["dynastyId"])
+            if family.get("houseId") and family["houseId"] not in house_ids:
+                add("unknown_character_house", f"{loc}.family.houseId", family["houseId"])
+            branch_type = family.get("branchType", "main")
+            if branch_type not in {"main", "cadet"}:
+                add("invalid_family_branch_type", f"{loc}.family.branchType", str(branch_type))
+            if family.get("branchFounder") and family["branchFounder"] not in characters:
+                add("unknown_family_branch_founder", f"{loc}.family.branchFounder", family["branchFounder"])
+            if family.get("parentHouseId") and family["parentHouseId"] not in house_ids:
+                add("unknown_family_parent_house", f"{loc}.family.parentHouseId", family["parentHouseId"])
+            if not isinstance(family.get("bastard", False), bool):
+                add("invalid_family_bastard", f"{loc}.family.bastard", str(family.get("bastard")))
+            if not isinstance(family.get("legitimised", False), bool):
+                add("invalid_family_legitimised", f"{loc}.family.legitimised", str(family.get("legitimised")))
+            if family.get("legitimised") is True and family.get("bastard") is not True:
+                add("legitimised_without_bastard", f"{loc}.family.legitimised", "Only bastards can be marked legitimised.")
+            legitimacy = family.get("legitimacy")
+            if not isinstance(legitimacy, (int, float)) or legitimacy < 0 or legitimacy > 100:
+                add("invalid_family_legitimacy", f"{loc}.family.legitimacy", str(legitimacy))
+            rank = family.get("inheritanceRank")
+            if rank is not None and (not isinstance(rank, (int, float)) or rank < 1):
+                add("invalid_inheritance_rank", f"{loc}.family.inheritanceRank", str(rank))
+            claim_strength = family.get("claimStrength")
+            if not isinstance(claim_strength, (int, float)) or claim_strength < 0 or claim_strength > 100:
+                add("invalid_family_claim_strength", f"{loc}.family.claimStrength", str(claim_strength))
+            if has_parent_loop(character.get("id")):
+                add("family_parent_loop", f"{loc}.family", "Family parent links contain a loop.")
+
+    for dynasty in snapshot.get("dynasties", []):
+        loc = f"runtime.dynasties[id={dynasty.get('id')}]"
+        if not dynasty.get("name"):
+            add("missing_dynasty_name", f"{loc}.name", "Dynasty needs a name.")
+        if dynasty.get("founder") not in characters:
+            add("unknown_dynasty_founder", f"{loc}.founder", str(dynasty.get("founder")))
+        if dynasty.get("head") and dynasty["head"] not in characters:
+            add("unknown_dynasty_head", f"{loc}.head", str(dynasty.get("head")))
+        if dynasty.get("homeProvince") and dynasty["homeProvince"] not in provinces:
+            add("unknown_dynasty_home_province", f"{loc}.homeProvince", dynasty["homeProvince"])
+        for member in dynasty.get("members", []):
+            if member not in characters:
+                add("unknown_dynasty_member", f"{loc}.members", str(member))
+        for house_id in dynasty.get("houses", []):
+            if house_id not in house_ids:
+                add("unknown_dynasty_house", f"{loc}.houses", str(house_id))
+        for branch in dynasty.get("cadetBranches", []):
+            if branch.get("house") not in house_ids:
+                add("unknown_dynasty_cadet_house", f"{loc}.cadetBranches.house", str(branch.get("house")))
+            if branch.get("founder") and branch["founder"] not in characters:
+                add("unknown_dynasty_cadet_founder", f"{loc}.cadetBranches.founder", str(branch["founder"]))
+            if branch.get("parentHouseId") and branch["parentHouseId"] not in house_ids:
+                add("unknown_dynasty_cadet_parent_house", f"{loc}.cadetBranches.parentHouseId", str(branch["parentHouseId"]))
+        for rival in dynasty.get("rivals", []):
+            if rival not in dynasty_ids:
+                add("unknown_dynasty_rival", f"{loc}.rivals", str(rival))
+        for alliance in dynasty.get("alliances", []):
+            if alliance not in dynasty_ids:
+                add("unknown_dynasty_alliance", f"{loc}.alliances", str(alliance))
+        if dynasty.get("prestige", 0) < 0 or dynasty.get("renown", 0) < 0:
+            add("negative_dynasty_number", loc, "Dynasty prestige and renown must be non-negative.")
+
+    for house in snapshot.get("houses", []):
+        loc = f"runtime.houses[id={house.get('id')}]"
+        if not house.get("name"):
+            add("missing_house_name", f"{loc}.name", "House needs a name.")
+        if house.get("dynasty") not in dynasty_ids:
+            add("unknown_house_dynasty", f"{loc}.dynasty", str(house.get("dynasty")))
+        if house.get("founder") not in characters:
+            add("unknown_house_founder", f"{loc}.founder", str(house.get("founder")))
+        if house.get("head") not in characters:
+            add("unknown_house_head", f"{loc}.head", str(house.get("head")))
+        if house.get("homeProvince") and house["homeProvince"] not in provinces:
+            add("unknown_house_home_province", f"{loc}.homeProvince", house["homeProvince"])
+        branch_type = house.get("branchType", "main")
+        if branch_type not in {"main", "cadet"}:
+            add("invalid_house_branch_type", f"{loc}.branchType", str(branch_type))
+        if house.get("branchFounder") and house["branchFounder"] not in characters:
+            add("unknown_house_branch_founder", f"{loc}.branchFounder", str(house["branchFounder"]))
+        if house.get("parentHouseId") and house["parentHouseId"] not in house_ids:
+            add("unknown_house_parent_house", f"{loc}.parentHouseId", str(house["parentHouseId"]))
+        for member in house.get("members", []):
+            if member not in characters:
+                add("unknown_house_member", f"{loc}.members", str(member))
+        if house.get("head") and isinstance(house.get("members"), list) and house["head"] not in house["members"]:
+            add("house_head_not_member", f"{loc}.head", "House head must be a member.")
+        legitimacy = house.get("legitimacy")
+        if not isinstance(legitimacy, (int, float)) or legitimacy < 0 or legitimacy > 100:
+            add("invalid_house_legitimacy", f"{loc}.legitimacy", str(legitimacy))
+        if house.get("prestige", 0) < 0:
+            add("negative_house_prestige", f"{loc}.prestige", str(house.get("prestige")))
+
+    relationship_ids, id_issues = _ids_by_row(snapshot.get("relationships", []), "id", "runtime.relationships")
+    issues.extend(id_issues)
+    del relationship_ids
+    relationships = snapshot.get("relationships", [])
+    for idx, relationship in enumerate(relationships, start=2):
+        loc = f"runtime.relationships[row {idx}, id={relationship.get('id')}]"
+        from_id = relationship.get("from")
+        to_id = relationship.get("to")
+        rel_type = relationship.get("type")
+        if from_id not in characters:
+            add("unknown_relationship_from", f"{loc}.from", str(from_id))
+        if to_id not in characters:
+            add("unknown_relationship_to", f"{loc}.to", str(to_id))
+        if from_id == to_id:
+            add("self_relationship", loc, "Character cannot have a relationship to themselves.")
+        if rel_type not in VALID_RELATIONSHIP_TYPES:
+            add("invalid_relationship_type", f"{loc}.type", str(rel_type))
+        strength = relationship.get("strength")
+        if not isinstance(strength, (int, float)) or strength < 1 or strength > 100:
+            add("invalid_relationship_strength", f"{loc}.strength", str(strength))
+        reciprocal = RECIPROCAL_RELATIONSHIP.get(rel_type)
+        if reciprocal and from_id in characters and to_id in characters:
+            has_back = any(
+                back.get("from") == to_id and back.get("to") == from_id and back.get("type") == reciprocal
+                for back in relationships
+            )
+            if not has_back:
+                add("missing_reciprocal_relationship", loc, f"{rel_type} needs {reciprocal} back.")
 
     for province_id, state in snapshot["provinceState"].items():
         loc = f"province_state:{province_id}"
@@ -309,6 +626,72 @@ def collect_runtime_validation_issues(snapshot: dict, seed: dict) -> list[Valida
                     add("invalid_internal_politics_number", f"{loc}.internal.{field}", str(value))
                 elif value < 0 or value > 100:
                     add("internal_politics_out_of_range", f"{loc}.internal.{field}", str(value))
+        succession = state.get("succession")
+        if not succession:
+            add("missing_succession_state", f"{loc}.succession", "Faction has no succession state.")
+        else:
+            if not succession.get("law"):
+                add("missing_succession_law", f"{loc}.succession.law", "Succession law is required.")
+            legitimacy = succession.get("heirLegitimacy")
+            if not isinstance(legitimacy, (int, float)) or legitimacy < 0 or legitimacy > 100:
+                add("invalid_heir_legitimacy", f"{loc}.succession.heirLegitimacy", str(legitimacy))
+            for pretender in succession.get("pretenders", []):
+                if pretender.get("character") not in characters:
+                    add("unknown_pretender_character", f"{loc}.succession.pretenders", str(pretender.get("character")))
+                strength = pretender.get("claimStrength", 0)
+                if strength < 0 or strength > 100:
+                    add("invalid_pretender_claim_strength", f"{loc}.succession.pretenders.claimStrength", str(strength))
+        economy = state.get("economy")
+        if not economy:
+            add("missing_economy_state", f"{loc}.economy", "Faction has no economy state.")
+        else:
+            for field in ["warDebt", "foodStress", "tradeValue", "devastationLoss", "tributeDue"]:
+                value = economy.get(field)
+                if not isinstance(value, (int, float)):
+                    add("invalid_economy_number", f"{loc}.economy.{field}", str(value))
+                elif value < 0:
+                    add("negative_economy_number", f"{loc}.economy.{field}", str(value))
+            if isinstance(economy.get("foodStress"), (int, float)) and economy["foodStress"] > 100:
+                add("economy_food_stress_out_of_range", f"{loc}.economy.foodStress", str(economy["foodStress"]))
+            decision = economy.get("lastDecision")
+            if decision and (not decision.get("type") or not decision.get("text")):
+                add("invalid_economy_decision", f"{loc}.economy.lastDecision", str(decision))
+        court = state.get("court")
+        if not court:
+            add("missing_court_state", f"{loc}.court", "Faction has no court state.")
+        else:
+            if court.get("faction") != faction_id:
+                add("invalid_court_faction", f"{loc}.court.faction", str(court.get("faction")))
+            stability = court.get("stability")
+            if not isinstance(stability, (int, float)) or stability < 0 or stability > 100:
+                add("invalid_court_stability", f"{loc}.court.stability", str(stability))
+            offices = court.get("offices") or {}
+            for office in COURT_OFFICES:
+                if office not in offices:
+                    add("missing_court_office", f"{loc}.court.offices.{office}", "Office slot is missing.")
+            for office, assignment in offices.items():
+                office_loc = f"{loc}.court.offices.{office}"
+                if office not in COURT_OFFICES:
+                    add("invalid_court_office", office_loc, str(office))
+                if assignment is None:
+                    continue
+                if not isinstance(assignment, dict):
+                    add("invalid_court_assignment", office_loc, "Office assignment must be null or an object.")
+                    continue
+                if assignment.get("office") != office:
+                    add("court_office_mismatch", f"{office_loc}.office", str(assignment.get("office")))
+                holder_id = assignment.get("character")
+                holder = characters_by_id.get(holder_id)
+                if not holder:
+                    add("unknown_court_office_holder", f"{office_loc}.character", str(holder_id))
+                else:
+                    if holder.get("faction") != faction_id:
+                        add("wrong_faction_court_office_holder", f"{office_loc}.character", str(holder_id))
+                    if holder.get("alive") is False:
+                        add("dead_court_office_holder", f"{office_loc}.character", str(holder_id))
+                effectiveness = assignment.get("effectiveness")
+                if not isinstance(effectiveness, (int, float)) or effectiveness < 0 or effectiveness > 100:
+                    add("invalid_court_office_effectiveness", f"{office_loc}.effectiveness", str(effectiveness))
 
     for revolt in snapshot.get("revolts", []):
         loc = f"runtime.revolts[id={revolt.get('id')}]"

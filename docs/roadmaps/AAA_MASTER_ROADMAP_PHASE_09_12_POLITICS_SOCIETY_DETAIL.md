@@ -16,6 +16,25 @@ Closing gate:
 Realms are no longer only rulers and armies. Courts, offices, social groups and law affect succession, taxation, unrest and legitimacy.
 ```
 
+## Phase 9A. Court and office system — DONE
+
+Completed with:
+
+```text
+- runtime court state added to factions
+- office slots added for ruler, heir, chancellor, marshal, steward, spymaster, court mage, high priest, captain of guard, governor and regent
+- offices are assigned to existing living characters where possible
+- office effectiveness is derived from character prestige, reputation, legitimacy, role, traits, mage status and relevant military record
+- offices affect internal politics, income and AI priorities at a first-pass level
+- courts refresh during monthly simulation and after character death or succession
+- realm inspector shows court stability and office holders
+- character inspector shows offices held by the character
+- JS and Python validation catch missing court state, missing/invalid offices, broken holders, wrong-faction holders, dead holders and invalid effectiveness
+- tests cover office assignment, inspector wiring, office effects and broken validation state
+- 25-year observer validation passing
+- full test suite passing
+```
+
 ## Phase 10. Historical memory and living chronicle
 
 Subphases:

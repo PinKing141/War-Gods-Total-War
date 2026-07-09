@@ -237,7 +237,153 @@ def test_runtime_validation_reports_bad_army_war_and_state_fields():
         "characters": [
             {**seed["characters"][0]},
             {**seed["characters"][0]},
-            {**seed["characters"][1], "faction": "FAC_MISSING", "age": -2},
+            {
+                **seed["characters"][1],
+                "faction": "FAC_MISSING",
+                "age": -2,
+                "faith": "REL_MISSING",
+                "birthYear": "bad",
+                "deathYear": "bad",
+                "ambition": "",
+                "fear": "",
+                "loyalties": {},
+                "stress": 101,
+                "health": -1,
+                "wealth": -1,
+                "legitimacy": 101,
+                "reputation": 101,
+                "memories": [
+                    {
+                        "id": "",
+                        "type": "impossible memory",
+                        "text": "",
+                        "day": -1,
+                        "refs": {
+                            "character": "CHAR_MISSING",
+                            "faction": "FAC_MISSING",
+                            "province": "PROV_MISSING",
+                            "war": "WAR_MISSING",
+                        },
+                    }
+                ],
+                "militaryRecord": {
+                    "battlesFought": 1,
+                    "battlesWon": 2,
+                    "battlesLost": 1,
+                    "siegesLed": -1,
+                    "wounds": -1,
+                    "notableVictories": "bad",
+                    "notableDefeats": "bad",
+                },
+                "family": {
+                    "father": "CHAR_MISSING",
+                    "mother": seed["characters"][1]["id"],
+                    "spouses": "bad",
+                    "lovers": ["CHAR_MISSING"],
+                    "children": [seed["characters"][1]["id"]],
+                    "siblings": ["CHAR_MISSING"],
+                    "dynasty": "",
+                    "house": "",
+                    "legitimacy": 150,
+                    "inheritanceRank": 0,
+                    "claimStrength": 150,
+                },
+            },
+            {
+                **seed["characters"][2],
+                "birthYear": 1,
+                "deathYear": None,
+                "faith": seed["characters"][2].get("religion") or seed["factions"][2]["religion"],
+                "ambition": "collect every moon",
+                "fear": "rain on parade day",
+                "loyalties": {"faction": seed["characters"][2]["faction"]},
+                "stress": 10,
+                "health": 80,
+                "wealth": 40,
+                "legitimacy": 50,
+                "reputation": 50,
+                "memories": [],
+                "militaryRecord": {
+                    "battlesFought": 0,
+                    "battlesWon": 0,
+                    "battlesLost": 0,
+                    "siegesLed": 0,
+                    "wounds": 0,
+                    "notableVictories": [],
+                    "notableDefeats": [],
+                },
+                "family": {
+                    "father": None,
+                    "mother": None,
+                    "spouses": [],
+                    "lovers": [],
+                    "children": [],
+                    "siblings": [],
+                    "dynasty": "Test",
+                    "house": "Test",
+                    "legitimacy": 50,
+                    "inheritanceRank": None,
+                    "claimStrength": 0,
+                },
+            },
+        ],
+        "relationships": [
+            {
+                "id": "REL_BAD",
+                "from": "CHAR_MISSING",
+                "to": seed["characters"][0]["id"],
+                "type": "moon_enemy",
+                "strength": 150,
+                "source": "broken test",
+            },
+            {
+                "id": "REL_ONE_WAY",
+                "from": seed["characters"][0]["id"],
+                "to": seed["characters"][1]["id"],
+                "type": "friend",
+                "strength": 40,
+                "source": "broken test",
+            },
+            {
+                "id": "REL_SELF",
+                "from": seed["characters"][0]["id"],
+                "to": seed["characters"][0]["id"],
+                "type": "rival",
+                "strength": 40,
+                "source": "broken test",
+            },
+        ],
+        "dynasties": [
+            {
+                "id": "DYN_BAD",
+                "name": "",
+                "founder": "CHAR_MISSING",
+                "head": "CHAR_MISSING",
+                "homeProvince": "PROV_MISSING",
+                "prestige": -1,
+                "renown": -1,
+                "famousAncestors": [],
+                "rivals": ["DYN_MISSING"],
+                "alliances": ["DYN_MISSING"],
+                "bloodlineTraits": [],
+                "cadetBranches": [],
+                "houses": ["HOUSE_MISSING"],
+                "members": ["CHAR_MISSING"],
+            }
+        ],
+        "houses": [
+            {
+                "id": "HOUSE_BAD",
+                "dynasty": "DYN_MISSING",
+                "name": "",
+                "founder": "CHAR_MISSING",
+                "head": seed["characters"][0]["id"],
+                "homeProvince": "PROV_MISSING",
+                "legitimacy": 150,
+                "prestige": -1,
+                "livingMembers": [],
+                "members": [],
+            }
         ],
         "armies": [
             {
@@ -333,6 +479,22 @@ def test_runtime_validation_reports_bad_army_war_and_state_fields():
                     "revoltRisk": 0,
                     "successionPressure": 0,
                 },
+                "succession": {
+                    "law": "",
+                    "heirLegitimacy": 150,
+                    "regency": False,
+                    "crisis": None,
+                    "pretenders": [{"character": "CHAR_MISSING", "claimStrength": 150}],
+                    "lastTransition": None,
+                },
+                "economy": {
+                    "warDebt": -1,
+                    "foodStress": 150,
+                    "tradeValue": -1,
+                    "devastationLoss": -1,
+                    "tributeDue": -1,
+                    "lastDecision": {"type": "", "text": ""},
+                },
             }
         },
     }
@@ -356,7 +518,66 @@ def test_runtime_validation_reports_bad_army_war_and_state_fields():
     assert "invalid_war_score" in codes
     assert "unknown_runtime_controller" in codes
     assert "unknown_runtime_ruler" in codes
+    assert "unknown_character_faith" in codes
+    assert "missing_character_birth_year" in codes
+    assert "invalid_character_death_year" in codes
+    assert "negative_character_state_number" in codes
+    assert "character_state_out_of_range" in codes
+    assert "missing_character_ambition" in codes
+    assert "missing_character_fear" in codes
+    assert "invalid_character_ambition" in codes
+    assert "invalid_character_fear" in codes
+    assert "missing_character_loyalties" in codes
+    assert "missing_memory_id" in codes
+    assert "invalid_memory_type" in codes
+    assert "missing_memory_text" in codes
+    assert "invalid_memory_day" in codes
+    assert "unknown_memory_character" in codes
+    assert "unknown_memory_faction" in codes
+    assert "unknown_memory_province" in codes
+    assert "unknown_memory_war" in codes
+    assert "negative_military_record_number" in codes
+    assert "invalid_military_record_totals" in codes
+    assert "invalid_military_record_list" in codes
+    assert "unknown_family_parent" in codes
+    assert "self_family_parent" in codes
+    assert "invalid_family_list" in codes
+    assert "unknown_family_link" in codes
+    assert "self_family_link" in codes
+    assert "missing_family_dynasty" in codes
+    assert "missing_family_house" in codes
+    assert "invalid_family_legitimacy" in codes
+    assert "invalid_inheritance_rank" in codes
+    assert "invalid_family_claim_strength" in codes
+    assert "unknown_relationship_from" in codes
+    assert "invalid_relationship_type" in codes
+    assert "invalid_relationship_strength" in codes
+    assert "missing_reciprocal_relationship" in codes
+    assert "self_relationship" in codes
+    assert "missing_dynasty_name" in codes
+    assert "unknown_dynasty_founder" in codes
+    assert "unknown_dynasty_head" in codes
+    assert "unknown_dynasty_home_province" in codes
+    assert "unknown_dynasty_member" in codes
+    assert "unknown_dynasty_house" in codes
+    assert "unknown_dynasty_rival" in codes
+    assert "unknown_dynasty_alliance" in codes
+    assert "negative_dynasty_number" in codes
+    assert "missing_house_name" in codes
+    assert "unknown_house_dynasty" in codes
+    assert "unknown_house_founder" in codes
+    assert "unknown_house_home_province" in codes
+    assert "house_head_not_member" in codes
+    assert "invalid_house_legitimacy" in codes
+    assert "negative_house_prestige" in codes
     assert "internal_politics_out_of_range" in codes
+    assert "missing_succession_law" in codes
+    assert "invalid_heir_legitimacy" in codes
+    assert "unknown_pretender_character" in codes
+    assert "invalid_pretender_claim_strength" in codes
+    assert "negative_economy_number" in codes
+    assert "economy_food_stress_out_of_range" in codes
+    assert "invalid_economy_decision" in codes
     assert "unknown_province_revolt" in codes
     assert "unknown_revolt_province" in codes
     assert "unknown_revolt_target" in codes
@@ -521,6 +742,9 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
   revolts: sim.revolts,
   armies: sim.armies,
   characters: sim.characters,
+  relationships: sim.relationships,
+  dynasties: sim.dynasties,
+  houses: sim.houses,
   provinceState: sim.provinceState,
   factionState: sim.factionState,
   monthlyRecaps: sim.monthlyRecaps,
@@ -544,6 +768,9 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
     cultures = set(seed["cultures"])
     species = set(seed["species"])
     characters = {c["id"] for c in snapshot["characters"]}
+    relationships = snapshot["relationships"]
+    dynasty_ids = {d["id"] for d in snapshot["dynasties"]}
+    house_ids = {h["id"] for h in snapshot["houses"]}
 
     assert snapshot["wars"]
     assert snapshot["armies"]
@@ -581,7 +808,68 @@ fs.writeFileSync({json.dumps(str(snapshot_path))}, JSON.stringify({{
       assert character["faction"] in factions
       assert character["culture"] in cultures
       assert character["species"] in species
+      assert character["faith"] in seed["religions"]
       assert character["age"] >= 0
+      assert isinstance(character["birthYear"], (int, float))
+      assert character["deathYear"] is None or isinstance(character["deathYear"], (int, float))
+      assert character["ambition"]
+      assert character["fear"]
+      assert character["loyalties"]["faction"] in factions
+      assert 0 <= character["stress"] <= 100
+      assert 0 <= character["health"] <= 100
+      assert character["wealth"] >= 0
+      assert 0 <= character["legitimacy"] <= 100
+      assert 0 <= character["reputation"] <= 100
+      assert isinstance(character["memories"], list)
+      record = character["militaryRecord"]
+      assert record["battlesFought"] >= 0
+      assert record["battlesWon"] >= 0
+      assert record["battlesLost"] >= 0
+      assert record["siegesLed"] >= 0
+      assert record["wounds"] >= 0
+      assert record["battlesWon"] + record["battlesLost"] <= record["battlesFought"]
+      assert isinstance(record["notableVictories"], list)
+      assert isinstance(record["notableDefeats"], list)
+      family = character["family"]
+      assert family["dynasty"]
+      assert family["house"]
+      assert family["dynastyId"] in dynasty_ids
+      assert family["houseId"] in house_ids
+      assert 0 <= family["legitimacy"] <= 100
+      assert family["inheritanceRank"] is None or family["inheritanceRank"] >= 1
+      assert 0 <= family["claimStrength"] <= 100
+      for key in ["spouses", "lovers", "children", "siblings"]:
+        assert isinstance(family[key], list)
+
+    assert relationships
+    for relationship in relationships:
+      assert relationship["from"] in characters
+      assert relationship["to"] in characters
+      assert relationship["from"] != relationship["to"]
+      assert relationship["type"]
+      assert 1 <= relationship["strength"] <= 100
+
+    assert snapshot["dynasties"]
+    assert snapshot["houses"]
+    for dynasty in snapshot["dynasties"]:
+      assert dynasty["name"]
+      assert dynasty["founder"] in characters
+      assert dynasty["head"] in characters
+      assert dynasty["prestige"] >= 0
+      assert dynasty["renown"] >= 0
+      for member in dynasty["members"]:
+        assert member in characters
+      for house_id in dynasty["houses"]:
+        assert house_id in house_ids
+
+    for house in snapshot["houses"]:
+      assert house["name"]
+      assert house["dynasty"] in dynasty_ids
+      assert house["founder"] in characters
+      assert house["head"] in characters
+      assert house["head"] in house["members"]
+      assert 0 <= house["legitimacy"] <= 100
+      assert house["prestige"] >= 0
 
     for province_id, state in snapshot["provinceState"].items():
       assert province_id in provinces
