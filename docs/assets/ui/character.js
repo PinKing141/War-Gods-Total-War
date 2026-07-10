@@ -73,7 +73,7 @@
         regent && regent.id !== c.id ? this.portraitMedallion(regent, { banner: "Regent", className: "ck2-heir-medal" }) : "",
       ].filter(Boolean).join("");
 
-      /* five CK2-style base attributes — display-only placeholders for now */
+      /* the five base attributes: rolled base, live total, modifier tooltip */
       const skillDefs = [
         ["⚜", "Diplomacy", "diplomacy"],
         ["⚔", "Martial", "martial"],
@@ -81,10 +81,16 @@
         ["✒", "Intrigue", "intrigue"],
         ["✦", "Learning", "learning"],
       ];
+      const attrs = this.sim.attributesOf ? this.sim.attributesOf(c.id) : null;
       const skillRows = skillDefs.map(([glyph, label, key]) => {
-        const base = this.placeholderSkill(c.id, key);
-        const total = base + this.placeholderSkill(c.id, key + ":bonus") % 9;
-        return `<div class="ck2-skillrow" title="${esc(label)} (placeholder)"><i>${glyph}</i><span>${esc(label)}</span><b>${base} <em>(${total})</em></b></div>`;
+        const attr = attrs && attrs[key];
+        const base = attr ? attr.base : this.placeholderSkill(c.id, key);
+        const total = attr ? attr.total : base + this.placeholderSkill(c.id, key + ":bonus") % 9;
+        const mods = attr && attr.modifiers.length
+          ? attr.modifiers.map((m) => `${m.label} ${m.amount > 0 ? "+" : ""}${m.amount}`).join(", ")
+          : "no active modifiers";
+        const cls = total > base ? " is-up" : total < base ? " is-down" : "";
+        return `<div class="ck2-skillrow${cls}" title="${esc(`${label} ${base} (${total}) — ${mods}`)}"><i>${glyph}</i><span>${esc(label)}</span><b>${base} <em>(${total})</em></b></div>`;
       }).join("");
 
       const dynRow = (glyph, label, value, cls) =>

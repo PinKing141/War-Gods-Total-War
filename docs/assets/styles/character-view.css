@@ -613,6 +613,9 @@
   color: var(--gold-bright);
   font-size: 11px;
 }
+/* totals lifted or dragged by live modifiers */
+.ck2-skillrow.is-up b em { color: #8fc97a; }
+.ck2-skillrow.is-down b em { color: #e46a56; }
 
 /* ---------- floating parchment windows ---------- */
 

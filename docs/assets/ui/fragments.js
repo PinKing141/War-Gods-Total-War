@@ -182,10 +182,9 @@
       </button>`;
     }
 
-    /* Display-only placeholder for the five CK2-style base attributes.
-       There is no stats system behind these yet — values are seeded from
-       the character id so each person reads as a distinct individual.
-       Replace with real sim data when the attribute system is built. */
+    /* Legacy fallback for the five base attributes, used only when the
+       sim has no attribute system (sim.attributesOf). Values are seeded
+       from the character id so each person still reads as an individual. */
     placeholderSkill(cid, key) {
       let h = 2166136261 >>> 0;
       const s = `${cid}:${key}`;
