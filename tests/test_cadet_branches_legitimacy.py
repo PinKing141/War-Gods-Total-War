@@ -76,7 +76,7 @@ const branch = sim.legitimizeBastard(bastard.id, 'legitimised_bastard');
 const supportAfter = sim.factionSupportForCharacter(bastard);
 const dynasty = sim.dynasty(bastard.family.dynastyId);
 const house = sim.house(bastard.family.houseId);
-const uiSource = fs.readFileSync('docs/assets/ui.js', 'utf8');
+const uiSource = fs.readdirSync('docs/assets/ui').sort().map((f) => fs.readFileSync('docs/assets/ui/' + f, 'utf8')).join('\n');
 fs.writeFileSync(process.argv[2], JSON.stringify({
   branch,
   bastardFamily: bastard.family,

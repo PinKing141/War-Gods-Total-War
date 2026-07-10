@@ -75,14 +75,14 @@ sim.characters.push(older, younger);
 sim._syncFamilyLinks();
 const close = sim.closeFamilyOf(ruler.id);
 const heir = sim.heirOf('FAC_ROV_HALEN');
-const uiSource = fs.readFileSync('docs/assets/ui.js', 'utf8');
+const uiSource = fs.readdirSync('docs/assets/ui').sort().map((f) => fs.readFileSync('docs/assets/ui/' + f, 'utf8')).join('\n');
 fs.writeFileSync(process.argv[2], JSON.stringify({
   rulerFamily: ruler.family,
   closeChildren: close.children.map((c) => c.id),
   olderSiblings: older.family.siblings,
   heirId: heir && heir.id,
   health: sim.validateState(),
-  inspectorMentionsFamily: uiSource.includes('<h3>Close Family</h3>') && uiSource.includes('Inheritance'),
+  inspectorMentionsFamily: uiSource.includes('familyPortraitRow("Siblings"') && uiSource.includes('Inheritance'),
 }));
 """
     result = _run_node(script)

@@ -50,7 +50,7 @@ const fid = 'FAC_ROV_HALEN';
 const court = sim.courtOf(fid);
 const ruler = sim.rulerOf(fid);
 const rulerOffices = sim.characterOffices(ruler.id);
-const uiSource = fs.readFileSync('docs/assets/ui.js', 'utf8');
+const uiSource = fs.readdirSync('docs/assets/ui').sort().map((f) => fs.readFileSync('docs/assets/ui/' + f, 'utf8')).join('\n');
 fs.writeFileSync(process.argv[2], JSON.stringify({
   court,
   rulerId: ruler.id,

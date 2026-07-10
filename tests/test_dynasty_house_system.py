@@ -75,7 +75,7 @@ sim.factionState[fid].internal.successionPressure = 5;
 sim.factionState[fid].internal.successionTension = 5;
 sim._kill(ruler, 'dies in a dynasty test');
 const after = sim.dynastySummaryForFaction(fid);
-const uiSource = fs.readFileSync('docs/assets/ui.js', 'utf8');
+const uiSource = fs.readdirSync('docs/assets/ui').sort().map((f) => fs.readFileSync('docs/assets/ui/' + f, 'utf8')).join('\n');
 fs.writeFileSync(process.argv[2], JSON.stringify({
   dynastyCount: sim.dynasties.length,
   houseCount: sim.houses.length,
@@ -88,7 +88,7 @@ fs.writeFileSync(process.argv[2], JSON.stringify({
   rivalsVisible: Array.isArray(after.rivals),
   health: sim.validateState(),
   uiMentionsDynasty: uiSource.includes('<h3>Dynasty & House</h3>') && uiSource.includes('House head'),
-  uiHasCharacterSheet: uiSource.includes('ck-character') &&
+  uiHasCharacterSheet: uiSource.includes('ck2-sheet') &&
     uiSource.includes('ck-portrait') &&
     uiSource.includes('ck-silhouette') &&
     uiSource.includes('characterTooltip') &&

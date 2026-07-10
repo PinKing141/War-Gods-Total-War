@@ -20,6 +20,39 @@
     { id: "patient", label: "Patient", war: 0.7, battle: 1.02 },
   ];
 
+  /* The five base attributes. Characters carry a rolled base score
+     (0..20, ~8 average); totals shown in the UI add live modifiers from
+     traits, age, stress, health and years of rule. */
+  const ATTRIBUTE_KEYS = ["diplomacy", "martial", "stewardship", "intrigue", "learning"];
+  const TRAIT_ATTRIBUTE_EFFECTS = {
+    bold: { martial: 2, diplomacy: -1 },
+    cautious: { stewardship: 1, learning: 1, martial: -1 },
+    greedy: { stewardship: 2, diplomacy: -1 },
+    vengeful: { martial: 1, intrigue: 1, diplomacy: -1 },
+    just: { diplomacy: 2, stewardship: 1, intrigue: -1 },
+    cunning: { intrigue: 2, learning: 1 },
+    pious: { learning: 2, intrigue: -1 },
+    ironhanded: { martial: 2, stewardship: 1, diplomacy: -2 },
+    patient: { diplomacy: 2, learning: 1, martial: -1 },
+  };
+  /* what a life spent in a role teaches — strongest key listed first */
+  const ROLE_ATTRIBUTE_HINTS = [
+    [/marshal|captain|commander|war|guard|banner|raider|sword/, { martial: 3 }],
+    [/merchant|steward|ledger|trade|counting|credit/, { stewardship: 3 }],
+    [/spy|shadow|whisper|knife/, { intrigue: 3 }],
+    [/mage|scholar|sage|loremaster|archivist/, { learning: 3 }],
+    [/priest|temple|faith|witness|hierophant/, { learning: 2, diplomacy: 1 }],
+    [/king|queen|khan|speaker|crown|ruler|prince/, { diplomacy: 2, stewardship: 1 }],
+    [/envoy|herald|chancellor|charter/, { diplomacy: 3 }],
+  ];
+  /* the attribute each court office leans on */
+  const OFFICE_ATTRIBUTE = {
+    ruler: "diplomacy", heir: "diplomacy", chancellor: "diplomacy",
+    marshal: "martial", captain_of_guard: "martial",
+    steward: "stewardship", governor: "stewardship", regent: "stewardship",
+    spymaster: "intrigue", court_mage: "learning", high_priest: "learning",
+  };
+
   const PRESSURE_TEMPLATES = [
     "must hold what the last ruler bled for",
     "must prove the succession was lawful",
@@ -295,6 +328,7 @@
         alive: raw.alive !== undefined ? raw.alive : true,
         isRuler: opts && opts.isRuler !== undefined ? opts.isRuler : !!raw.isRuler,
         traits,
+        attributes: this._normalizeAttributes(raw, family, opts),
         ambition,
         fear,
         loyalties: raw.loyalties || {
@@ -885,6 +919,122 @@
       return picks;
     }
 
+    /* ---------------------------------------- character attributes */
+
+    _clampAttribute(v) { return Math.max(0, Math.min(20, Math.round(v))); }
+
+    _rollAttributes(raw, family, opts) {
+      const base = {};
+      for (const key of ATTRIBUTE_KEYS) base[key] = this.rng.int(3, 9);
+      const role = String(raw.role || "").toLowerCase();
+      for (const [pattern, effects] of ROLE_ATTRIBUTE_HINTS) {
+        if (!pattern.test(role)) continue;
+        for (const key of Object.keys(effects)) base[key] += effects[key];
+      }
+      /* blood tells: children lean toward their parents' gifts */
+      const parents = [family && family.father, family && family.mother, raw.parentId]
+        .filter(Boolean)
+        .map((id) => this.character(id))
+        .filter((p, i, arr) => p && p.attributes && arr.indexOf(p) === i);
+      for (const parent of parents) {
+        for (const key of ATTRIBUTE_KEYS) {
+          base[key] += Math.round((parent.attributes[key] - 8) * 0.35);
+        }
+      }
+      if (opts && opts.isRuler) { base.diplomacy += 1; base.stewardship += 1; }
+      for (const key of ATTRIBUTE_KEYS) {
+        base[key] = this._clampAttribute(base[key] + this.rng.int(-1, 1));
+      }
+      return base;
+    }
+
+    _normalizeAttributes(raw, family, opts) {
+      const provided = raw.attributes || {};
+      const rolled = this._rollAttributes(raw, family, opts);
+      const out = {};
+      for (const key of ATTRIBUTE_KEYS) {
+        out[key] = typeof provided[key] === "number"
+          ? this._clampAttribute(provided[key])
+          : rolled[key];
+      }
+      return out;
+    }
+
+    attributeKeys() { return [...ATTRIBUTE_KEYS]; }
+
+    /* one attribute with its live modifiers: { key, base, total, modifiers } */
+    attribute(characterOrId, key) {
+      const c = typeof characterOrId === "string" ? this.character(characterOrId) : characterOrId;
+      if (!c || !ATTRIBUTE_KEYS.includes(key)) return null;
+      const base = c.attributes && typeof c.attributes[key] === "number" ? c.attributes[key] : 8;
+      const modifiers = [];
+      const add = (label, amount) => { if (amount) modifiers.push({ label, amount }); };
+      for (const t of c.traits || []) {
+        const effects = TRAIT_ATTRIBUTE_EFFECTS[t.id];
+        if (effects && effects[key]) add(t.label || t.id, effects[key]);
+      }
+      const sp = this.seed.species[c.species] || { oldAge: 55 };
+      const age = c.age || 0;
+      if (age < 16) add("Youth", -Math.ceil((16 - age) / 3));
+      if (age >= 40 && (key === "diplomacy" || key === "stewardship" || key === "learning")) {
+        add("Long experience", age >= 60 ? 2 : 1);
+      }
+      if (age > sp.oldAge && (key === "martial" || key === "intrigue")) {
+        add("Old age", -Math.min(4, Math.ceil((age - sp.oldAge) / 8)));
+      }
+      if ((c.stress || 0) > 75) add("Overwhelmed", -2);
+      else if ((c.stress || 0) > 55) add("Stress", -1);
+      if ((c.health === undefined ? 100 : c.health) < 40 && key === "martial") add("Failing health", -2);
+      if (c.isRuler && typeof c.reignStart === "number" && (key === "diplomacy" || key === "stewardship")) {
+        const years = Math.max(0, this.date.year - c.reignStart);
+        if (years >= 8) add("Years on the throne", Math.min(3, Math.floor(years / 8)));
+      }
+      const total = Math.max(0, Math.min(24, base + modifiers.reduce((sum, m) => sum + m.amount, 0)));
+      return { key, base, total, modifiers };
+    }
+
+    attributeTotal(characterOrId, key) {
+      const a = this.attribute(characterOrId, key);
+      return a ? a.total : 8;
+    }
+
+    /* all five attributes keyed by name, for the character sheet */
+    attributesOf(characterOrId) {
+      const c = typeof characterOrId === "string" ? this.character(characterOrId) : characterOrId;
+      if (!c) return null;
+      const out = {};
+      for (const key of ATTRIBUTE_KEYS) out[key] = this.attribute(c, key);
+      return out;
+    }
+
+    /* the aptitude a life leans on, for yearly growth */
+    _preferredAttribute(c) {
+      const role = String(c.role || "").toLowerCase();
+      for (const [pattern, effects] of ROLE_ATTRIBUTE_HINTS) {
+        if (!pattern.test(role)) continue;
+        const keys = Object.keys(effects);
+        let best = keys[0];
+        for (const key of keys) if (effects[key] > effects[best]) best = key;
+        if (this.rng.chance(0.6)) return best;
+        break;
+      }
+      return this.rng.chance(0.5)
+        ? ATTRIBUTE_KEYS.reduce((a, b) => (c.attributes[a] >= c.attributes[b] ? a : b))
+        : this.rng.pick(ATTRIBUTE_KEYS);
+    }
+
+    /* young adults grow into their gifts; the old lose their edge */
+    _developAttributes(c, sp) {
+      if (!c.attributes) return;
+      if (c.age >= 16 && c.age <= 32 && this.rng.chance(0.3)) {
+        const key = this._preferredAttribute(c);
+        c.attributes[key] = this._clampAttribute(c.attributes[key] + 1);
+      } else if (c.age > (sp.oldAge || 55) && this.rng.chance(0.25)) {
+        const key = this.rng.pick(["martial", "intrigue"]);
+        c.attributes[key] = this._clampAttribute(c.attributes[key] - 1);
+      }
+    }
+
     _traitFactor(fid, key) {
       const ruler = this.rulerOf(fid);
       if (!ruler) return 1;
@@ -920,7 +1070,8 @@
     _officeCandidateScore(character, office, fid) {
       if (!character || !character.alive || character.faction !== fid) return -9999;
       let score = (character.prestige || 0) * 0.35 + (character.reputation || 0) * 0.45 +
-        (character.legitimacy || 0) * 0.12 + Math.min(30, character.age || 0);
+        (character.legitimacy || 0) * 0.12 + Math.min(30, character.age || 0) +
+        this.attributeTotal(character, OFFICE_ATTRIBUTE[office] || "diplomacy") * 2.2;
       const traits = new Set((character.traits || []).map((t) => t.id));
       const role = String(character.role || "").toLowerCase();
       if (character.isRuler) score += office === "ruler" ? 10000 : -25;
@@ -938,7 +1089,8 @@
 
     _officeEffectiveness(character, office, fid) {
       if (!character) return 0;
-      const base = 35 + (character.reputation || 0) * 0.25 + (character.prestige || 0) * 0.18 + (character.legitimacy || 0) * 0.12;
+      const base = 30 + (character.reputation || 0) * 0.25 + (character.prestige || 0) * 0.18 + (character.legitimacy || 0) * 0.12 +
+        this.attributeTotal(character, OFFICE_ATTRIBUTE[office] || "diplomacy") * 1.4;
       return this._clampPolitics(base + Math.max(0, this._officeCandidateScore(character, office, fid)) * 0.12);
     }
 
@@ -1442,6 +1594,11 @@
       }
       const court = this.courtEffects(fid);
       income *= 1 + Math.min(0.14, (court.economy || 0) / 760);
+      const ruler = this.rulerOf(fid);
+      if (ruler && ruler.alive) {
+        // a shrewd ruler squeezes more from the same land, a poor one leaks it
+        income *= 1 + Math.max(-0.06, Math.min(0.08, (this.attributeTotal(ruler, "stewardship") - 8) * 0.007));
+      }
       return Math.round(income);
     }
 
@@ -1996,6 +2153,16 @@
         }
         for (const field of ["health", "legitimacy", "reputation", "stress"]) {
           if (typeof c[field] === "number" && c[field] > 100) add("error", "character_state_out_of_range", `character:${c.id}.${field}`, String(c[field]));
+        }
+        if (!c.attributes || typeof c.attributes !== "object") {
+          add("error", "missing_character_attributes", `character:${c.id}.attributes`, String(c.attributes));
+        } else {
+          for (const key of ATTRIBUTE_KEYS) {
+            const value = c.attributes[key];
+            if (typeof value !== "number" || Number.isNaN(value) || value < 0 || value > 20) {
+              add("error", "invalid_character_attribute", `character:${c.id}.attributes.${key}`, String(value));
+            }
+          }
         }
         if (!c.ambition) add("error", "missing_character_ambition", `character:${c.id}.ambition`, "Character needs an ambition.");
         else if (!VALID_AMBITIONS.has(c.ambition)) add("error", "invalid_character_ambition", `character:${c.id}.ambition`, String(c.ambition));
@@ -2607,7 +2774,7 @@
       const cmdBonus = (army) => {
         const c = this.character(army.commanderId);
         if (!c) return 1;
-        let f = 1;
+        let f = 1 + (this.attributeTotal(c, "martial") - 8) * 0.02;
         for (const t of c.traits) if (t.battle) f *= t.battle;
         return f;
       };
@@ -2920,6 +3087,18 @@
       }
     }
 
+    /* skilled diplomats warm the table they sit at; boors chill it */
+    _rulerDiplomacyBias(opinionKey) {
+      const [a, b] = opinionKey.split("|");
+      let bias = 0;
+      for (const fid of [a, b]) {
+        if (!this.factionState[fid]) continue;
+        const ruler = this.rulerOf(fid);
+        if (ruler && ruler.alive) bias += (this.attributeTotal(ruler, "diplomacy") - 8) * 0.7;
+      }
+      return Math.max(-12, Math.min(12, bias));
+    }
+
     _factionsBorder(a, b) {
       if (!this.adjacency) return false;
       for (const p of this.ownedProvinces(a)) {
@@ -2935,7 +3114,7 @@
       const baseline = {};
       for (const r of this.seed.relations) baseline[this._oKey(r.a, r.b)] = r.score;
       for (const key of Object.keys(this.opinions)) {
-        const target = baseline[key] !== undefined ? baseline[key] : 0;
+        const target = (baseline[key] !== undefined ? baseline[key] : 0) + this._rulerDiplomacyBias(key);
         const cur = this.opinions[key];
         this.opinions[key] = cur + Math.sign(target - cur) * Math.min(1.5, Math.abs(target - cur));
       }
@@ -3292,6 +3471,7 @@
         c.stress = this._clampPolitics((c.stress || 0) + (c.isRuler && this.warsOf(c.faction).length ? 4 : -2));
         c.health = this._clampPolitics((c.health || 0) - Math.max(0, c.stress - 70) * 0.03);
         const sp = this.seed.species[c.species] || { oldAge: 55, maxAge: 95 };
+        this._developAttributes(c, sp);
         let deathChance = 0.006;
         if (c.age > sp.oldAge) {
           deathChance = 0.03 + 0.30 * (c.age - sp.oldAge) / Math.max(1, sp.maxAge - sp.oldAge);

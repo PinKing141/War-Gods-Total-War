@@ -1,0 +1,354 @@
+/* ============================================================
+   CK2 ORNATE THEME LAYER — gilded frames, plaques & heraldry
+   (appended override layer; keep after all base rules)
+   ============================================================ */
+
+:root {
+  --bronze: #8a6a34;
+  --bronze-dark: #4f3c1c;
+  --parchment: #e9dcb8;
+  --parchment-dark: #cdbb8e;
+  --frame-outer: #0c0904;
+  --frame-inner: #6b5426;
+}
+
+/* ---------- top bar: riveted bronze band ---------- */
+
+#topbar {
+  height: 66px;
+  background:
+    linear-gradient(rgba(0,0,0,0.22), rgba(0,0,0,0.22)),
+    linear-gradient(#3a2c16 0%, #241a0c 45%, #191108 100%);
+  border-bottom: 1px solid #000;
+  box-shadow:
+    inset 0 1px 0 rgba(232,201,106,0.28),
+    inset 0 -2px 0 var(--bronze-dark),
+    0 3px 16px rgba(0,0,0,0.8);
+}
+#topbar::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -6px;
+  height: 6px;
+  background: linear-gradient(90deg,
+    transparent 0%, var(--gold) 12%, var(--gold-bright) 50%, var(--gold) 88%, transparent 100%);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.brand b {
+  font-variant: small-caps;
+  letter-spacing: 4px;
+  text-shadow: 0 1px 0 #000, 0 0 12px rgba(232,201,106,0.35);
+}
+
+#btn-world {
+  background: linear-gradient(#4a3819, #2a1f0e 55%, #1d150a);
+  border: 1px solid var(--bronze-dark);
+  outline: 1px solid rgba(232,201,106,0.25);
+  outline-offset: -3px;
+  color: var(--gold-bright);
+  font-family: var(--serif);
+  font-variant: small-caps;
+  letter-spacing: 2px;
+  font-size: 13px;
+  padding: 7px 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,235,180,0.25), 0 2px 4px rgba(0,0,0,0.6);
+}
+#btn-world:hover {
+  border-color: var(--gold);
+  box-shadow: inset 0 1px 0 rgba(255,235,180,0.35), 0 0 10px rgba(201,168,76,0.35);
+}
+
+.speed-controls button {
+  background: linear-gradient(#46351a, #241a0e 60%);
+  box-shadow: inset 0 1px 0 rgba(255,235,180,0.22), 0 2px 3px rgba(0,0,0,0.55);
+  border-radius: 3px;
+}
+
+/* ---------- panels: double-gilded frames with corner studs ---------- */
+
+.panel {
+  border: 1px solid var(--frame-outer);
+  outline: 2px solid var(--frame-inner);
+  outline-offset: -5px;
+  border-radius: 4px;
+  background:
+    radial-gradient(140% 90% at 50% 0%, rgba(232,201,106,0.05), transparent 55%),
+    linear-gradient(#211910, #171009);
+  box-shadow:
+    inset 0 0 0 3px #0d0a05,
+    inset 0 0 26px rgba(0,0,0,0.75),
+    0 8px 28px rgba(0,0,0,0.8);
+  position: relative;
+}
+.panel::before, .panel::after {
+  content: "◆";
+  position: absolute;
+  top: 3px;
+  font-size: 9px;
+  color: var(--gold);
+  opacity: 0.75;
+  text-shadow: 0 1px 1px #000;
+  pointer-events: none;
+}
+.panel::before { left: 7px; }
+.panel::after { right: 7px; }
+
+/* ---------- headers: engraved plaques ---------- */
+
+.panel-head h2, .ck-nameplate h2 {
+  font-variant: small-caps;
+  letter-spacing: 1.5px;
+  color: var(--gold-bright);
+  text-shadow: 0 1px 0 #000, 0 0 10px rgba(232,201,106,0.25);
+}
+
+.panel h3, .ck-card h3 {
+  position: relative;
+  margin: 14px 0 7px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  font-variant: small-caps;
+  letter-spacing: 2px;
+  color: var(--gold-bright);
+  text-align: center;
+  background: linear-gradient(#33270f, #211808 60%, #191106);
+  border: 1px solid var(--bronze-dark);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 1px 0 rgba(232,201,106,0.22),
+    inset 0 -1px 0 rgba(0,0,0,0.6),
+    0 1px 3px rgba(0,0,0,0.55);
+  text-shadow: 0 1px 0 #000;
+}
+.panel h3::before, .panel h3::after,
+.ck-card h3::before, .ck-card h3::after {
+  content: "❧";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-52%);
+  font-size: 10px;
+  color: var(--gold);
+  opacity: 0.7;
+}
+.panel h3::before, .ck-card h3::before { left: 8px; }
+.panel h3::after, .ck-card h3::after { right: 8px; transform: translateY(-52%) scaleX(-1); }
+
+/* ---------- panel head with arms (provinces etc.) ---------- */
+
+.panel-head.with-arms {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.panel-head.with-arms .head-arms {
+  flex: none;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.7));
+}
+.panel-head.with-arms .head-text { min-width: 0; }
+
+/* ---------- arms rows: dynasty & house heraldry ---------- */
+
+.arms-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 8px 4px 10px;
+  margin-bottom: 4px;
+  background:
+    radial-gradient(80% 100% at 50% 0%, rgba(232,201,106,0.06), transparent 70%);
+  border-bottom: 1px solid rgba(107,84,38,0.45);
+}
+.arms-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: 110px;
+}
+.arms-item .wg-shield {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.75));
+}
+.arms-caption {
+  font-size: 10.5px;
+  letter-spacing: 0.5px;
+  color: var(--ink-dim);
+  text-align: center;
+  line-height: 1.15;
+  font-variant: small-caps;
+}
+
+.ck-personal-arms {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.75));
+}
+
+/* every armoria shield gets a subtle gilt bezel */
+.wg-armoria-shield {
+  display: inline-flex;
+  border-radius: 2px;
+}
+.wg-armoria-badge-frame {
+  display: block;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* ---------- chronicle tabs: CK2 folder tabs ---------- */
+
+#chronicle-tabs div {
+  font-variant: small-caps;
+  letter-spacing: 1.5px;
+  background: linear-gradient(#2a2010, #1b1409 65%);
+  border: 1px solid var(--bronze-dark);
+  border-bottom-color: transparent;
+  border-radius: 5px 5px 0 0;
+  box-shadow: inset 0 1px 0 rgba(232,201,106,0.14);
+  color: var(--ink-dim);
+}
+#chronicle-tabs div.active {
+  background: linear-gradient(#453413, #2a1f0c 70%);
+  color: var(--gold-bright);
+  box-shadow:
+    inset 0 1px 0 rgba(232,201,106,0.3),
+    0 -2px 8px rgba(201,168,76,0.18);
+  text-shadow: 0 1px 0 #000;
+}
+#chronicle-tabs div:hover:not(.active) { color: var(--ink); }
+
+/* ---------- map mode buttons: bronze toggles ---------- */
+
+#map-modes button {
+  font-variant: small-caps;
+  letter-spacing: 1.5px;
+  background: linear-gradient(#33270f, #1d150a 65%);
+  border: 1px solid var(--bronze-dark);
+  color: var(--ink-dim);
+  box-shadow: inset 0 1px 0 rgba(232,201,106,0.14), 0 2px 4px rgba(0,0,0,0.5);
+  border-radius: 3px;
+}
+#map-modes button.active {
+  background: linear-gradient(#57420f, #33270c 70%);
+  color: var(--gold-bright);
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 1px 0 rgba(255,235,180,0.35),
+    0 0 10px rgba(201,168,76,0.35);
+  text-shadow: 0 1px 0 #000;
+}
+
+/* ---------- quotes: parchment scraps ---------- */
+
+.quote {
+  background:
+    linear-gradient(rgba(0,0,0,0.05), rgba(0,0,0,0.12)),
+    linear-gradient(#2c2312, #251d0e);
+  border: 1px solid rgba(107,84,38,0.55);
+  border-left: 3px solid var(--gold);
+  border-radius: 2px;
+  padding: 7px 10px;
+  font-style: italic;
+  color: var(--ink);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* ---------- rows, chips, ranks ---------- */
+
+.stat-rows .row, .row {
+  border-bottom: 1px solid rgba(107,84,38,0.25);
+}
+.rank-row:hover, .strip-shield:hover {
+  background: rgba(201,168,76,0.1);
+  box-shadow: inset 0 0 0 1px rgba(201,168,76,0.35);
+}
+
+.chip {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(107,84,38,0.4);
+  border-radius: 3px;
+  padding: 1px 6px 1px 3px;
+}
+.chip:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 6px rgba(201,168,76,0.3);
+}
+
+.trait {
+  background: linear-gradient(#33270f, #241a0c);
+  border: 1px solid var(--bronze-dark);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(232,201,106,0.15);
+  font-variant: small-caps;
+  letter-spacing: 0.5px;
+}
+
+/* ---------- character sheet: gilded portrait frame ---------- */
+
+.ck-portrait {
+  border: 2px solid var(--bronze-dark);
+  outline: 1px solid rgba(232,201,106,0.3);
+  outline-offset: -4px;
+  box-shadow:
+    inset 0 0 10px rgba(0,0,0,0.7),
+    0 3px 8px rgba(0,0,0,0.7);
+}
+.ck-portrait:hover {
+  outline-color: var(--gold-bright);
+  box-shadow:
+    inset 0 0 10px rgba(0,0,0,0.7),
+    0 0 12px rgba(201,168,76,0.4);
+}
+
+.ck-card {
+  border: 1px solid var(--bronze-dark);
+  outline: 1px solid rgba(0,0,0,0.8);
+  outline-offset: -3px;
+  border-radius: 3px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(232,201,106,0.04), transparent 60%),
+    linear-gradient(#221a0f, #1a130a);
+  box-shadow: inset 0 0 14px rgba(0,0,0,0.55);
+}
+
+/* ---------- tooltip: parchment slip ---------- */
+
+#tooltip {
+  background: linear-gradient(#2e2411, #221a0c);
+  border: 1px solid var(--bronze);
+  outline: 1px solid #000;
+  border-radius: 3px;
+  color: var(--ink);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.85), inset 0 1px 0 rgba(232,201,106,0.2);
+}
+
+/* ---------- scrollbars: bronze rails ---------- */
+
+.panel::-webkit-scrollbar, #events-list::-webkit-scrollbar { width: 10px; }
+.panel::-webkit-scrollbar-track, #events-list::-webkit-scrollbar-track {
+  background: #120d06;
+  border-left: 1px solid var(--bronze-dark);
+}
+.panel::-webkit-scrollbar-thumb, #events-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(#4f3c1c, #33270f);
+  border: 1px solid #000;
+  border-radius: 5px;
+}
+.panel::-webkit-scrollbar-thumb:hover, #events-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(#6b5426, #46351a);
+}
+
+/* ---------- hint ribbon ---------- */
+
+#hint {
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  background: linear-gradient(rgba(23,18,11,0.9), rgba(23,18,11,0.75));
+  border: 1px solid rgba(107,84,38,0.5);
+  border-radius: 3px;
+  padding: 3px 12px;
+}
+

@@ -102,7 +102,7 @@ sim.characters.push(child);
 sim._addRelationship(rov.id, child.id, 'parent', 90, 'test family');
 sim._kill(rov, 'dies in a memory test');
 
-const uiSource = fs.readFileSync('docs/assets/ui.js', 'utf8');
+const uiSource = fs.readdirSync('docs/assets/ui').sort().map((f) => fs.readFileSync('docs/assets/ui/' + f, 'utf8')).join('\n');
 fs.writeFileSync(process.argv[2], JSON.stringify({
   winnerMemories: gharu.memories.filter((m) => m.type === 'battle defeat').length,
   loserMemories: rov.memories.filter((m) => m.type === 'battle victory').length,
@@ -111,7 +111,7 @@ fs.writeFileSync(process.argv[2], JSON.stringify({
   gharuRecord: gharu.militaryRecord,
   grudge: sim.relationshipBetween(gharu.id, rov.id, 'rival'),
   health: sim.validateState(),
-  inspectorMentionsMemory: uiSource.includes('<h3>Memories</h3>') && uiSource.includes('Military record'),
+  inspectorMentionsMemory: uiSource.includes('ck2-band-title">Memories') && uiSource.includes('Military Record'),
 }));
 """
     result = _run_node(script)

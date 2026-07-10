@@ -1,0 +1,871 @@
+/* ============================================================
+   CK2 CHARACTER VIEW — stone frame, parchment, silhouettes
+   ============================================================ */
+
+#inspector.wide { width: 560px; }
+
+.ck2-sheet { margin: -4px -4px 0; }
+
+/* ---------- top: the stone frame ---------- */
+
+.ck2-top {
+  position: relative;
+  border: 2px solid #0a0805;
+  outline: 1px solid #5b4726;
+  outline-offset: -5px;
+  border-radius: 4px;
+  background:
+    linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.35)),
+    linear-gradient(135deg, #3b3630 0%, #2a2622 30%, #221e1a 60%, #2e2a25 100%);
+  box-shadow:
+    inset 0 0 0 3px #14100b,
+    inset 0 0 30px rgba(0,0,0,0.7),
+    0 4px 14px rgba(0,0,0,0.7);
+  padding: 8px 10px 10px;
+}
+/* jeweled studs along the top rail, like the CK2 frame */
+.ck2-top::before {
+  content: "";
+  position: absolute;
+  top: 3px; left: 10px; right: 10px;
+  height: 6px;
+  background: repeating-linear-gradient(90deg,
+    transparent 0 14px, #6b5426 14px 16px, #c9a84c 16px 19px, #6b5426 19px 21px, transparent 21px 35px);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* ---------- name banner ---------- */
+
+.ck2-namebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 18px 8px 6px;
+  padding: 4px 10px;
+  background: linear-gradient(#efe3c0, #d8c493 70%, #c4ad78);
+  border: 1px solid #171208;
+  outline: 1px solid #8a7440;
+  outline-offset: -3px;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255,250,230,0.7), 0 2px 4px rgba(0,0,0,0.6);
+}
+.ck2-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: bold;
+  color: #241a0a;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 0 rgba(255,250,230,0.5);
+}
+.ck2-age {
+  flex: none;
+  font-size: 14px;
+  font-weight: bold;
+  color: #241a0a;
+  padding: 0 6px;
+  border-left: 1px solid #8a7440;
+}
+
+/* ---------- top body: left plate / portrait / dynasty box ---------- */
+
+.ck2-top-body {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.ck2-left-plate {
+  flex: none;
+  width: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.ck2-rank-crown {
+  font-size: 20px;
+  color: var(--gold-bright);
+  text-shadow: 0 1px 2px #000, 0 0 8px rgba(232,201,106,0.5);
+}
+.ck2-arms { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+.ck2-arms-caption {
+  font-size: 9.5px;
+  font-variant: small-caps;
+  letter-spacing: 0.5px;
+  color: var(--ink-dim);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.ck2-portrait-plate {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 8px;
+  background:
+    radial-gradient(90% 80% at 50% 30%, rgba(232,201,106,0.07), transparent 70%),
+    linear-gradient(#efe4c2, #d9c697 60%, #c8b17c);
+  border: 1px solid #171208;
+  outline: 1px solid #8a7440;
+  outline-offset: -3px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 18px rgba(60,40,10,0.35);
+}
+.ck2-side-medals {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
+
+.ck2-dynbox {
+  flex: none;
+  width: 180px;
+  padding: 8px 9px;
+  background: linear-gradient(#eadcb6, #d5c08b 70%, #c6ae76);
+  border: 1px solid #171208;
+  outline: 1px solid #8a7440;
+  outline-offset: -3px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 14px rgba(60,40,10,0.3);
+  color: #241a0a;
+}
+.ck2-dynname {
+  text-align: center;
+  font-weight: bold;
+  font-size: 13px;
+  padding-bottom: 4px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #8a7440;
+  letter-spacing: 0.5px;
+}
+.ck2-dyn-arms {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.ck2-dyn-arms .wg-shield { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5)); }
+.ck2-dynrow {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 11.5px;
+  padding: 2px 0;
+  border-bottom: 1px dotted rgba(138,116,64,0.5);
+}
+.ck2-dynrow:last-child { border-bottom: none; }
+.ck2-dynrow i {
+  flex: none;
+  width: 14px;
+  font-style: normal;
+  color: #7e5a1f;
+  text-align: center;
+}
+.ck2-dynrow span { color: #5d4a26; font-variant: small-caps; letter-spacing: 0.4px; }
+.ck2-dynrow b { margin-left: auto; text-align: right; color: #241a0a; }
+
+/* ---------- skill bar ---------- */
+
+.ck2-skillbar {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+}
+.ck2-skill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 2px 3px;
+  background: linear-gradient(#211c15, #14100b 70%);
+  border: 1px solid #4f3c1c;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(232,201,106,0.12), inset 0 0 8px rgba(0,0,0,0.6);
+}
+.ck2-skill i {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--gold);
+  text-shadow: 0 1px 1px #000;
+}
+.ck2-skill b {
+  font-size: 15px;
+  color: var(--ink);
+  text-shadow: 0 1px 0 #000;
+}
+.ck2-skill span {
+  font-size: 8.5px;
+  font-variant: small-caps;
+  letter-spacing: 0.8px;
+  color: var(--ink-dim);
+}
+
+.ck2-traitbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(107,84,38,0.5);
+}
+
+/* ---------- tabs: parchment folder tabs over the dark ledger ---------- */
+
+.ck2-tabs {
+  display: flex;
+  gap: 3px;
+  margin: 10px 2px 0;
+  padding: 0 4px;
+}
+.ck2-tab {
+  padding: 5px 14px 4px;
+  font-size: 12px;
+  font-variant: small-caps;
+  letter-spacing: 1.2px;
+  color: var(--ink-dim);
+  background: linear-gradient(#2a2010, #1b1409 70%);
+  border: 1px solid #4f3c1c;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(232,201,106,0.12);
+}
+.ck2-tab:hover:not(.active) { color: var(--ink); }
+.ck2-tab.active {
+  color: #241a0a;
+  font-weight: bold;
+  background: linear-gradient(#eadcb6, #d5c08b);
+  border-color: #171208;
+  box-shadow: inset 0 1px 0 rgba(255,250,230,0.6);
+}
+
+.ck2-panes {
+  border: 2px solid #0a0805;
+  outline: 1px solid #5b4726;
+  outline-offset: -4px;
+  border-radius: 0 3px 3px 3px;
+  background: linear-gradient(#191410, #120e09);
+  box-shadow: inset 0 0 22px rgba(0,0,0,0.65);
+  padding: 8px 9px 10px;
+  min-height: 180px;
+}
+.ck2-pane { display: none; }
+.ck2-pane.active { display: block; }
+
+/* ---------- banded family sections ---------- */
+
+.ck2-band { margin-bottom: 4px; }
+.ck2-band-title {
+  margin: 6px 0 5px;
+  padding: 3px 8px;
+  text-align: center;
+  font-size: 11.5px;
+  font-variant: small-caps;
+  letter-spacing: 1.6px;
+  color: #efe3c0;
+  background: linear-gradient(#6a1f22, #4a1214 65%, #380d0f);
+  border: 1px solid #14090a;
+  outline: 1px solid rgba(201,168,76,0.35);
+  outline-offset: -2px;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255,220,190,0.16), 0 1px 3px rgba(0,0,0,0.6);
+  text-shadow: 0 1px 1px #000;
+}
+.ck2-band-split {
+  display: flex;
+  gap: 8px;
+}
+.ck2-band-split .ck2-band { flex: 1; min-width: 0; }
+
+.ck-family-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 2px 2px 6px;
+  align-items: flex-start;
+}
+.ck-empty { font-size: 11px; color: var(--ink-dim); font-style: italic; padding: 4px 2px; }
+.ck-more { font-size: 11px; color: var(--ink-dim); align-self: center; }
+
+/* ---------- medallions: black silhouettes on stone discs ---------- */
+
+.ck-portrait {
+  background:
+    radial-gradient(circle at 50% 32%, #b9c2c4 0 30%, #7f8a8d 31% 58%, #3c4143 59% 100%);
+  border: 2px solid #171208;
+  outline: 1px solid #8a7440;
+  outline-offset: 1px;
+  overflow: hidden;
+}
+.ck-portrait:hover { outline-color: var(--gold-bright); }
+
+.ck-silhouette::before,
+.ck-silhouette::after { background: #0b0906; }
+.ck-silhouette::before {
+  top: 4%;
+  width: 46%;
+  height: 36%;
+  border-radius: 50%;
+}
+.ck-silhouette::after {
+  bottom: -8%;
+  width: 96%;
+  height: 46%;
+  border-radius: 46% 46% 0 0;
+}
+
+.ck2-skull {
+  position: absolute;
+  left: -4px; bottom: -4px;
+  font-size: 13px;
+  line-height: 1;
+  color: #e8dfc8;
+  background: radial-gradient(#3a3126, #17110a 75%);
+  border: 1px solid #8a7440;
+  border-radius: 50%;
+  width: 17px; height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 1px 1px #000;
+  z-index: 2;
+}
+.ck2-drop {
+  position: absolute;
+  top: -3px; right: -3px;
+  width: 9px; height: 12px;
+  background: radial-gradient(circle at 35% 30%, #e06a5a, #8c1f14 70%);
+  border: 1px solid #2a0705;
+  border-radius: 50% 50% 50% 50% / 32% 32% 68% 68%;
+  transform: rotate(3deg);
+  z-index: 2;
+}
+.ck2-medal-banner {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  font-size: 9.5px;
+  font-variant: small-caps;
+  letter-spacing: 0.8px;
+  color: #241a0a;
+  background: linear-gradient(#eadcb6, #cdb684);
+  border: 1px solid #171208;
+  border-radius: 2px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  z-index: 2;
+}
+.ck2-side-medals .ck-portrait { margin-bottom: 12px; }
+
+.ck-portrait.is-dead { opacity: 0.85; filter: grayscale(0.5) brightness(0.8); }
+.ck-portrait.is-dead .ck-silhouette::before,
+.ck-portrait.is-dead .ck-silhouette::after { background: #14100b; }
+
+/* ============================================================
+   CK2 CHARACTER VIEW — pass 2: overlapping medallions, clean
+   circles for the living, crosses for the dead, CK2 attributes
+   ============================================================ */
+
+/* the living get a clean gilt ring — no rectangular box.
+   (box-shadow follows the circle, unlike outline) */
+.ck-portrait {
+  outline: none !important;
+  border: 2px solid #171208;
+  box-shadow:
+    0 0 0 1px #8a7440,
+    inset 0 0 0 1px rgba(0,0,0,0.5),
+    0 2px 5px rgba(0,0,0,0.6);
+  overflow: visible; /* badges may overhang */
+}
+.ck-portrait:hover {
+  box-shadow:
+    0 0 0 1px var(--gold-bright),
+    0 0 8px rgba(232,201,106,0.4),
+    inset 0 0 0 1px rgba(0,0,0,0.5),
+    0 2px 5px rgba(0,0,0,0.7);
+}
+/* clip the silhouette to the circle without clipping badges */
+.ck-portrait .ck-silhouette { overflow: visible; }
+.ck-portrait::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 -14px 14px -10px rgba(0,0,0,0.55);
+  pointer-events: none;
+}
+.ck-silhouette::after { bottom: 0; height: 44%; }
+
+/* the dead: greyed, dimmed ring, a cross standing above the circle */
+.ck-portrait.is-dead {
+  filter: grayscale(1) brightness(0.72);
+  opacity: 0.85;
+  box-shadow:
+    0 0 0 1px #4a3f2b,
+    inset 0 0 0 1px rgba(0,0,0,0.6),
+    0 2px 5px rgba(0,0,0,0.6);
+}
+.ck2-cross {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  line-height: 1;
+  color: #d8cda9;
+  text-shadow: 0 1px 1px #000, 0 0 4px rgba(0,0,0,0.8);
+  filter: none;
+  z-index: 3;
+  pointer-events: none;
+}
+.ck-portrait-small .ck2-cross { top: -11px; font-size: 11px; }
+.ck-portrait-large .ck2-cross { top: -17px; font-size: 16px; }
+
+/* opinion/age badge overlaps the circle's bottom edge, CK2-style */
+.ck-portrait-label {
+  left: 50%;
+  right: auto;
+  bottom: -6px;
+  transform: translateX(-50%);
+  min-width: 16px;
+  text-align: center;
+  padding: 0 4px;
+  font-size: 9px;
+  font-weight: bold;
+  color: #9fd08a;
+  background: linear-gradient(#1c1710, #0f0b06);
+  border: 1px solid #6a542f;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  z-index: 3;
+}
+.ck-relations-strip .ck-portrait-label { max-width: 76px; color: #ead98f; }
+
+/* ---------- portrait cluster: spouse overlaps the sovereign ---------- */
+
+.ck2-portrait-cluster {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.ck2-main-portrait { display: inline-flex; }
+.ck2-spouse-overlap {
+  position: absolute;
+  right: -26px;
+  bottom: -8px;
+  width: 52px;
+  height: 52px;
+  z-index: 4;
+  border-width: 2px;
+}
+.ck2-spouse-overlap .ck2-medal-banner { bottom: -11px; }
+
+.ck2-under-medals {
+  display: flex;
+  gap: 18px;
+  justify-content: flex-start;
+  padding-left: 4px;
+  margin-top: 4px;
+}
+.ck2-heir-medal { width: 40px; height: 40px; }
+.ck2-under-medals .ck-portrait { margin-bottom: 12px; }
+
+.ck2-portrait-plate {
+  align-items: center;
+  padding-bottom: 16px;
+}
+
+/* ---------- skill bar: the five CK2 base attributes ---------- */
+
+.ck2-skillbar { gap: 4px; }
+.ck2-skill i { font-size: 13px; }
+.ck2-skill b { color: var(--gold-bright); }
+.ck2-skill span { font-size: 8px; letter-spacing: 0.6px; }
+
+/* ============================================================
+   CK2 CHARACTER VIEW — pass 3: right-column anatomy, heraldry
+   fills the frame, tree buttons, draggable tree windows
+   ============================================================ */
+
+/* ---------- left frame: realm heraldry beside the liege ---------- */
+
+.ck2-left-plate { width: 72px; gap: 6px; justify-content: flex-start; padding-top: 8px; }
+.ck2-realm-arms .wg-shield { filter: drop-shadow(0 3px 5px rgba(0,0,0,0.85)); }
+
+/* ---------- portrait plate: traits live here now ---------- */
+
+.ck2-portrait-plate { justify-content: flex-start; gap: 6px; }
+.ck2-portrait-plate .ck2-traitbar {
+  border-top: 1px solid rgba(138,116,64,0.55);
+  margin-top: 8px;
+  padding-top: 6px;
+  justify-content: center;
+}
+.ck2-portrait-plate .trait { color: #efe3c0; }
+
+/* ---------- right column: CK2 order ---------- */
+
+.ck2-dynbox { width: 190px; padding: 0; background: none; border: none; outline: none; box-shadow: none; display: flex; flex-direction: column; gap: 6px; }
+.ck2-dynsection {
+  padding: 7px 9px;
+  background: linear-gradient(#eadcb6, #d5c08b 70%, #c6ae76);
+  border: 1px solid #171208;
+  outline: 1px solid #8a7440;
+  outline-offset: -3px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 12px rgba(60,40,10,0.3);
+  color: #241a0a;
+}
+
+.ck2-tree-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 6px 0 4px;
+}
+.ck2-tree-btn {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 2px solid #171208;
+  box-shadow: 0 0 0 1px #8a7440, inset 0 1px 0 rgba(255,240,200,0.35), 0 2px 4px rgba(0,0,0,0.5);
+  background: radial-gradient(circle at 50% 35%, #6c86a8 0 45%, #3b5474 46% 100%);
+  color: #f0ead2;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.ck2-tree-btn:hover { box-shadow: 0 0 0 1px var(--gold-bright), 0 0 8px rgba(232,201,106,0.5); }
+.ck2-tree-btn[disabled] { opacity: 0.4; cursor: default; }
+.ck2-tree-btn span { text-shadow: 0 1px 1px #000; }
+
+.ck2-culture-line {
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 3px 0 2px;
+  border-top: 1px solid rgba(138,116,64,0.6);
+}
+.ck2-faith-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #5d4a26;
+}
+.ck2-faith-line i { font-style: normal; color: #7e5a1f; }
+
+/* skill rows like the Harold column: dark bands, icon, value (total) */
+.ck2-skillrows {
+  border: 1px solid #171208;
+  outline: 1px solid #4f3c1c;
+  outline-offset: -2px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #14100b;
+}
+.ck2-skillrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 9px;
+  border-bottom: 1px solid rgba(107,84,38,0.35);
+  background: linear-gradient(rgba(232,201,106,0.05), transparent 60%);
+}
+.ck2-skillrow:nth-child(even) { background: rgba(0,0,0,0.25); }
+.ck2-skillrow:last-child { border-bottom: none; }
+.ck2-skillrow i {
+  flex: none;
+  width: 16px;
+  font-style: normal;
+  text-align: center;
+  color: var(--gold);
+  text-shadow: 0 1px 1px #000;
+}
+.ck2-skillrow span {
+  font-size: 10px;
+  font-variant: small-caps;
+  letter-spacing: 0.8px;
+  color: var(--ink-dim);
+}
+.ck2-skillrow b {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.ck2-skillrow b em {
+  font-style: normal;
+  color: var(--gold-bright);
+  font-size: 11px;
+}
+/* totals lifted or dragged by live modifiers */
+.ck2-skillrow.is-up b em { color: #8fc97a; }
+.ck2-skillrow.is-down b em { color: #e46a56; }
+
+/* ---------- floating parchment windows ---------- */
+
+.ck2-window {
+  position: fixed;
+  min-width: 340px;
+  max-width: 760px;
+  border: 2px solid #0a0805;
+  outline: 1px solid #5b4726;
+  outline-offset: -5px;
+  border-radius: 4px;
+  background:
+    linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.25)),
+    linear-gradient(135deg, #3b3630, #262220 55%, #2e2a25);
+  box-shadow:
+    inset 0 0 0 3px #14100b,
+    0 12px 40px rgba(0,0,0,0.85);
+  z-index: 300;
+}
+.ck2-window.dragging { opacity: 0.92; }
+
+.ck2-window-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 10px 6px;
+  padding: 4px 10px;
+  background: linear-gradient(#6a1f22, #4a1214 65%, #380d0f);
+  border: 1px solid #14090a;
+  outline: 1px solid rgba(201,168,76,0.35);
+  outline-offset: -2px;
+  border-radius: 2px;
+  cursor: move;
+  user-select: none;
+}
+.ck2-window-name {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-variant: small-caps;
+  letter-spacing: 1.6px;
+  color: #efe3c0;
+  text-shadow: 0 1px 1px #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck2-window-close {
+  flex: none;
+  width: 20px; height: 20px;
+  border-radius: 3px;
+  border: 1px solid #14090a;
+  background: linear-gradient(#8a2a2e, #5a1518);
+  color: #f0e2c0;
+  font-size: 11px;
+  cursor: pointer;
+  line-height: 1;
+}
+.ck2-window-close:hover { background: linear-gradient(#a83a3e, #6a1d20); }
+
+.ck2-window-body {
+  margin: 0 10px 10px;
+  padding: 10px;
+  max-height: 66vh;
+  overflow: auto;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(120,90,40,0.12), transparent 65%),
+    linear-gradient(#e6d7ae, #d2bc85 70%, #c3aa73);
+  border: 1px solid #171208;
+  outline: 1px solid #8a7440;
+  outline-offset: -3px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 20px rgba(60,40,10,0.35);
+  color: #241a0a;
+}
+
+/* tree windows: plaques & cells */
+.ft-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin: 4px 2px;
+  max-width: 92px;
+  vertical-align: top;
+}
+.ft-plaque {
+  padding: 1px 8px;
+  font-size: 10px;
+  max-width: 92px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  color: #241a0a;
+  background: linear-gradient(#f2e8c8, #d9c696);
+  border: 1px solid #4a3a1c;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.ck2-window-body .ck-portrait-label { display: none; }
+.ck2-window-body .ck-empty { color: #6a5a38; }
+
+/* family tree: children | center | ancestry columns */
+.ft-columns-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10.5px;
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  color: #5d4a26;
+  border-bottom: 1px solid #8a7440;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+.ft-head-center { font-weight: bold; font-size: 12px; color: #241a0a; }
+.ft-tree {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.ft-children {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-right: 2px solid #8a7440;
+  padding-right: 10px;
+}
+.ft-center {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding-top: 8px;
+}
+.ft-ancestry {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ft-node { display: flex; align-items: center; }
+.ft-parents {
+  display: flex;
+  flex-direction: column;
+  margin-left: 8px;
+  padding-left: 10px;
+  border-left: 2px solid #8a7440;
+  gap: 4px;
+}
+.ft-cell-empty .ft-disc {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #a99e86, #6d6350 70%);
+  border: 2px solid #4a3a1c;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+}
+
+/* dynasty tree: header + top-down generations */
+.dt-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid #8a7440;
+}
+.dt-arms { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+.dt-header-stats { display: flex; gap: 18px; flex-wrap: wrap; }
+.dt-header-stats div { font-size: 11.5px; color: #5d4a26; }
+.dt-header-stats b { margin-left: 5px; color: #241a0a; font-size: 13px; }
+
+.dt-tree { display: flex; justify-content: center; padding: 4px 0; }
+.dt-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dt-kids {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 2px solid #8a7440;
+}
+.dt-kids > .dt-node { position: relative; padding-top: 6px; }
+.dt-kids > .dt-node::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 2px;
+  height: 8px;
+  background: #8a7440;
+}
+
+/* ============================================================
+   CK2 CHARACTER VIEW — pass 5: heraldic mini-strips
+   (demesne / pacts / wars / claims — shields only, tooltips talk)
+   ============================================================ */
+
+.ck2-ministrips {
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(138,116,64,0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ck2-ministrip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 3px 5px;
+  background: rgba(60,40,10,0.1);
+  border: 1px solid rgba(138,116,64,0.4);
+  border-radius: 3px;
+  min-height: 34px;
+}
+.ck2-mini-glyph {
+  flex: none;
+  width: 20px;
+  font-style: normal;
+  font-size: 13px;
+  text-align: center;
+  color: #7e5a1f;
+  text-shadow: 0 1px 0 rgba(255,245,220,0.4);
+  cursor: help;
+}
+.ck2-mini {
+  display: inline-flex;
+  cursor: help;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  transition: transform .08s ease;
+}
+.ck2-mini:hover { transform: translateY(-2px); }
+.ck2-mini.is-granted { opacity: 0.55; }
+.ck2-mini.is-granted:hover { opacity: 0.9; }
+.ck2-mini.is-war {
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(168,58,44,0.8), 0 0 6px rgba(168,58,44,0.4);
+}
+.ck2-mini-more {
+  font-size: 10px;
+  color: #5d4a26;
+  align-self: center;
+  font-weight: bold;
+  padding: 0 3px;
+}
+
