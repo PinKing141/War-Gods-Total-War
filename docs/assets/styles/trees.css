@@ -1,0 +1,134 @@
+/* ============================================================
+   TREE CONNECTORS v2 — proper genealogical lines
+   (stems, rails spanning sibling centers, stubs into cells)
+   ============================================================ */
+
+/* ---------- family tree (horizontal, ancestry grows right) ---------- */
+
+.ft-root { flex: 1; }
+
+.ft-node { position: relative; display: flex; align-items: center; }
+
+.ft-parents {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: 13px;
+  padding-left: 13px;
+  border-left: none; /* v1 rail replaced by per-node segments */
+}
+/* stub: person → rail */
+.ft-parents::before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 50%;
+  width: 13px;
+  height: 2px;
+  margin-top: -1px;
+  background: #8a7440;
+}
+/* stub: rail → each parent */
+.ft-parents > .ft-node::before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 50%;
+  width: 13px;
+  height: 2px;
+  margin-top: -1px;
+  background: #8a7440;
+}
+/* rail segment: spans this node's height plus half the gap each side */
+.ft-parents > .ft-node::after {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  background: #8a7440;
+}
+.ft-parents > .ft-node:first-child::after { top: 50%; }
+.ft-parents > .ft-node:last-child::after { bottom: 50%; }
+.ft-parents > .ft-node:only-child::after { display: none; }
+
+/* children column: stubs from each child into the divider rail */
+.ft-children {
+  border-right: 2px solid #8a7440;
+  padding-right: 13px;
+  gap: 8px;
+}
+.ft-children > .ft-cell { position: relative; }
+.ft-children > .ft-cell::after {
+  content: "";
+  position: absolute;
+  right: -13px;
+  top: 50%;
+  width: 13px;
+  height: 2px;
+  margin-top: -1px;
+  background: #8a7440;
+}
+/* stub from the divider into the central character */
+.ft-root > .ft-node > .ft-cell { position: relative; }
+.ft-root > .ft-node > .ft-cell::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  width: 14px;
+  height: 2px;
+  margin-top: -1px;
+  background: #8a7440;
+}
+.ft-tree { gap: 14px; }
+
+/* ---------- dynasty tree (vertical, generations descend) ---------- */
+
+.dt-node { position: relative; }
+
+.dt-kids {
+  position: relative;
+  border-top: none; /* v1 edge-to-edge bar replaced */
+  margin-top: 2px;
+  padding-top: 20px;
+  gap: 10px;
+}
+/* stem: parent → rail */
+.dt-kids::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 10px;
+  margin-left: -1px;
+  background: #8a7440;
+}
+/* stem: rail → each child */
+.dt-kids > .dt-node { padding-top: 0; }
+.dt-kids > .dt-node::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 2px;
+  height: 10px;
+  margin-left: -1px;
+  background: #8a7440;
+}
+/* rail segment: spans this child's width plus half the gap each side */
+.dt-kids > .dt-node::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -5px;
+  right: -5px;
+  height: 2px;
+  background: #8a7440;
+}
+.dt-kids > .dt-node:first-child::after { left: 50%; }
+.dt-kids > .dt-node:last-child::after { right: 50%; }
+.dt-kids > .dt-node:only-child::after { display: none; }

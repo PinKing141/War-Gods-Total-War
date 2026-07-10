@@ -345,6 +345,14 @@
   }
 
   window.WG = window.WG || {};
+  /* shared internals for the lineage layer (heraldry_lineage.js) */
+  window.WG.heraldryHelpers = {
+    normalizeHexColor,
+    chargeTinctureForField,
+    customTinctureName,
+    heraldrySeed,
+    escAttr,
+  };
   window.WG.shieldSVG = shieldSVG;
   window.WG.fallbackShieldSVG = fallbackShieldSVG;
   window.WG.heraldrySeed = heraldrySeed;

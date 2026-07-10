@@ -69,7 +69,10 @@ def test_validation_module_reports_clear_static_output():
 
 
 def test_normal_ui_copy_avoids_debug_language():
-    ui_text = (ROOT / "docs" / "assets" / "ui.js").read_text(encoding="utf-8")
+    ui_dir = ROOT / "docs" / "assets" / "ui"
+    ui_text = "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted(ui_dir.glob("*.js"))
+    )
     sim_text = (ROOT / "docs" / "assets" / "sim.js").read_text(encoding="utf-8")
     normal_ui_text = re.sub(
         r"debugMapPanel\(info\).*?\n    \/\* ---------- events ---------- \*\/",

@@ -116,10 +116,10 @@ sim.relationships.push({
   strength: 50,
   source: 'test',
 });
-const uiSource = fs.readFileSync('docs/assets/ui.js', 'utf8');
+const uiSource = fs.readdirSync('docs/assets/ui').sort().map((f) => fs.readFileSync('docs/assets/ui/' + f, 'utf8')).join('\n');
 fs.writeFileSync(process.argv[2], JSON.stringify({
   health: sim.validateState(),
-  inspectorMentionsRelationships: uiSource.includes('<h3>Relationships</h3>') && uiSource.includes('relationshipsOf'),
+  inspectorMentionsRelationships: uiSource.includes('Bonds & Grudges') && uiSource.includes('relationshipsOf'),
 }));
 """
     result = _run_node(script)
