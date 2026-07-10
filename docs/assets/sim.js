@@ -1255,6 +1255,31 @@
       };
     }
 
+    _updateProvinceSociety(pid) {
+      const st = this.provinceState[pid];
+      const p = this.province(pid);
+      const society = this.societyOf(pid);
+      if (!st || !p || !society) return;
+      const rulerState = this.factionState[st.controller] || {};
+      const internal = rulerState.internal || {};
+      const pressure = (st.devastation || 0) * 0.18 + (internal.taxBurden || 0) * 0.08 + (st.occupier ? 10 : 0) + (st.siege ? 8 : 0);
+      const prosperity = Math.max(0, (p.value || 0) - (st.devastation || 0)) / 100 + (p.roads || 0) * 0.025 + (p.port || 0) * 0.035;
+      for (const [group, g] of Object.entries(society)) {
+        const vulnerable = ["peasants", "refugees", "urban_poor", "minorities", "foreign_settlers"].includes(group);
+        const commercial = ["merchants", "craftsmen", "scholars"].includes(group);
+        const martial = ["soldiers", "nobles", "tribes"].includes(group);
+        const faithful = group === "clergy";
+        const targetUnrest = 12 + pressure + (vulnerable ? 8 : 0) + (faithful ? (internal.faithTension || 0) * 0.08 : 0) + (group === "minorities" ? (internal.cultureTension || 0) * 0.12 : 0);
+        const targetLoyalty = 64 - pressure * 0.65 + prosperity * 12 - (commercial ? Math.max(0, (internal.taxBurden || 0) - 35) * 0.18 : 0) + (martial ? Math.max(0, (internal.armyInfluence || 0) - 35) * 0.10 : 0);
+        const targetWealth = (commercial ? 52 : vulnerable ? 28 : 42) + prosperity * 22 - (st.devastation || 0) * 0.20 - (st.occupier ? 8 : 0);
+        g.unrest = this._clampPolitics(g.unrest + Math.sign(targetUnrest - g.unrest) * Math.min(3, Math.abs(targetUnrest - g.unrest)));
+        g.loyalty = this._clampPolitics(g.loyalty + Math.sign(targetLoyalty - g.loyalty) * Math.min(3, Math.abs(targetLoyalty - g.loyalty)));
+        g.wealth = this._clampPolitics(g.wealth + Math.sign(targetWealth - g.wealth) * Math.min(2, Math.abs(targetWealth - g.wealth)));
+        g.influence = this._clampPolitics(g.influence);
+        g.size = Math.max(0, Math.round(g.size || 0));
+      }
+    }
+
     provinceSocietySummary(pid) {
       const society = this.societyOf(pid);
       if (!society) return null;
@@ -1349,7 +1374,7 @@
         boost("hold_mountain_passes", 1.2); boost("protect_homeland", 0.45);
       }
       if (/khan|horse|raid|pasture|ring|nomad/.test(text)) {
-        boost("raid_for_wealth", 1.4); boost("avoid_war", -0.35); boost("expand_territory", 0.3);
+        boost("raid_for_wealth", 1.75); boost("avoid_war", -0.35); boost("expand_territory", 0.3);
       }
       if (/temple|faith|sacred|protector|witness|hearth|oath|banner/.test(text)) {
         boost("defend_faith", 1.0); boost("recover_old_claims", 0.25);
@@ -1568,7 +1593,8 @@
       const s = this.factionState[fid];
       let max = 0;
       for (const p of this.ownedProvinces(fid)) {
-        max += this.provinceState[p.id].pop * 0.10 * (1 - this.provinceState[p.id].devastation / 150);
+        const st = this.provinceState[p.id];
+        max += st.pop * 0.10 * (1 - st.devastation / 150) * this.societyEffects(p.id).recruitment;
       }
       s.maxManpower = Math.round(max);
       if (initial) s.manpower = s.maxManpower;
@@ -1583,7 +1609,7 @@
         if (st.occupier) continue;                      // occupied land pays nothing
         const base = (st.pop / 90) * (1 + p.roads * 0.15);
         baseBeforeDevastation += base;
-        income += base * (1 - st.devastation / 120);
+        income += base * (1 - st.devastation / 120) * this.societyEffects(p.id).tax;
         income += p.port * 14;
       }
       const internal = this.factionState[fid] && this.factionState[fid].internal;
@@ -1777,6 +1803,17 @@
       const net = income - this.monthlyUpkeep(fid) - Math.max(0, Math.round(st.treasury * 0.02));
       const rulerWar = ruler ? this._traitFactor(fid, "war") : 1;
       const court = this.courtEffects(fid);
+      const societyPressure = owned.length ? owned.reduce((acc, p) => {
+        const effects = this.societyEffects(p.id);
+        acc.unrest += effects.unrest;
+        acc.culture += effects.cultureTension;
+        acc.faith += effects.faithTension;
+        return acc;
+      }, { unrest: 0, culture: 0, faith: 0 }) : { unrest: 0, culture: 0, faith: 0 };
+      const ownedCount = Math.max(1, owned.length);
+      societyPressure.unrest /= ownedCount;
+      societyPressure.culture /= ownedCount;
+      societyPressure.faith /= ownedCount;
       const drift = (value, target, step) => value + Math.sign(target - value) * Math.min(step, Math.abs(target - value));
 
       internal.courtTension = drift(internal.courtTension, 12 + owned.length * 2 + wars.length * 4 + Math.max(0, -net) / 18 - (court.diplomacy || 0) * 0.08 - (court.intrigue || 0) * 0.05, 4);
@@ -1786,14 +1823,14 @@
       }
       internal.armyInfluence = drift(internal.armyInfluence, 16 + activeArmies * 14 + wars.length * 16 + Math.max(0, rulerWar - 1) * 18 - (court.war || 0) * 0.05, 6);
       internal.taxBurden = drift(internal.taxBurden, 22 + Math.max(0, -net) / 7 + Math.max(0, 250 - st.treasury) / 15 + st.exhaustion * 0.08 - (court.economy || 0) * 0.06, 5);
-      internal.faithTension = drift(internal.faithTension, 14 + wars.length * 2 - (court.faith || 0) * 0.07, 3);
-      internal.cultureTension = drift(internal.cultureTension, (f.species === "mixed" || f.species === "human_orc_mixed" ? 24 : 14) + owned.length * 1.5 + occupied * 7, 3);
+      internal.faithTension = drift(internal.faithTension, 14 + wars.length * 2 + societyPressure.faith * 0.18 - (court.faith || 0) * 0.07, 3);
+      internal.cultureTension = drift(internal.cultureTension, (f.species === "mixed" || f.species === "human_orc_mixed" ? 24 : 14) + owned.length * 1.5 + occupied * 7 + societyPressure.culture * 0.20, 3);
       internal.regionalAutonomy = drift(internal.regionalAutonomy, 18 + Math.max(0, owned.length - 1) * 8 + occupied * 10 + claimsHeldByOthers * 3 - (court.governance || 0) * 0.07, 4);
       internal.nobleLoyalty = drift(internal.nobleLoyalty, 68 - internal.courtTension * 0.28 - internal.taxBurden * 0.18 - st.exhaustion * 0.18 + st.prestige * 0.04 + (court.diplomacy || 0) * 0.04, 5);
       internal.merchantLoyalty = drift(internal.merchantLoyalty, 68 - internal.taxBurden * 0.35 - occupied * 8 + Math.max(0, net) * 0.04, 5);
       internal.revoltRisk = this._clampPolitics(
         occupied * 10 + sieged * 8 + internal.taxBurden * 0.22 + internal.regionalAutonomy * 0.18 +
-        internal.cultureTension * 0.14 + internal.faithTension * 0.12 + Math.max(0, 45 - internal.nobleLoyalty) * 0.26
+        internal.cultureTension * 0.14 + internal.faithTension * 0.12 + societyPressure.unrest * 0.18 + Math.max(0, 45 - internal.nobleLoyalty) * 0.26
       );
       internal.courtTension -= ((court.diplomacy || 0) + (court.intrigue || 0)) * 0.025;
       internal.taxBurden -= (court.economy || 0) * 0.022;
@@ -1955,6 +1992,8 @@
       add(st.occupier ? 22 : 0, "occupation");
       add(st.recentConquest || 0, "recent conquest");
       add(st.garrison < 160 ? 18 : st.garrison < 300 ? 8 : 0, "low garrison");
+      const society = this.societyEffects(pid);
+      add(society.unrest * 0.35, "social unrest");
       if (internal) {
         add(internal.cultureTension * 0.16, "culture tension");
         add(internal.faithTension * 0.15, "faith tension");
@@ -2044,6 +2083,8 @@
         }
         if (revolt.progress >= 1) {
           this._endRevolt(revolt, true, "rebel pressure overwhelmed the local garrison");
+        } else if (revolt.progress <= 0.08 && (st.garrison >= revolt.strength * 2.4 || suppression >= pressure * 0.85)) {
+          this._endRevolt(revolt, false, "the garrison broke the revolt before it could spread");
         } else if (revolt.progress <= 0.02) {
           this._endRevolt(revolt, false, "the garrison broke the revolt before it could spread");
         }
@@ -2407,6 +2448,25 @@
         if (st.revoltId && !this.revolts.some((r) => r.id === st.revoltId)) add("error", "unknown_province_revolt", `${loc}.revoltId`, st.revoltId);
         for (const field of ["pop", "garrison", "devastation", "instability", "recentConquest"]) {
           if ((st[field] || 0) < 0) add("error", "negative_province_state_number", `${loc}.${field}`, String(st[field]));
+        }
+        if (!st.society) {
+          add("error", "missing_province_society", `${loc}.society`, "Province has no social group state.");
+        } else {
+          for (const group of SOCIAL_GROUPS) {
+            if (!st.society[group]) add("error", "missing_social_group", `${loc}.society.${group}`, "Required social group is missing.");
+          }
+          for (const [group, social] of Object.entries(st.society)) {
+            const groupLoc = `${loc}.society.${group}`;
+            if (!VALID_SOCIAL_GROUPS.has(group)) add("error", "invalid_social_group", groupLoc, group);
+            for (const field of ["size", "loyalty", "unrest", "wealth", "influence"]) {
+              const value = social && social[field];
+              if (typeof value !== "number" || Number.isNaN(value)) add("error", "invalid_social_group_number", `${groupLoc}.${field}`, String(value));
+              else if (value < 0 || (field !== "size" && value > 100)) add("error", "social_group_out_of_range", `${groupLoc}.${field}`, String(value));
+            }
+            if (!social || typeof social.needs !== "string" || !social.needs.trim()) {
+              add("error", "missing_social_group_needs", `${groupLoc}.needs`, "Social group needs must be readable.");
+            }
+          }
         }
       }
 
@@ -2969,6 +3029,7 @@
             { province: p.id, faction: st.controller });
         }
         if (st.devastation < 25) st.riotLogged = false;
+        this._updateProvinceSociety(p.id);
       }
       this.mapVersion++; // devastation drift matters in the Ruin map mode
       this._diplomacyPulse();

@@ -81,6 +81,22 @@ COURT_OFFICES = {
     "regent",
 }
 
+SOCIAL_GROUPS = {
+    "nobles",
+    "clergy",
+    "merchants",
+    "peasants",
+    "craftsmen",
+    "soldiers",
+    "mages",
+    "scholars",
+    "minorities",
+    "tribes",
+    "foreign_settlers",
+    "refugees",
+    "urban_poor",
+}
+
 VALID_MEMORY_TYPES = {
     "family death",
     "battle victory",
@@ -602,6 +618,26 @@ def collect_runtime_validation_issues(snapshot: dict, seed: dict) -> list[Valida
         for field in ["pop", "garrison", "devastation", "instability", "recentConquest"]:
             if state.get(field, 0) < 0:
                 add("negative_province_state_number", f"{loc}.{field}", str(state.get(field)))
+        society = state.get("society")
+        if not society:
+            add("missing_province_society", f"{loc}.society", "Province has no social group state.")
+        else:
+            for group in SOCIAL_GROUPS:
+                if group not in society:
+                    add("missing_social_group", f"{loc}.society.{group}", "Required social group is missing.")
+            for group, social in society.items():
+                group_loc = f"{loc}.society.{group}"
+                if group not in SOCIAL_GROUPS:
+                    add("invalid_social_group", group_loc, group)
+                for field in ["size", "loyalty", "unrest", "wealth", "influence"]:
+                    value = social.get(field) if isinstance(social, dict) else None
+                    if not isinstance(value, (int, float)):
+                        add("invalid_social_group_number", f"{group_loc}.{field}", str(value))
+                    elif value < 0 or (field != "size" and value > 100):
+                        add("social_group_out_of_range", f"{group_loc}.{field}", str(value))
+                needs = social.get("needs") if isinstance(social, dict) else None
+                if not isinstance(needs, str) or not needs.strip():
+                    add("missing_social_group_needs", f"{group_loc}.needs", "Social group needs must be readable.")
 
     for faction_id, state in snapshot["factionState"].items():
         loc = f"faction_state:{faction_id}"

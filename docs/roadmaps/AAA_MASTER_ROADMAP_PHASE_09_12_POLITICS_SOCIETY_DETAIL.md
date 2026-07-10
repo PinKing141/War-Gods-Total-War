@@ -35,6 +35,23 @@ Completed with:
 - full test suite passing
 ```
 
+## Phase 9B. Social groups inside provinces — DONE
+
+Completed with:
+
+```text
+- province society state added for nobles, clergy, merchants, peasants, craftsmen, soldiers, mages, scholars, minorities, tribes, foreign settlers, refugees and urban poor
+- each social group tracks size, loyalty, unrest, needs, wealth and influence
+- social groups affect province tax, recruitment, unrest, culture tension and faith tension
+- monthly province society drift responds to devastation, occupation, siege pressure, tax burden, prosperity and internal politics
+- province instability now includes social unrest causes
+- province inspector shows readable Society summaries with social pressure, restive groups and dominant groups
+- JS and Python validation catch missing society state, missing groups, invalid groups, invalid values and missing needs text
+- tests cover social state creation, UI wiring, mechanical effects and broken validation state
+- 25-year observer validation passing
+- full test suite passing
+```
+
 ## Phase 10. Historical memory and living chronicle
 
 Subphases:

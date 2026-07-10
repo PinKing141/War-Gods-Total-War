@@ -1,54 +1,56 @@
 # Next Codex task from the AAA master roadmap
 
-The validation, UI language, scenario foundation, world scale, core simulation depth, character-life gates, dynasty/inheritance gates and first-pass court office gate are complete. The immediate next task is province social groups.
+The validation, UI language, scenario foundation, world scale, core simulation depth, character-life gates, dynasty/inheritance gates, court office gate and province social-group gate are complete. The immediate next task is law, crime and justice.
 
 ## Next task
 
 ```text
-Begin Phase 9-B: Social groups inside provinces.
+Begin Phase 9-C: Law, crime and justice.
 ```
 
 ## Codex prompt
 
 ```text
-Begin Phase 9-B from docs/roadmaps/AAA_MASTER_ROADMAP_V1.md: add first-pass social groups inside provinces.
+Begin Phase 9-C from docs/roadmaps/AAA_MASTER_ROADMAP_V1.md: add first-pass law, crime and justice systems.
 
 Tasks:
-1. Add province social group state for:
-   - nobles
-   - clergy
-   - merchants
-   - peasants
-   - craftsmen
-   - soldiers
-   - mages
-   - scholars
-   - minorities
-   - tribes
-   - foreign settlers
-   - refugees
-   - urban poor
-2. Each group should track:
-   - size
-   - loyalty
-   - unrest
-   - needs
-   - wealth
-   - influence
-3. Make social groups affect tax, unrest, recruitment, culture tension and faith tension at a first-pass level.
-4. Show readable social summaries in the province inspector.
-5. Add validation/tests for missing groups, invalid values and broken province social state.
-6. Keep map cosmetics unchanged.
-7. Do not add new factions or provinces in this slice.
+1. Add realm law state for:
+   - inheritance law
+   - tax law
+   - military obligation
+   - religious law
+   - merchant law
+   - noble privilege
+   - trial system
+   - hostage law
+   - exile
+   - execution
+   - imprisonment
+   - pardon
+2. Add first-pass crime and disorder tracking for:
+   - banditry
+   - corruption
+   - treason
+   - smuggling
+   - heresy
+   - noble violence
+   - urban unrest
+3. Make law affect succession, taxation, unrest, imprisonment, executions and legitimacy.
+4. Let character and province events reference law outcomes.
+5. Show readable law/crime summaries in realm, province and relevant character inspectors.
+6. Add validation/tests for missing law state, invalid law values, invalid crime values and broken justice references.
+7. Keep map cosmetics unchanged.
+8. Do not add new factions or provinces in this slice.
 ```
 
 ## Closing gate
 
-Phase 9-B is closed only when:
+Phase 9-C is closed only when:
 
 ```text
-Province society affects tax, unrest, recruitment, culture and faith tension.
-Province UI shows readable summaries, not raw spreadsheets.
+Law affects succession, taxation, unrest, imprisonment, executions and legitimacy.
+Character and province events can reference law outcomes.
+UI shows readable law/crime summaries.
 Existing balance and validation gates still pass.
 Existing tests still pass.
 ```
@@ -75,4 +77,5 @@ Phase 8-A: Family tree data — DONE
 Phase 8-B: Dynasty and house system — DONE
 Phase 8-C: Cadet branches, bastards and legitimacy — DONE
 Phase 9-A: Court and office system — DONE
+Phase 9-B: Social groups inside provinces — DONE
 ```

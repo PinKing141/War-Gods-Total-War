@@ -58,6 +58,14 @@
       const armies = this.sim.armies.filter((a) => a.loc === pid);
       const why = this.provinceImportance(p, st, river, armies, claims);
       const instability = this.sim.provinceInstability ? this.sim.provinceInstability(p.id) : { score: st.instability || 0, causes: [] };
+      const society = this.sim.provinceSocietySummary ? this.sim.provinceSocietySummary(p.id) : null;
+      const societyRows = society ? `
+        <h3>Society</h3>
+        <div class="stat-rows">
+          <div class="row"><span>Social Pressure</span><b>unrest ${Math.round(society.effects.unrest)} · tax x${society.effects.tax.toFixed(2)} · recruits x${society.effects.recruitment.toFixed(2)}</b></div>
+          ${society.mostRestive ? `<div class="row"><span>Most Restive</span><b>${esc(society.mostRestive.label)} <span class="fine">${esc(society.mostRestive.needs)} · unrest ${Math.round(society.mostRestive.unrest)}</span></b></div>` : ""}
+          ${society.dominant.map((g) => `<div class="row"><span>${esc(g.label)}</span><b>${Math.round(g.size).toLocaleString()} <span class="fine">loyalty ${Math.round(g.loyalty)} · influence ${Math.round(g.influence)} · ${esc(g.needs)}</span></b></div>`).join("")}
+        </div>` : "";
       const revolt = st.revoltId && this.sim.revolts ? this.sim.revolts.find((r) => r.id === st.revoltId) : null;
       const names = [
         [`Locally`, p.localName], [`In the old imperial rolls`, p.imperialName],
@@ -96,6 +104,7 @@
           ${p.regionName ? `<div class="row"><span>Region</span><b>${esc(p.regionName)}</b></div>` : ""}
           <div class="row"><span>Strategic Value</span><b>${esc(why || "local holding")}</b></div>
         </div>
+        ${societyRows}
         ${riverRows ? `<h3>Rivers</h3><div class="stat-rows">${riverRows}</div>` : ""}
         ${armies.length ? `<h3>Armies Present</h3>` + armies.map((a) =>
           `<div class="row">${this.shieldChip(a.faction)}<b>${a.size.toLocaleString()} under ${this.charLink(a.commanderId)} <span class="fine">${a.undersupplied ? "undersupplied" : "supply"} ${Math.round(a.supply || 0)} / ${Math.round(a.maxSupply || 0)}${this.debugEnabled ? ` · ${esc(a.intentReason || "holding position")}` : ""}</span></b></div>`).join("") : ""}

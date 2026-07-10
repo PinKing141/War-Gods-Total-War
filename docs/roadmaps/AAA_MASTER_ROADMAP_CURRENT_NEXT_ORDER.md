@@ -268,7 +268,8 @@ Phase 8-C closed with:
 
 ```text
 Phase 9-A: Court and office system — DONE
-Phase 9-B: Social groups inside provinces — NEXT
+Phase 9-B: Social groups inside provinces — DONE
+Phase 9-C: Law, crime and justice — NEXT
 ```
 
 ## Phase 9 notes
@@ -285,6 +286,18 @@ Phase 9-A closed with:
 - character inspector shows offices held by the character
 - JS and Python validation catch missing court state, missing/invalid offices, broken holders, wrong-faction holders, dead holders and invalid effectiveness
 - tests cover office assignment, inspector wiring, office effects and broken validation state
+- 25-year observer validation passing
+- full test suite passing
+
+Phase 9-B closed with:
+- province society state added for nobles, clergy, merchants, peasants, craftsmen, soldiers, mages, scholars, minorities, tribes, foreign settlers, refugees and urban poor
+- each social group tracks size, loyalty, unrest, needs, wealth and influence
+- social groups affect province tax, recruitment, unrest, culture tension and faith tension
+- monthly province society drift responds to devastation, occupation, siege pressure, tax burden, prosperity and internal politics
+- province instability now includes social unrest causes
+- province inspector shows readable Society summaries with social pressure, restive groups and dominant groups
+- JS and Python validation catch missing society state, missing groups, invalid groups, invalid values and missing needs text
+- tests cover social state creation, UI wiring, mechanical effects and broken validation state
 - 25-year observer validation passing
 - full test suite passing
 ```
